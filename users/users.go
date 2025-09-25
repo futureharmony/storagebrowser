@@ -7,6 +7,7 @@ import (
 
 	"github.com/filebrowser/filebrowser/v2/errors"
 	"github.com/filebrowser/filebrowser/v2/files"
+	"github.com/filebrowser/filebrowser/v2/minio"
 	"github.com/filebrowser/filebrowser/v2/rules"
 )
 
@@ -93,7 +94,7 @@ func (u *User) Clean(baseScope string, fields ...string) error {
 	if u.Fs == nil {
 		scope := u.Scope
 		scope = filepath.Join(baseScope, filepath.Join("/", scope)) //nolint:gocritic
-		u.Fs = afero.NewBasePathFs(afero.NewOsFs(), scope)
+		u.Fs = minio.NewBasePathFs()
 	}
 
 	return nil

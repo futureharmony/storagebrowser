@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/afero"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/filebrowser/filebrowser/v2/files"
+	"github.com/filebrowser/filebrowser/v2/minio"
 	"github.com/filebrowser/filebrowser/v2/share"
 )
 
@@ -60,7 +60,7 @@ var withHashFile = func(fn handleFunc) handleFunc {
 		}
 
 		// set fs root to the shared file/folder
-		d.user.Fs = afero.NewBasePathFs(d.user.Fs, basePath)
+		d.user.Fs = minio.NewBasePathFs()
 
 		file, err = files.NewFileInfo(&files.FileOptions{
 			Fs:      d.user.Fs,

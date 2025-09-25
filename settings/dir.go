@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/spf13/afero"
+	"github.com/filebrowser/filebrowser/v2/minio"
 )
 
 var (
@@ -32,7 +32,7 @@ func (s *Settings) MakeUserDir(username, userScope, serverRoot string) (string, 
 
 	userScope = path.Join("/", userScope)
 
-	fs := afero.NewBasePathFs(afero.NewOsFs(), serverRoot)
+	fs := minio.NewBasePathFs()
 	if err := fs.MkdirAll(userScope, os.ModePerm); err != nil {
 		return "", fmt.Errorf("failed to create user home dir: [%s]: %w", userScope, err)
 	}

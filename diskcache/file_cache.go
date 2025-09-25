@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/filebrowser/filebrowser/v2/minio"
 	"github.com/spf13/afero"
 )
 
@@ -27,7 +28,7 @@ type FileCache struct {
 
 func New(fs afero.Fs, root string) *FileCache {
 	return &FileCache{
-		fs: afero.NewBasePathFs(fs, root),
+		fs: minio.NewBasePathFs(),
 	}
 }
 

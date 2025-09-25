@@ -5,8 +5,12 @@ go 1.24
 require (
 	github.com/asdine/storm/v3 v3.2.1
 	github.com/asticode/go-astisub v0.34.0
+	github.com/aws/aws-sdk-go-v2 v1.39.1
+	github.com/aws/aws-sdk-go-v2/config v1.31.10
+	github.com/aws/aws-sdk-go-v2/credentials v1.18.14
 	github.com/disintegration/imaging v1.6.2
 	github.com/dsoprea/go-exif/v3 v3.0.1
+	github.com/fclairamb/afero-s3 v0.3.1
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/gorilla/mux v1.8.1
@@ -18,16 +22,16 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/shirou/gopsutil/v3 v3.24.5
-	github.com/spf13/afero v1.14.0
+	github.com/spf13/afero v1.15.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
 	github.com/spf13/viper v1.20.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	go.etcd.io/bbolt v1.4.2
 	golang.org/x/crypto v0.40.0
 	golang.org/x/image v0.29.0
-	golang.org/x/text v0.27.0
+	golang.org/x/text v0.28.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -37,6 +41,22 @@ require (
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/asticode/go-astikit v0.56.0 // indirect
 	github.com/asticode/go-astits v1.13.0 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.1 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.8 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.19.8 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.8 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.8 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.8.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.29.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.38.5 // indirect
+	github.com/aws/smithy-go v1.23.0 // indirect
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/sevenzip v1.6.1 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
@@ -75,3 +95,5 @@ require (
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/fclairamb/afero-s3 => ./library/afero-s3

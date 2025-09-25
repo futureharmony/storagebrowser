@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	aferos3 "github.com/fclairamb/afero-s3"
+	aferos3 "github.com/futureharmony/afero-aws-s3"
 	"github.com/spf13/afero"
 )
 

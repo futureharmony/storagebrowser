@@ -1,0 +1,3 @@
+[submodule "library/afero-s3"]
+	path = library/afero-s3
+	url = https://github.com/fclairamb/afero-s3.git

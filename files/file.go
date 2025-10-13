@@ -109,6 +109,7 @@ func stat(opts *FileOptions) (*FileInfo, error) {
 	var file *FileInfo
 
 	if lstaterFs, ok := opts.Fs.(afero.Lstater); ok {
+		// TODO suit for s3
 		info, _, err := lstaterFs.LstatIfPossible(opts.Path)
 		if err != nil {
 			return nil, err

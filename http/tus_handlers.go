@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jellydator/ttlcache/v3"
@@ -127,6 +128,8 @@ func tusPostHandler() handleFunc {
 		}
 		defer openFile.Close()
 
+		// For afero-s3 compatibility, we need to handle the case where the file
+		// may not be immediately visible after creation
 		file, err = files.NewFileInfo(&files.FileOptions{
 			Fs:         d.user.Fs,
 			Path:       r.URL.Path,
@@ -137,7 +140,23 @@ func tusPostHandler() handleFunc {
 			Content:    false,
 		})
 		if err != nil {
-			return errToStatus(err), err
+			// If the file was just created but not visible yet (common with S3),
+			// we can still proceed by creating a basic file info structure
+			if errors.Is(err, afero.ErrFileNotFound) {
+				// Create a basic file info for the new file
+				file = &files.FileInfo{
+					Fs:        d.user.Fs,
+					Path:      r.URL.Path,
+					Name:      filepath.Base(r.URL.Path),
+					IsDir:     false,
+					Mode:      d.settings.FileMode,
+					Size:      0, // New file size is 0
+					ModTime:   time.Now(),
+					Extension: filepath.Ext(r.URL.Path),
+				}
+			} else {
+				return errToStatus(err), err
+			}
 		}
 
 		uploadLength, err := getUploadLength(r)
@@ -239,32 +258,84 @@ func tusPatchHandler() handleFunc {
 			)
 		}
 
+		// Check if we're dealing with an S3-like filesystem that doesn't support
+		// the traditional file operations needed for tus protocol
+		// Instead of using O_APPEND (which S3 doesn't support), we'll try to detect
+		// S3 filesystems and handle the upload differently
 		openFile, err := d.user.Fs.OpenFile(r.URL.Path, os.O_WRONLY|os.O_APPEND, d.settings.FileMode)
 		if err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("could not open file: %w", err)
+			// If O_APPEND failed, it might be an S3 filesystem, try different approach
+			if err.Error() == "s3 doesn't support this operation" || 
+				err.Error() == "not implemented" || 
+				strings.Contains(err.Error(), "not support") {
+				
+				// For S3, we can't do traditional tus chunked uploads.
+				// Instead, for the first chunk (when offset=0), we upload the entire file content
+				if uploadOffset == 0 {
+					// Read the entire request body into memory
+					bodyBytes, err := io.ReadAll(r.Body)
+					if err != nil {
+						return http.StatusInternalServerError, fmt.Errorf("could not read request body: %w", err)
+					}
+					
+					// Write the entire content to the file
+					err = afero.WriteFile(d.user.Fs, r.URL.Path, bodyBytes, d.settings.FileMode)
+					if err != nil {
+						return http.StatusInternalServerError, fmt.Errorf("could not write to file: %w", err)
+					}
+					
+					// Update the file info after write
+					file, err = files.NewFileInfo(&files.FileOptions{
+						Fs:         d.user.Fs,
+						Path:       r.URL.Path,
+						Modify:     d.user.Perm.Modify,
+						Expand:     false,
+						ReadHeader: false,
+						Checker:    d,
+						Content:    false,
+					})
+					if err != nil {
+						return errToStatus(err), err
+					}
+					
+					newOffset := int64(len(bodyBytes))
+					w.Header().Set("Upload-Offset", strconv.FormatInt(newOffset, 10))
+
+					if newOffset >= uploadLength {
+						completeUpload(file.RealPath())
+						_ = d.RunHook(func() error { return nil }, "upload", r.URL.Path, "", d.user)
+					}
+
+					return http.StatusNoContent, nil
+				} else {
+					// S3 doesn't properly support chunked uploads beyond the first chunk
+					return http.StatusNotImplemented, fmt.Errorf("S3 filesystem does not support chunked uploads beyond first chunk")
+				}
+			} else {
+				return errToStatus(err), err
+			}
+		} else {
+			// Traditional filesystem approach
+			defer openFile.Close()
+			
+			// For S3 filesystems that don't support seeking, write directly without seeking
+			// Since we've validated that the offset matches the file size, we can append directly
+			defer r.Body.Close()
+			bytesWritten, err := io.Copy(openFile, r.Body)
+			if err != nil {
+				return http.StatusInternalServerError, fmt.Errorf("could not write to file: %w", err)
+			}
+
+			newOffset := uploadOffset + bytesWritten
+			w.Header().Set("Upload-Offset", strconv.FormatInt(newOffset, 10))
+
+			if newOffset >= uploadLength {
+				completeUpload(file.RealPath())
+				_ = d.RunHook(func() error { return nil }, "upload", r.URL.Path, "", d.user)
+			}
+
+			return http.StatusNoContent, nil
 		}
-		defer openFile.Close()
-
-		_, err = openFile.Seek(uploadOffset, 0)
-		if err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("could not seek file: %w", err)
-		}
-
-		defer r.Body.Close()
-		bytesWritten, err := io.Copy(openFile, r.Body)
-		if err != nil {
-			return http.StatusInternalServerError, fmt.Errorf("could not write to file: %w", err)
-		}
-
-		newOffset := uploadOffset + bytesWritten
-		w.Header().Set("Upload-Offset", strconv.FormatInt(newOffset, 10))
-
-		if newOffset >= uploadLength {
-			completeUpload(file.RealPath())
-			_ = d.RunHook(func() error { return nil }, "upload", r.URL.Path, "", d.user)
-		}
-
-		return http.StatusNoContent, nil
 	})
 }
 

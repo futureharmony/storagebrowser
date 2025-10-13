@@ -11,17 +11,21 @@ import (
 	"github.com/spf13/afero"
 )
 
-var bucketName = ""
 var fs afero.Fs = nil
+
+var (
+	bucketName = ""
+	endpoint   = ""
+	ak         = ""
+	sk         = ""
+)
 
 // TODO read config from config file or env
 func init() {
 
-	endpoint := "" // Custom S3-compatible service endpoint
-
 	cfg, err := config.LoadDefaultConfig(context.Background(),
 		config.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider("ak", "sk", ""),
+			credentials.NewStaticCredentialsProvider(ak, sk, ""),
 		),
 		config.WithRegion("us-east-1"),
 		config.WithEndpointResolver(
@@ -54,4 +58,10 @@ func init() {
 
 func NewBasePathFs() afero.Fs {
 	return fs
+}
+
+func FullPath(fs afero.Fs, relativePath string) string {
+	// For S3 filesystem, just return the relative path since it will be the object key
+	// The bucket name is handled internally by the aferos3 filesystem
+	return relativePath
 }

@@ -91,12 +91,17 @@ func tusPostHandler() handleFunc {
 		})
 		switch {
 		case errors.Is(err, afero.ErrFileNotFound):
-			dirPath := filepath.Dir(r.URL.Path)
-			if _, statErr := d.user.Fs.Stat(dirPath); os.IsNotExist(statErr) {
-				if mkdirErr := d.user.Fs.MkdirAll(dirPath, d.settings.DirMode); mkdirErr != nil {
-					return http.StatusInternalServerError, err
-				}
-			}
+			// s3 file system no need to create parent directories
+			// afero-s3 handles this internally
+			// for other file systems, we can create parent directories if needed
+			// Uncomment the following lines if you want to create parent directories
+
+			// dirPath := filepath.Dir(r.URL.Path)
+			// if _, statErr := d.user.Fs.Stat(dirPath); os.IsNotExist(statErr) {
+			// 	if mkdirErr := d.user.Fs.MkdirAll(dirPath, d.settings.DirMode); mkdirErr != nil {
+			// 		return http.StatusInternalServerError, err
+			// 	}
+			// }
 		case err != nil:
 			return errToStatus(err), err
 		}
@@ -265,10 +270,10 @@ func tusPatchHandler() handleFunc {
 		openFile, err := d.user.Fs.OpenFile(r.URL.Path, os.O_WRONLY|os.O_APPEND, d.settings.FileMode)
 		if err != nil {
 			// If O_APPEND failed, it might be an S3 filesystem, try different approach
-			if err.Error() == "s3 doesn't support this operation" || 
-				err.Error() == "not implemented" || 
+			if err.Error() == "s3 doesn't support this operation" ||
+				err.Error() == "not implemented" ||
 				strings.Contains(err.Error(), "not support") {
-				
+
 				// For S3, we can't do traditional tus chunked uploads.
 				// Instead, for the first chunk (when offset=0), we upload the entire file content
 				if uploadOffset == 0 {
@@ -277,13 +282,13 @@ func tusPatchHandler() handleFunc {
 					if err != nil {
 						return http.StatusInternalServerError, fmt.Errorf("could not read request body: %w", err)
 					}
-					
+
 					// Write the entire content to the file
 					err = afero.WriteFile(d.user.Fs, r.URL.Path, bodyBytes, d.settings.FileMode)
 					if err != nil {
 						return http.StatusInternalServerError, fmt.Errorf("could not write to file: %w", err)
 					}
-					
+
 					// Update the file info after write
 					file, err = files.NewFileInfo(&files.FileOptions{
 						Fs:         d.user.Fs,
@@ -297,7 +302,7 @@ func tusPatchHandler() handleFunc {
 					if err != nil {
 						return errToStatus(err), err
 					}
-					
+
 					newOffset := int64(len(bodyBytes))
 					w.Header().Set("Upload-Offset", strconv.FormatInt(newOffset, 10))
 
@@ -317,7 +322,7 @@ func tusPatchHandler() handleFunc {
 		} else {
 			// Traditional filesystem approach
 			defer openFile.Close()
-			
+
 			// For S3 filesystems that don't support seeking, write directly without seeking
 			// Since we've validated that the offset matches the file size, we can append directly
 			defer r.Body.Close()

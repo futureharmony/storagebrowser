@@ -16,6 +16,9 @@ import (
 	"net/http"
 	"os"
 	"path"
+
+	aferos3 "github.com/futureharmony/afero-aws-s3"
+
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -90,7 +93,8 @@ func NewFileInfo(opts *FileOptions) (*FileInfo, error) {
 
 	if opts.Expand {
 		if file.IsDir {
-			if err := file.readListing(opts.Checker, opts.ReadHeader); err != nil { //nolint:govet
+			// TODO this step take so many time， maybe we can optimize it
+			if err := file.simpleReadListingFromS3(opts.Checker, opts.ReadHeader); err != nil { //nolint:govet
 				return nil, err
 			}
 			return file, nil
@@ -464,5 +468,141 @@ func (i *FileInfo) readListing(checker rules.Checker, readHeader bool) error {
 	}
 
 	i.Listing = listing
+	return nil
+}
+
+// simpleReadListingFromS3 is used for S3-compatible filesystems that implement Readdir
+func (i *FileInfo) simpleReadListingFromS3(checker rules.Checker, readHeader bool) error {
+	// Check if the filesystem supports Readdir with count parameter (like afero-s3fs does)
+	if dirReader, ok := i.Fs.(*aferos3.Fs); ok {
+		// Use Readdir with count -1 to get all entries (equivalent to ReadDir)
+		pathFile, err := dirReader.Open(i.Path)
+		if err != nil {
+			return err
+		}
+
+		dir, err := pathFile.Readdir(-1)
+		if err != nil {
+			return err
+		}
+
+		listing := &Listing{
+			Items:    []*FileInfo{},
+			NumDirs:  0,
+			NumFiles: 0,
+		}
+
+		for _, f := range dir {
+			name := f.Name()
+			fPath := path.Join(i.Path, name)
+
+			if !checker.Check(fPath) {
+				continue
+			}
+
+			isSymlink, isInvalidLink := false, false
+			if IsSymlink(f.Mode()) {
+				isSymlink = true
+				// It's a symbolic link. We try to follow it. If it doesn't work,
+				// we stay with the link information instead of the target's.
+				info, err := i.Fs.Stat(fPath)
+				if err == nil {
+					f = info
+				} else {
+					isInvalidLink = true
+				}
+			}
+
+			file := &FileInfo{
+				Fs:         i.Fs,
+				Name:       name,
+				Size:       f.Size(),
+				ModTime:    f.ModTime(),
+				Mode:       f.Mode(),
+				IsDir:      f.IsDir(),
+				IsSymlink:  isSymlink,
+				Extension:  filepath.Ext(name),
+				Path:       fPath,
+				currentDir: dir,
+			}
+
+			// if !file.IsDir && strings.HasPrefix(mime.TypeByExtension(file.Extension), "image/") {
+			// 	resolution, err := calculateImageResolution(file.Fs, file.Path)
+			// 	if err != nil {
+			// 		log.Printf("Error calculating resolution for image %s: %v", file.Path, err)
+			// 	} else {
+			// 		file.Resolution = resolution
+			// 	}
+			// }
+
+			if file.IsDir {
+				listing.NumDirs++
+			} else {
+				listing.NumFiles++
+
+				if isInvalidLink {
+					file.Type = "invalid_link"
+				} else {
+					err := file.detectTypeByFileName(true, false, false)
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+			listing.Items = append(listing.Items, file)
+		}
+
+		i.Listing = listing
+		return nil
+	}
+
+	// Fallback to regular readListing if no S3-specific method is supported
+	return i.readListing(checker, readHeader)
+}
+
+func (i *FileInfo) detectTypeByFileName(modify, saveContent, readHeader bool) error {
+	mimetype := mime.TypeByExtension(i.Extension)
+
+	switch {
+	case strings.HasPrefix(mimetype, "video"):
+		i.Type = "video"
+		// i.detectSubtitles()
+		return nil
+	case strings.HasPrefix(mimetype, "audio"):
+		i.Type = "audio"
+		return nil
+	case strings.HasPrefix(mimetype, "image"):
+		i.Type = "image"
+		// resolution, err := calculateImageResolution(i.Fs, i.Path)
+		// if err != nil {
+		// 	log.Printf("Error calculating image resolution: %v", err)
+		// } else {
+		// 	i.Resolution = resolution
+		// }
+		return nil
+	case strings.HasSuffix(mimetype, "pdf"):
+		i.Type = "pdf"
+		return nil
+	case (strings.HasPrefix(mimetype, "text")) && i.Size <= 10*1024*1024: // 10 MB
+		i.Type = "text"
+
+		// if !modify {
+		// 	i.Type = "textImmutable"
+		// }
+		// if saveContent {
+		// 	afs := &afero.Afero{Fs: i.Fs}
+		// 	content, err := afs.ReadFile(i.Path)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+
+		// 	i.Content = string(content)
+		// }
+		return nil
+	default:
+		i.Type = "blob"
+	}
+
 	return nil
 }

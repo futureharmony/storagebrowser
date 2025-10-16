@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	aferos3 "github.com/futureharmony/afero-aws-s3"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/spf13/afero"
 
@@ -269,7 +270,14 @@ func writeFile(afs afero.Fs, dst string, in io.Reader, fileMode, dirMode fs.File
 		return nil, err
 	}
 
-	file, err := afs.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	var file afero.File
+	// s3 does not support os.O_RDWR, so we have to use os.O_WRONLY or os.O_CREATE|os.O_TRUNC
+	if s3fs, ok := afs.(*aferos3.Fs); ok {
+		// For S3, just use Create which should handle the file creation properly
+		file, err = s3fs.Create(dst)
+	} else {
+		file, err = afs.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	}
 	if err != nil {
 		return nil, err
 	}

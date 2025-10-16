@@ -112,8 +112,29 @@ func NewFileInfo(opts *FileOptions) (*FileInfo, error) {
 func stat(opts *FileOptions) (*FileInfo, error) {
 	var file *FileInfo
 
+	// Check if it's an S3 filesystem to handle it differently
+	if _, ok := opts.Fs.(*aferos3.Fs); ok {
+		// For S3 filesystem, use Stat directly since LstatIfPossible may not work properly
+		info, err := opts.Fs.Stat(opts.Path)
+		if err != nil {
+			return nil, err
+		}
+		file = &FileInfo{
+			Fs:        opts.Fs,
+			Path:      opts.Path,
+			Name:      info.Name(),
+			ModTime:   info.ModTime(),
+			Mode:      info.Mode(),
+			IsDir:     info.IsDir(),
+			IsSymlink: IsSymlink(info.Mode()), // For S3, we'll assume it's not a symlink since S3 doesn't have symlinks
+			Size:      info.Size(),
+			Extension: filepath.Ext(info.Name()),
+			Token:     opts.Token,
+		}
+		return file, nil
+	}
+
 	if lstaterFs, ok := opts.Fs.(afero.Lstater); ok {
-		// TODO suit for s3
 		info, _, err := lstaterFs.LstatIfPossible(opts.Path)
 		if err != nil {
 			return nil, err

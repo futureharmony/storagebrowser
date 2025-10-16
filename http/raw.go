@@ -2,14 +2,18 @@ package http
 
 import (
 	"errors"
+	"io"
 	"io/fs"
 	"log"
+	"mime"
 	"net/http"
 	"net/url"
 	gopath "path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	aferos3 "github.com/futureharmony/afero-aws-s3"
 	"github.com/mholt/archives"
 
 	"github.com/filebrowser/filebrowser/v2/files"
@@ -217,6 +221,34 @@ func rawFileHandler(w http.ResponseWriter, r *http.Request, file *files.FileInfo
 	setContentDisposition(w, r, file)
 	w.Header().Add("Content-Security-Policy", `script-src 'none';`)
 	w.Header().Set("Cache-Control", "private")
+
+	// Check if filesystem is S3 to handle differently since S3 files are not seekable
+	// We need to get the actual filesystem from the data object in the rawHandler function
+	// Since we cannot import aferos3 in files package, we check by name or type
+	// We'll pass filesystem type information through the request context or check differently
+	if _, ok := file.Fs.(*aferos3.Fs); ok {
+		// For S3 files, we can't use http.ServeContent because it requires seeking
+		// Instead, we'll set headers manually and copy the content
+		w.Header().Set("Content-Type", "application/octet-stream") // Default to binary
+		if file.Extension != "" {
+			if mimeType := mime.TypeByExtension(file.Extension); mimeType != "" {
+				w.Header().Set("Content-Type", mimeType)
+			}
+		}
+
+		// Set content length if available
+		if file.Size > 0 {
+			w.Header().Set("Content-Length", strconv.FormatInt(file.Size, 10))
+		}
+
+		// Copy the file content to response
+		_, err := io.Copy(w, fd)
+		if err != nil {
+			return http.StatusInternalServerError, err
+		}
+		return 0, nil
+	}
+
 	http.ServeContent(w, r, file.Name, file.ModTime, fd)
 	return 0, nil
 }

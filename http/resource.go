@@ -276,7 +276,7 @@ func addVersionSuffix(source string, afs afero.Fs) string {
 
 func writeFile(afs afero.Fs, dst string, in io.Reader, fileMode, dirMode fs.FileMode) (os.FileInfo, error) {
 	dir, _ := path.Split(dst)
-	
+
 	// For S3 filesystems, skip MkdirAll if the directory is the root "/"
 	if _, ok := afs.(*aferos3.Fs); ok {
 		if dir != "/" {
@@ -388,6 +388,13 @@ var diskUsage = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (
 	})
 	if err != nil {
 		return errToStatus(err), err
+	}
+	if _, ok := d.user.Fs.(*aferos3.Fs); ok {
+		return renderJSON(w, r, &DiskUsageResponse{
+			Total: uint64(file.Size),
+			Used:  uint64(file.Size),
+		})
+
 	}
 	fPath := file.RealPath()
 	if !file.IsDir {

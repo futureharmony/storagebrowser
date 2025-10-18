@@ -107,8 +107,19 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 
 		// Directories creation on POST.
 		if strings.HasSuffix(r.URL.Path, "/") {
-			err := d.user.Fs.MkdirAll(r.URL.Path, d.settings.DirMode)
-			return errToStatus(err), err
+			// For S3 filesystems, we need to handle the root directory specially since MkdirAll("/") fails
+			if _, ok := d.user.Fs.(*aferos3.Fs); ok {
+				if r.URL.Path != "/" {
+					err := d.user.Fs.MkdirAll(r.URL.Path, d.settings.DirMode)
+					return errToStatus(err), err
+				} else {
+					// The root directory always exists in S3, so just return success
+					return http.StatusOK, nil
+				}
+			} else {
+				err := d.user.Fs.MkdirAll(r.URL.Path, d.settings.DirMode)
+				return errToStatus(err), err
+			}
 		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
@@ -265,16 +276,29 @@ func addVersionSuffix(source string, afs afero.Fs) string {
 
 func writeFile(afs afero.Fs, dst string, in io.Reader, fileMode, dirMode fs.FileMode) (os.FileInfo, error) {
 	dir, _ := path.Split(dst)
-	err := afs.MkdirAll(dir, dirMode)
-	if err != nil {
-		return nil, err
+	
+	// For S3 filesystems, skip MkdirAll if the directory is the root "/"
+	if _, ok := afs.(*aferos3.Fs); ok {
+		if dir != "/" {
+			err := afs.MkdirAll(dir, dirMode)
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		// For non-S3 filesystems, proceed as before
+		err := afs.MkdirAll(dir, dirMode)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var file afero.File
+	var err error
 	// s3 does not support os.O_RDWR, so we have to use os.O_WRONLY or os.O_CREATE|os.O_TRUNC
-	if s3fs, ok := afs.(*aferos3.Fs); ok {
+	if _, ok := afs.(*aferos3.Fs); ok {
 		// For S3, just use Create which should handle the file creation properly
-		file, err = s3fs.Create(dst)
+		file, err = afs.(*aferos3.Fs).Create(dst)
 	} else {
 		file, err = afs.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 	}

@@ -8,6 +8,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"os"
 	gopath "path"
 	"path/filepath"
 	"strconv"
@@ -221,7 +222,19 @@ func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.
 		if file.Name != "" {
 			name = file.Name
 		} else {
-			actual, statErr := file.Fs.Stat(".")
+			// For S3 filesystems, we can't use "." as a path for Stat operation
+			// Instead, we should get the name from the root path directly
+			var actual os.FileInfo
+			var statErr error
+			
+			if isS3Fs(file.Fs) {
+				// For S3, use the current directory path instead of "."
+				actual, statErr = file.Fs.Stat(file.Path)
+			} else {
+				// For regular filesystems, continue with the original logic
+				actual, statErr = file.Fs.Stat(".")
+			}
+			
 			if statErr != nil {
 				return http.StatusInternalServerError, statErr
 			}

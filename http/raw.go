@@ -15,6 +15,7 @@ import (
 
 	aferos3 "github.com/futureharmony/afero-aws-s3"
 	"github.com/mholt/archives"
+	"github.com/spf13/afero"
 
 	"github.com/filebrowser/filebrowser/v2/files"
 	"github.com/filebrowser/filebrowser/v2/fileutils"
@@ -126,7 +127,11 @@ func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
 
 	if path != commonPath {
 		nameInArchive := strings.TrimPrefix(path, commonPath)
-		nameInArchive = strings.TrimPrefix(nameInArchive, string(filepath.Separator))
+		// Use forward slash separator for nameInArchive to be consistent across filesystems
+		nameInArchive = strings.TrimPrefix(nameInArchive, "/")
+		if !isS3Fs(d.user.Fs) {
+			nameInArchive = strings.TrimPrefix(nameInArchive, string(filepath.Separator))
+		}
 
 		archiveFiles = append(archiveFiles, archives.FileInfo{
 			FileInfo:      info,
@@ -150,7 +155,15 @@ func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
 		}
 
 		for _, name := range names {
-			fPath := filepath.Join(path, name)
+			var fPath string
+			if isS3Fs(d.user.Fs) {
+				// For S3 filesystems, use forward slash path separators
+				fPath = gopath.Join(path, name)
+			} else {
+				// For regular filesystems, use OS-specific separators
+				fPath = filepath.Join(path, name)
+			}
+			
 			subFiles, err := getFiles(d, fPath, commonPath)
 			if err != nil {
 				log.Printf("Failed to get files from %s: %v", fPath, err)
@@ -161,6 +174,12 @@ func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
 	}
 
 	return archiveFiles, nil
+}
+
+// Helper function to check if the filesystem is an S3 filesystem
+func isS3Fs(fs afero.Fs) bool {
+	_, ok := fs.(*aferos3.Fs)
+	return ok
 }
 
 func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.FileInfo) (int, error) {
@@ -178,9 +197,20 @@ func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.
 
 	var allFiles []archives.FileInfo
 	for _, fname := range filenames {
-		archiveFiles, err := getFiles(d, fname, commonDir)
+		// For S3 filesystems, we need to normalize the path format
+		normalizedFname := fname
+		if isS3Fs(d.user.Fs) {
+			// Convert OS-specific paths to S3-compatible paths with forward slashes
+			normalizedFname = gopath.Clean(strings.ReplaceAll(fname, string(filepath.Separator), "/"))
+			// Ensure it starts with a forward slash for S3
+			if normalizedFname != "" && normalizedFname[0] != '/' {
+				normalizedFname = "/" + normalizedFname
+			}
+		}
+		
+		archiveFiles, err := getFiles(d, normalizedFname, commonDir)
 		if err != nil {
-			log.Printf("Failed to get files from %s: %v", fname, err)
+			log.Printf("Failed to get files from %s: %v", normalizedFname, err)
 			continue
 		}
 		allFiles = append(allFiles, archiveFiles...)

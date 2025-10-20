@@ -57,6 +57,9 @@ var withHashFile = func(fn handleFunc) handleFunc {
 		if file.IsDir {
 			basePath = filepath.Dir(basePath)
 			filePath = ifPath
+		} else {
+			// For files, we need to set filePath to link.Path to access the actual file
+			filePath = link.Path
 		}
 
 		// set fs root to the shared file/folder

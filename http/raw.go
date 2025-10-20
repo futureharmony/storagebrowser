@@ -194,7 +194,14 @@ func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.
 		return http.StatusInternalServerError, err
 	}
 
-	commonDir := fileutils.CommonPrefix(filepath.Separator, filenames...)
+	var commonDir string
+	if isS3Fs(d.user.Fs) {
+		// For S3 filesystems, use forward slash as separator for CommonPrefix
+		commonDir = fileutils.CommonPrefix('/', filenames...)
+	} else {
+		// For regular filesystems, use OS-specific separator
+		commonDir = fileutils.CommonPrefix(filepath.Separator, filenames...)
+	}
 
 	var allFiles []archives.FileInfo
 	for _, fname := range filenames {

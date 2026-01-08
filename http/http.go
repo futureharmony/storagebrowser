@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/filebrowser/filebrowser/v2/minio"
 	"github.com/filebrowser/filebrowser/v2/settings"
 	"github.com/filebrowser/filebrowser/v2/storage"
 )
@@ -23,6 +24,16 @@ func NewHandler(
 	assetsFs fs.FS,
 ) (http.Handler, error) {
 	server.Clean()
+
+	if err := minio.Init(&minio.Config{
+		Bucket:    server.S3Bucket,
+		Endpoint:  server.S3Endpoint,
+		AccessKey: server.S3AccessKey,
+		SecretKey: server.S3SecretKey,
+		Region:    server.S3Region,
+	}); err != nil {
+		return nil, err
+	}
 
 	r := mux.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {

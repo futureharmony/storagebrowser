@@ -10,9 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/spf13/afero"
-	aferos3 "github.com/futureharmony/afero-aws-s3"
 
 	"github.com/filebrowser/filebrowser/v2/rules"
+	aferos3 "github.com/futureharmony/afero-aws-s3"
 )
 
 type searchOptions struct {
@@ -87,13 +87,13 @@ func s3Search(fs *aferos3.Fs, scope, query string, checker rules.Checker, found 
 
 	scope = filepath.ToSlash(filepath.Clean(scope))
 	scope = path.Join("/", scope)
-	
+
 	// Remove leading slash for S3 prefix
 	s3Prefix := strings.TrimPrefix(scope, "/")
 	if s3Prefix != "" && !strings.HasSuffix(s3Prefix, "/") {
 		s3Prefix += "/"
 	}
-	
+
 	// If scope is root, keep it as empty string for S3
 	if scope == "/" {
 		s3Prefix = ""
@@ -120,10 +120,10 @@ func s3Search(fs *aferos3.Fs, scope, query string, checker rules.Checker, found 
 
 			// Convert S3 key to the file path format expected by the rest of the system
 			fPath := path.Join("/", objectKey)
-			
+
 			// Get just the filename from the path for term matching
 			_, fileName := path.Split(fPath)
-			
+
 			// For relative path calculation, remove the scope prefix
 			relativePath := strings.TrimPrefix(fPath, scope)
 			relativePath = strings.TrimPrefix(relativePath, "/")

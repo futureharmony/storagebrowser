@@ -75,6 +75,11 @@ func addServerFlags(flags *pflag.FlagSet) {
 	flags.Bool("disable-preview-resize", false, "disable resize of image previews")
 	flags.Bool("disable-exec", true, "disables Command Runner feature")
 	flags.Bool("disable-type-detection-by-header", false, "disables type detection by reading file headers")
+	flags.String("s3-bucket", "", "S3 bucket name")
+	flags.String("s3-endpoint", "", "S3 endpoint URL")
+	flags.String("s3-access-key", "", "S3 access key")
+	flags.String("s3-secret-key", "", "S3 secret key")
+	flags.String("s3-region", "us-east-1", "S3 region")
 }
 
 var rootCmd = &cobra.Command{

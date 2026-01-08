@@ -65,7 +65,7 @@ require (
 	github.com/dsoprea/go-logging v0.0.0-20200710184922-b02d349568dd // indirect
 	github.com/dsoprea/go-utility/v2 v2.0.0-20221003172846-a3e1774ef349 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/futureharmony/afero-aws-s3 v0.0.0-20251010161143-1ddfd495f8fe
+	github.com/futureharmony/afero-aws-s3 v0.0.0-20260108155800-77399c71f529
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
@@ -97,4 +97,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/futureharmony/afero-aws-s3 => ./library/afero-s3
+// replace github.com/futureharmony/afero-aws-s3 => ./library/afero-s3

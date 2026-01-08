@@ -4,35 +4,39 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	aferos3 "github.com/futureharmony/afero-aws-s3"
 	"github.com/spf13/afero"
 )
 
-var fs afero.Fs = nil
+type Config struct {
+	Bucket    string
+	Endpoint  string
+	AccessKey string
+	SecretKey string
+	Region    string
+}
 
 var (
-	bucketName = ""
-	endpoint   = ""
-	ak         = ""
-	sk         = ""
+	fs  afero.Fs
+	cfg Config
 )
 
-// TODO read config from config file or env
-func init() {
+func Init(config *Config) error {
+	cfg = *config
 
-	cfg, err := config.LoadDefaultConfig(context.Background(),
-		config.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(ak, sk, ""),
+	awsCfg, err := awsconfig.LoadDefaultConfig(context.Background(),
+		awsconfig.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(cfg.AccessKey, cfg.SecretKey, ""),
 		),
-		config.WithRegion("us-east-1"),
-		config.WithEndpointResolver(
-			aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
+		awsconfig.WithRegion(cfg.Region),
+		awsconfig.WithEndpointResolverWithOptions(
+			aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 				if service == s3.ServiceID {
 					return aws.Endpoint{
-						URL:           endpoint,
+						URL:           cfg.Endpoint,
 						SigningRegion: region,
 					}, nil
 				}
@@ -42,26 +46,17 @@ func init() {
 	)
 
 	if err != nil {
-		panic("unable to load SDK config, " + err.Error())
+		return err
 	}
 
-	// sess, errSession := session.NewSession(&aws.Config{
-	// 	Credentials:      credentials.NewStaticCredentials("testuser", "test123123", ""),
-	// 	Endpoint:         aws.String("https://io.lifelib.org/testbucket"),
-	// 	Region:           aws.String("cn-north-1"),
-	// 	DisableSSL:       aws.Bool(false),
-	// 	S3ForcePathStyle: aws.Bool(true),
-	// })
-
-	fs = aferos3.NewFs(bucketName, cfg)
+	fs = aferos3.NewFs(cfg.Bucket, awsCfg)
+	return nil
 }
 
 func NewBasePathFs() afero.Fs {
 	return fs
 }
 
-func FullPath(fs afero.Fs, relativePath string) string {
-	// For S3 filesystem, just return the relative path since it will be the object key
-	// The bucket name is handled internally by the aferos3 filesystem
+func FullPath(_ afero.Fs, relativePath string) string {
 	return relativePath
 }

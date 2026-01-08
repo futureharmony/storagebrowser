@@ -57,11 +57,32 @@ type Server struct {
 	TypeDetectionByHeader bool   `json:"typeDetectionByHeader"`
 	AuthHook              string `json:"authHook"`
 	TokenExpirationTime   string `json:"tokenExpirationTime"`
+	S3Bucket              string `json:"s3Bucket"`
+	S3Endpoint            string `json:"s3Endpoint"`
+	S3AccessKey           string `json:"s3AccessKey"`
+	S3SecretKey           string `json:"s3SecretKey"`
+	S3Region              string `json:"s3Region"`
 }
 
 // Clean cleans any variables that might need cleaning.
 func (s *Server) Clean() {
 	s.BaseURL = strings.TrimSuffix(s.BaseURL, "/")
+
+	if s.S3Bucket == "" {
+		s.S3Bucket = "test"
+	}
+	if s.S3Endpoint == "" {
+		s.S3Endpoint = "https://io.lifelib.org"
+	}
+	if s.S3AccessKey == "" {
+		s.S3AccessKey = "zuiwu"
+	}
+	if s.S3SecretKey == "" {
+		s.S3SecretKey = "01K3SYMQ7R4XTTH9Y0KZC5XMS6"
+	}
+	if s.S3Region == "" {
+		s.S3Region = "us-east-1"
+	}
 }
 
 func (s *Server) GetTokenExpirationTime(fallback time.Duration) time.Duration {

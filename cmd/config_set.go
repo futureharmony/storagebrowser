@@ -78,6 +78,16 @@ you want to change. Other options will remain unchanged.`,
 				set.FileMode, err = getMode(flags, flag.Name)
 			case "dir-mode":
 				set.DirMode, err = getMode(flags, flag.Name)
+			case "s3-bucket":
+				ser.S3Bucket, err = getString(flags, flag.Name)
+			case "s3-endpoint":
+				ser.S3Endpoint, err = getString(flags, flag.Name)
+			case "s3-access-key":
+				ser.S3AccessKey, err = getString(flags, flag.Name)
+			case "s3-secret-key":
+				ser.S3SecretKey, err = getString(flags, flag.Name)
+			case "s3-region":
+				ser.S3Region, err = getString(flags, flag.Name)
 			}
 		})
 

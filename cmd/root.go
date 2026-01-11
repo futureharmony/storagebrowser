@@ -75,6 +75,7 @@ func addServerFlags(flags *pflag.FlagSet) {
 	flags.Bool("disable-preview-resize", false, "disable resize of image previews")
 	flags.Bool("disable-exec", true, "disables Command Runner feature")
 	flags.Bool("disable-type-detection-by-header", false, "disables type detection by reading file headers")
+	flags.String("storage-type", "s3", "storage type (s3, local)")
 	flags.String("s3-bucket", "", "S3 bucket name")
 	flags.String("s3-endpoint", "", "S3 endpoint URL")
 	flags.String("s3-access-key", "", "S3 access key")
@@ -156,6 +157,11 @@ user created with the credentials from options "username" and "password".`,
 		if err != nil {
 			return err
 		}
+
+		if err := server.Validate(); err != nil {
+			return err
+		}
+
 		setupLog(server.Log)
 
 		root, err := filepath.Abs(server.Root)
@@ -340,6 +346,30 @@ func getRunParams(flags *pflag.FlagSet, st *storage.Storage) (*settings.Server, 
 		server.TokenExpirationTime = val
 	}
 
+	if val, set := getStringParamB(flags, "storage-type"); set {
+		server.StorageType = val
+	}
+
+	if val, set := getStringParamB(flags, "s3-bucket"); set {
+		server.S3Bucket = val
+	}
+
+	if val, set := getStringParamB(flags, "s3-endpoint"); set {
+		server.S3Endpoint = val
+	}
+
+	if val, set := getStringParamB(flags, "s3-access-key"); set {
+		server.S3AccessKey = val
+	}
+
+	if val, set := getStringParamB(flags, "s3-secret-key"); set {
+		server.S3SecretKey = val
+	}
+
+	if val, set := getStringParamB(flags, "s3-region"); set {
+		server.S3Region = val
+	}
+
 	return server, nil
 }
 
@@ -388,6 +418,12 @@ func getStringParamB(flags *pflag.FlagSet, key string) (string, bool) {
 	}
 
 	// If set through viper (env, config), return it.
+	// Check both kebab-case and camelCase for config file compatibility
+	camelCaseKey := strings.ReplaceAll(key, "-", "")
+	if v.IsSet(camelCaseKey) {
+		return v.GetString(camelCaseKey), true
+	}
+
 	if v.IsSet(key) {
 		return v.GetString(key), true
 	}
@@ -472,13 +508,19 @@ func quickSetup(flags *pflag.FlagSet, d pythonData) error {
 	}
 
 	ser := &settings.Server{
-		BaseURL: getStringParam(flags, "baseurl"),
-		Port:    getStringParam(flags, "port"),
-		Log:     getStringParam(flags, "log"),
-		TLSKey:  getStringParam(flags, "key"),
-		TLSCert: getStringParam(flags, "cert"),
-		Address: getStringParam(flags, "address"),
-		Root:    getStringParam(flags, "root"),
+		BaseURL:     getStringParam(flags, "baseurl"),
+		Port:        getStringParam(flags, "port"),
+		Log:         getStringParam(flags, "log"),
+		TLSKey:      getStringParam(flags, "key"),
+		TLSCert:     getStringParam(flags, "cert"),
+		Address:     getStringParam(flags, "address"),
+		Root:        getStringParam(flags, "root"),
+		StorageType: getStringParam(flags, "storage-type"),
+		S3Bucket:    getStringParam(flags, "s3-bucket"),
+		S3Endpoint:  getStringParam(flags, "s3-endpoint"),
+		S3AccessKey: getStringParam(flags, "s3-access-key"),
+		S3SecretKey: getStringParam(flags, "s3-secret-key"),
+		S3Region:    getStringParam(flags, "s3-region"),
 	}
 
 	err = d.store.Settings.SaveServer(ser)

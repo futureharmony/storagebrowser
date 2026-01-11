@@ -2,6 +2,7 @@ package settings
 
 import (
 	"crypto/rand"
+	"errors"
 	"io/fs"
 	"log"
 	"strings"
@@ -57,6 +58,7 @@ type Server struct {
 	TypeDetectionByHeader bool   `json:"typeDetectionByHeader"`
 	AuthHook              string `json:"authHook"`
 	TokenExpirationTime   string `json:"tokenExpirationTime"`
+	StorageType           string `json:"storageType"`
 	S3Bucket              string `json:"s3Bucket"`
 	S3Endpoint            string `json:"s3Endpoint"`
 	S3AccessKey           string `json:"s3AccessKey"`
@@ -68,17 +70,21 @@ type Server struct {
 func (s *Server) Clean() {
 	s.BaseURL = strings.TrimSuffix(s.BaseURL, "/")
 
+	if s.StorageType == "" {
+		s.StorageType = "s3"
+	}
+
 	if s.S3Bucket == "" {
-		s.S3Bucket = "test"
+		s.S3Bucket = ""
 	}
 	if s.S3Endpoint == "" {
-		s.S3Endpoint = "https://io.lifelib.org"
+		s.S3Endpoint = ""
 	}
 	if s.S3AccessKey == "" {
-		s.S3AccessKey = "zuiwu"
+		s.S3AccessKey = ""
 	}
 	if s.S3SecretKey == "" {
-		s.S3SecretKey = "01K3SYMQ7R4XTTH9Y0KZC5XMS6"
+		s.S3SecretKey = ""
 	}
 	if s.S3Region == "" {
 		s.S3Region = "us-east-1"
@@ -96,6 +102,25 @@ func (s *Server) GetTokenExpirationTime(fallback time.Duration) time.Duration {
 		return fallback
 	}
 	return duration
+}
+
+// Validate validates the server configuration.
+func (s *Server) Validate() error {
+	if s.StorageType == "s3" {
+		if s.S3Endpoint == "" {
+			return errors.New("s3Endpoint is required when storageType is 's3'")
+		}
+		if s.S3AccessKey == "" {
+			return errors.New("s3AccessKey is required when storageType is 's3'")
+		}
+		if s.S3SecretKey == "" {
+			return errors.New("s3SecretKey is required when storageType is 's3'")
+		}
+		if s.S3Bucket == "" {
+			return errors.New("s3Bucket is required when storageType is 's3'")
+		}
+	}
+	return nil
 }
 
 // GenerateKey generates a key of 512 bits.

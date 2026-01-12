@@ -60,7 +60,8 @@
     "connection": "Sunucuya ulaşılamıyor."
   },
   "files": {
-    "body": "Sayfa",
+    "body": "Gövde",
+    "bucket": "Kova",
     "closePreview": "Önizlemeyi kapat",
     "files": "Dosyalar",
     "folders": "Klasörler",

@@ -46,6 +46,8 @@ func handleWithStaticData(w http.ResponseWriter, _ *http.Request, d *data, fSys 
 		"ResizePreview":         d.server.ResizePreview,
 		"EnableExec":            d.server.EnableExec,
 		"TusSettings":           d.settings.Tus,
+		"S3Bucket":              d.server.S3Bucket,
+		"StorageType":           d.server.StorageType,
 	}
 
 	if d.settings.Branding.Files != "" {

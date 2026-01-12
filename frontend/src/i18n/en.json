@@ -61,6 +61,7 @@
   },
   "files": {
     "body": "Body",
+    "bucket": "Bucket",
     "closePreview": "Close preview",
     "files": "Files",
     "folders": "Folders",

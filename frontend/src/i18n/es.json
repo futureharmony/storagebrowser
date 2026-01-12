@@ -61,6 +61,7 @@
   },
   "files": {
     "body": "Cuerpo",
+    "bucket": "Cubo",
     "closePreview": "Cerrar vista previa",
     "files": "Archivos",
     "folders": "Carpetas",

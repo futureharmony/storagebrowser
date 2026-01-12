@@ -13,6 +13,7 @@ import router from "@/router";
 import i18n, { isRtl } from "@/i18n";
 import App from "@/App.vue";
 import CustomToast from "@/components/CustomToast.vue";
+import { config as configApi } from "@/api";
 
 import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
@@ -106,4 +107,37 @@ app.provide("$showError", (error: Error | string, displayReport = true) => {
   );
 });
 
-router.isReady().then(() => app.mount("#app"));
+// Load config and then mount app
+const loadConfig = async () => {
+  try {
+    const appConfig = await configApi.getConfig();
+
+    // Set config on window for backward compatibility
+    (window as any).FileBrowser = appConfig;
+
+    // Update static URL function
+    (window as any).__prependStaticUrl = (url: string) => {
+      return `${appConfig.StaticURL}/${url.replace(/^\/+/, "")}`;
+    };
+
+    // Update manifest with loaded config
+    if ((window as any).generateManifest) {
+      (window as any).generateManifest(appConfig);
+    }
+
+    console.log("App config loaded:", appConfig);
+  } catch (error) {
+    console.error("Failed to load app config:", error);
+    // Fallback to default config
+    (window as any).FileBrowser = {
+      StaticURL: "/static",
+      BaseURL: "",
+      StorageType: "local",
+    };
+  }
+};
+
+router.isReady().then(async () => {
+  await loadConfig();
+  app.mount("#app");
+});

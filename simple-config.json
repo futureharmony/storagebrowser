@@ -1,0 +1,9 @@
+{
+  "port": "8080",
+  "baseURL": "",
+  "address": "127.0.0.1",
+  "log": "stdout",
+  "database": "filebrowser.db",
+  "root": "./",
+  "storageType": "local"
+}

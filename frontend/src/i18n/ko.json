@@ -61,6 +61,7 @@
   },
   "files": {
     "body": "본문",
+    "bucket": "버킷",
     "closePreview": "미리보기 닫기",
     "files": "파일",
     "folders": "폴더",

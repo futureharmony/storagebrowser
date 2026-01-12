@@ -61,6 +61,7 @@
   },
   "files": {
     "body": "Тело",
+    "bucket": "Бакет",
     "closePreview": "Закрыть",
     "files": "Файлы",
     "folders": "Папки",

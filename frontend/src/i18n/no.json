@@ -61,21 +61,22 @@
   },
   "files": {
     "body": "Kropp",
-    "closePreview": "Lukk forhandsvisning",
+    "bucket": "Bøtte",
+    "closePreview": "Lukk forhåndsvisning",
     "files": "Filer",
-    "folders": "Mappe",
+    "folders": "Mapper",
     "home": "Hjem",
     "lastModified": "Sist endret",
     "loading": "Laster....",
-    "lonely": "Det føltes ensomt her...",
+    "lonely": "Det føles ensomt her...",
     "metadata": "Metadata",
-    "multipleSelectionEnabled": "Fleire seksjoner på",
+    "multipleSelectionEnabled": "Flere seksjoner på",
     "name": "Navn",
     "size": "Størrelse",
     "sortByLastModified": "Sorter etter sist endret",
     "sortByName": "Sorter etter navn",
     "sortBySize": "Sorter etter størrelse",
-    "noPreview": "Forhåndsvisning er ikkje tilgjengeleg for denne filen."
+    "noPreview": "Forhåndsvisning er ikke tilgjengelig for denne filen."
   },
   "help": {
     "click": "velg fil eller katalog",

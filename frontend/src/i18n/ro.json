@@ -61,6 +61,7 @@
   },
   "files": {
     "body": "Corp",
+    "bucket": "Găleată",
     "closePreview": "Închide previzualizarea",
     "files": "Fișiere",
     "folders": "Directoare",
@@ -72,7 +73,7 @@
     "multipleSelectionEnabled": "Selecție multiplă activată",
     "name": "Nume",
     "size": "Dimensiune",
-    "sortByLastModified": "Ordonează dup ultima modificare",
+    "sortByLastModified": "Ordonează după ultima modificare",
     "sortByName": "Ordonează după nume",
     "sortBySize": "Ordonează după dimensiune",
     "noPreview": "Preview is not available for this file."

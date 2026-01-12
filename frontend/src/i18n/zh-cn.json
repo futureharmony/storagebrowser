@@ -61,6 +61,7 @@
   },
   "files": {
     "body": "内容",
+    "bucket": "存储桶",
     "closePreview": "关闭预览",
     "files": "文件",
     "folders": "文件夹",

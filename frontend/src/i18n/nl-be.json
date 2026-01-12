@@ -61,7 +61,8 @@
   },
   "files": {
     "body": "Body",
-    "closePreview": "Voorvertoon sluiten",
+    "bucket": "Emmer",
+    "closePreview": "Voorvertoning sluiten",
     "files": "Bestanden",
     "folders": "Mappen",
     "home": "Home",

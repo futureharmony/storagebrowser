@@ -60,7 +60,8 @@
     "connection": "無法連接到伺服器。"
   },
   "files": {
-    "body": "内容",
+    "body": "內容",
+    "bucket": "儲存桶",
     "closePreview": "關閉預覽",
     "files": "檔案",
     "folders": "資料夾",

@@ -61,6 +61,7 @@
   },
   "files": {
     "body": "Nội dung",
+    "bucket": "Thùng",
     "closePreview": "Đóng xem trước",
     "files": "Tập tin",
     "folders": "Thư mục",

@@ -20,14 +20,16 @@ type Config struct {
 }
 
 var (
-	fs  afero.Fs
-	cfg Config
+	fs     afero.Fs
+	cfg    Config
+	awsCfg aws.Config
 )
 
 func Init(config *Config) error {
 	cfg = *config
 
-	awsCfg, err := awsconfig.LoadDefaultConfig(context.Background(),
+	var err error
+	awsCfg, err = awsconfig.LoadDefaultConfig(context.Background(),
 		awsconfig.WithCredentialsProvider(
 			credentials.NewStaticCredentialsProvider(cfg.AccessKey, cfg.SecretKey, ""),
 		),
@@ -49,6 +51,12 @@ func Init(config *Config) error {
 		return err
 	}
 
+	fs = aferos3.NewFs(cfg.Bucket, awsCfg)
+	return nil
+}
+
+func SwitchBucket(bucket string) error {
+	cfg.Bucket = bucket
 	fs = aferos3.NewFs(cfg.Bucket, awsCfg)
 	return nil
 }

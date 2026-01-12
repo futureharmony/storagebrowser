@@ -61,6 +61,7 @@
   },
   "files": {
     "body": "Corps",
+    "bucket": "Secteur",
     "closePreview": "Fermer la prévisualisation",
     "files": "Fichiers",
     "folders": "Dossiers",

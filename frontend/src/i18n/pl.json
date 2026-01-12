@@ -61,6 +61,7 @@
   },
   "files": {
     "body": "Zawartość",
+    "bucket": "Kubełek",
     "closePreview": "Zamknij podgląd",
     "files": "Pliki",
     "folders": "Foldery",
@@ -69,7 +70,7 @@
     "loading": "Ładowanie...",
     "lonely": "Smutno, gdy tak pusto...",
     "metadata": "Metadane",
-    "multipleSelectionEnabled": "Włączono zaznaczenie wielokrotne",
+    "multipleSelectionEnabled": "Włączono zaznaczanie wielokrotne",
     "name": "Nazwa",
     "size": "Rozmiar",
     "sortByLastModified": "Sortuj wg ostatniej modyfikacji",

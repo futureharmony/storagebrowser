@@ -61,6 +61,7 @@
   },
   "files": {
     "body": "本文",
+    "bucket": "バケット",
     "closePreview": "プレビューを閉じる",
     "files": "ファイル",
     "folders": "フォルダー",

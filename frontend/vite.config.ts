@@ -64,6 +64,7 @@ export default defineConfig(({ command }) => {
             },
           },
         },
+        sourcemap: process.env.NODE_ENV !== "production",
       },
       experimental: {
         renderBuiltUrl(filename, { hostType }) {

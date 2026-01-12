@@ -61,7 +61,8 @@
   },
   "files": {
     "body": "Huvud",
-    "closePreview": "Stäng förhands granskningen",
+    "bucket": "Hink",
+    "closePreview": "Stäng förhandsgranskning",
     "files": "Filer",
     "folders": "Mappar",
     "home": "Hem",

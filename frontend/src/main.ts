@@ -1,24 +1,23 @@
-import { disableExternal } from "@/utils/constants";
-import { createApp } from "vue";
-import VueNumberInput from "@chenfengyuan/vue-number-input";
-import VueLazyload from "vue-lazyload";
-import { createVfm } from "vue-final-modal";
-import Toast, { POSITION, useToast } from "vue-toastification";
-import type {
-  ToastOptions,
-  PluginOptions,
-} from "vue-toastification/dist/types/types";
-import createPinia from "@/stores";
-import router from "@/router";
-import i18n, { isRtl } from "@/i18n";
 import App from "@/App.vue";
 import CustomToast from "@/components/CustomToast.vue";
-import { config as configApi } from "@/api";
+import i18n, { isRtl } from "@/i18n";
+import router from "@/router";
+import createPinia from "@/stores";
+import { disableExternal } from "@/utils/constants";
+import VueNumberInput from "@chenfengyuan/vue-number-input";
+import { createApp } from "vue";
+import { createVfm } from "vue-final-modal";
+import VueLazyload from "vue-lazyload";
+import Toast, { POSITION, useToast } from "vue-toastification";
+import type {
+  PluginOptions,
+  ToastOptions,
+} from "vue-toastification/dist/types/types";
 
 import dayjs from "dayjs";
+import duration from "dayjs/plugin/duration";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import relativeTime from "dayjs/plugin/relativeTime";
-import duration from "dayjs/plugin/duration";
 
 import "./css/styles.css";
 
@@ -107,37 +106,6 @@ app.provide("$showError", (error: Error | string, displayReport = true) => {
   );
 });
 
-// Load config and then mount app
-const loadConfig = async () => {
-  try {
-    const appConfig = await configApi.getConfig();
-
-    // Set config on window for backward compatibility
-    (window as any).FileBrowser = appConfig;
-
-    // Update static URL function
-    (window as any).__prependStaticUrl = (url: string) => {
-      return `${appConfig.StaticURL}/${url.replace(/^\/+/, "")}`;
-    };
-
-    // Update manifest with loaded config
-    if ((window as any).generateManifest) {
-      (window as any).generateManifest(appConfig);
-    }
-
-    console.log("App config loaded:", appConfig);
-  } catch (error) {
-    console.error("Failed to load app config:", error);
-    // Fallback to default config
-    (window as any).FileBrowser = {
-      StaticURL: "/static",
-      BaseURL: "",
-      StorageType: "local",
-    };
-  }
-};
-
-router.isReady().then(async () => {
-  await loadConfig();
+router.isReady().then(() => {
   app.mount("#app");
 });

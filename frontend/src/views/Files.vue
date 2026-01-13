@@ -33,6 +33,7 @@ import {
   watch,
 } from "vue";
 
+import { loadConfig } from "@/api/config";
 import { StatusError } from "@/api/utils";
 import Breadcrumbs from "@/components/Breadcrumbs.vue";
 import Errors from "@/views/Errors.vue";
@@ -77,6 +78,7 @@ const currentView = computed(() => {
 
 // Define hooks
 onMounted(async () => {
+  await loadConfig();
   fetchData();
   fileStore.isFiles = true;
   window.addEventListener("keydown", keyEvent);

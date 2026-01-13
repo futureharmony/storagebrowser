@@ -1,11 +1,11 @@
-import { useAuthStore } from "@/stores/auth";
+import { StatusError } from "@/api/utils";
 import router from "@/router";
+import { useAuthStore } from "@/stores/auth";
 import type { JwtPayload } from "jwt-decode";
 import { jwtDecode } from "jwt-decode";
 import { baseURL, noAuth } from "./constants";
-import { StatusError } from "@/api/utils";
 
-export function parseToken(token: string) {
+export async function parseToken(token: string) {
   // falsy or malformed jwt will throw InvalidTokenError
   const data = jwtDecode<JwtPayload & { user: IUser }>(token);
 
@@ -27,6 +27,7 @@ export function parseToken(token: string) {
       logout("inactivity");
     }, expiresAt.getTime() - Date.now())
   );
+
 }
 
 export async function validateLogin() {

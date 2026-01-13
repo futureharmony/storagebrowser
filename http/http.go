@@ -26,7 +26,7 @@ func NewHandler(
 	server.Clean()
 
 	if err := minio.Init(&minio.Config{
-		Bucket:    server.S3Bucket,
+		Bucket:    "",
 		Endpoint:  server.S3Endpoint,
 		AccessKey: server.S3AccessKey,
 		SecretKey: server.S3SecretKey,

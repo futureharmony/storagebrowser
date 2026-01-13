@@ -59,7 +59,6 @@ type Server struct {
 	AuthHook              string `json:"authHook"`
 	TokenExpirationTime   string `json:"tokenExpirationTime"`
 	StorageType           string `json:"storageType"`
-	S3Bucket              string `json:"s3Bucket"`
 	S3Endpoint            string `json:"s3Endpoint"`
 	S3AccessKey           string `json:"s3AccessKey"`
 	S3SecretKey           string `json:"s3SecretKey"`
@@ -72,10 +71,6 @@ func (s *Server) Clean() {
 
 	if s.StorageType == "" {
 		s.StorageType = "s3"
-	}
-
-	if s.S3Bucket == "" {
-		s.S3Bucket = ""
 	}
 	if s.S3Endpoint == "" {
 		s.S3Endpoint = ""
@@ -115,9 +110,6 @@ func (s *Server) Validate() error {
 		}
 		if s.S3SecretKey == "" {
 			return errors.New("s3SecretKey is required when storageType is 's3'")
-		}
-		if s.S3Bucket == "" {
-			return errors.New("s3Bucket is required when storageType is 's3'")
 		}
 	}
 	return nil

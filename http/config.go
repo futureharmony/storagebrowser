@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/filebrowser/filebrowser/v2/auth"
+	"github.com/filebrowser/filebrowser/v2/minio"
 	"github.com/filebrowser/filebrowser/v2/version"
 )
 
@@ -35,7 +36,7 @@ var configHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *dat
 		"ResizePreview":         d.server.ResizePreview,
 		"EnableExec":            d.server.EnableExec,
 		"TusSettings":           d.settings.Tus,
-		"S3Bucket":              d.server.S3Bucket,
+		"S3Bucket":              minio.GetCurrenBucket(),
 		"StorageType":           d.server.StorageType,
 	}
 

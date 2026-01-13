@@ -76,7 +76,6 @@ func addServerFlags(flags *pflag.FlagSet) {
 	flags.Bool("disable-exec", true, "disables Command Runner feature")
 	flags.Bool("disable-type-detection-by-header", false, "disables type detection by reading file headers")
 	flags.String("storage-type", "s3", "storage type (s3, local)")
-	flags.String("s3-bucket", "", "S3 bucket name")
 	flags.String("s3-endpoint", "", "S3 endpoint URL")
 	flags.String("s3-access-key", "", "S3 access key")
 	flags.String("s3-secret-key", "", "S3 secret key")
@@ -350,10 +349,6 @@ func getRunParams(flags *pflag.FlagSet, st *storage.Storage) (*settings.Server, 
 		server.StorageType = val
 	}
 
-	if val, set := getStringParamB(flags, "s3-bucket"); set {
-		server.S3Bucket = val
-	}
-
 	if val, set := getStringParamB(flags, "s3-endpoint"); set {
 		server.S3Endpoint = val
 	}
@@ -516,7 +511,6 @@ func quickSetup(flags *pflag.FlagSet, d pythonData) error {
 		Address:     getStringParam(flags, "address"),
 		Root:        getStringParam(flags, "root"),
 		StorageType: getStringParam(flags, "storage-type"),
-		S3Bucket:    getStringParam(flags, "s3-bucket"),
 		S3Endpoint:  getStringParam(flags, "s3-endpoint"),
 		S3AccessKey: getStringParam(flags, "s3-access-key"),
 		S3SecretKey: getStringParam(flags, "s3-secret-key"),

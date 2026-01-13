@@ -1,9 +1,6 @@
 <template>
   <div>
-    <header-bar
-      showMenu
-      showLogo
-    />
+    <header-bar showMenu showLogo />
 
     <breadcrumbs base="/files" />
     <errors v-if="error" :errorCode="error.status" />
@@ -38,14 +35,12 @@ import {
 
 import { StatusError } from "@/api/utils";
 import Breadcrumbs from "@/components/Breadcrumbs.vue";
-import HeaderBar from "@/components/header/HeaderBar.vue";
 import Errors from "@/views/Errors.vue";
 import FileListing from "@/views/files/FileListing.vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import { name } from "../utils/constants";
 
-console.log("fucking")
 const Editor = defineAsyncComponent(() => import("@/views/files/Editor.vue"));
 const Preview = defineAsyncComponent(() => import("@/views/files/Preview.vue"));
 
@@ -67,6 +62,7 @@ const currentView = computed(() => {
     return null;
   }
 
+  console.log("current view changed", fileStore.req.isDir, fileStore.req.type);
   if (fileStore.req.isDir) {
     return FileListing;
   } else if (
@@ -80,10 +76,16 @@ const currentView = computed(() => {
 });
 
 // Define hooks
-onMounted(() => {
+onMounted(async () => {
   fetchData();
   fileStore.isFiles = true;
   window.addEventListener("keydown", keyEvent);
+
+  // Load buckets if S3 storage
+  const appConfig = (window as any).FileBrowser;
+  if (appConfig.StorageType === "s3") {
+    await fileStore.loadBuckets();
+  }
 });
 
 onBeforeUnmount(() => {
@@ -170,5 +172,3 @@ const keyEvent = (event: KeyboardEvent) => {
   }
 };
 </script>
-
-

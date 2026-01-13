@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import type { Bucket } from "@/api/bucket";
 
 export const useFileStore = defineStore("file", {
   // convert to a function
@@ -10,6 +11,7 @@ export const useFileStore = defineStore("file", {
     multiple: boolean;
     isFiles: boolean;
     preselect: string | null;
+    buckets: Bucket[];
   } => ({
     req: null,
     oldReq: null,
@@ -18,6 +20,7 @@ export const useFileStore = defineStore("file", {
     multiple: false,
     isFiles: false,
     preselect: null,
+    buckets: [],
   }),
   getters: {
     selectedCount: (state) => state.selected.length,
@@ -56,6 +59,15 @@ export const useFileStore = defineStore("file", {
       const i = this.selected.indexOf(value);
       if (i === -1) return;
       this.selected.splice(i, 1);
+    },
+    async loadBuckets() {
+      try {
+        const { bucket } = await import("@/api");
+        this.buckets = await bucket.list();
+      } catch (err) {
+        console.error("Failed to load buckets:", err);
+        this.buckets = [];
+      }
     },
     // easily reset state using `$reset`
     clearFile() {

@@ -2,6 +2,7 @@ package minio
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -53,14 +54,22 @@ func Init(config *Config) error {
 		return err
 	}
 
-	fs = aferos3.NewFs(cfg.Bucket, awsCfg)
-	SetupBucket()
+	fs = aferos3.NewFs(awsCfg)
+	err = SetupBucket()
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func GetCurrenBucket() string {
+	return cfg.Bucket
 }
 
 func SwitchBucket(bucket string) error {
 	cfg.Bucket = bucket
-	fs = aferos3.NewFs(cfg.Bucket, awsCfg)
+	s3Fs := fs.(*aferos3.Fs)
+	s3Fs.SetBucket(bucket)
 	return nil
 }
 
@@ -80,6 +89,10 @@ func SetupBucket() error {
 		return err
 	}
 
+	if len(bucketNames) == 0 {
+		return fmt.Errorf("no available S3 buckets found")
+	}
+
 	buckets := make([]BucketInfo, 0, len(bucketNames))
 	for _, name := range bucketNames {
 		buckets = append(buckets, BucketInfo{
@@ -87,6 +100,7 @@ func SetupBucket() error {
 		})
 	}
 
+	SwitchBucket(buckets[0].Name)
 	CachedBuckets = buckets
 	return nil
 }

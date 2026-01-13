@@ -214,7 +214,6 @@ func printSettings(ser *settings.Server, set *settings.Settings, auther auth.Aut
 	fmt.Fprintf(w, "\tTLS Key:\t%s\n", ser.TLSKey)
 	fmt.Fprintf(w, "\tExec Enabled:\t%t\n", ser.EnableExec)
 	fmt.Fprintln(w, "\nS3:")
-	fmt.Fprintf(w, "\tBucket:\t%s\n", ser.S3Bucket)
 	fmt.Fprintf(w, "\tEndpoint:\t%s\n", ser.S3Endpoint)
 	fmt.Fprintf(w, "\tAccess Key:\t%s\n", ser.S3AccessKey)
 	fmt.Fprintf(w, "\tSecret Key:\t%s\n", "***")

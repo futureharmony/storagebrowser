@@ -100,7 +100,7 @@ func s3Search(fs *aferos3.Fs, scope, query string, checker rules.Checker, found 
 	}
 
 	paginator := s3.NewListObjectsV2Paginator(fs.S3API(), &s3.ListObjectsV2Input{
-		Bucket: aws.String(fs.Bucket()),
+		Bucket: aws.String(fs.GetBucket()),
 		Prefix: aws.String(s3Prefix),
 	})
 

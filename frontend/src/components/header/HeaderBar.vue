@@ -1,16 +1,31 @@
 <template>
   <header>
     <img v-if="showLogo" :src="logoURL" />
-    <Action v-if="showMenu" class="menu-button" icon="menu" :label="t('buttons.toggleSidebar')"
-      @action="layoutStore.showHover('sidebar')" />
+    <Action
+      v-if="showMenu"
+      class="menu-button"
+      icon="menu"
+      :label="t('buttons.toggleSidebar')"
+      @action="layoutStore.showHover('sidebar')"
+    />
 
     <!-- Bucket selector always visible in header, but hidden when search is active -->
-    <div v-if="storageType === 's3' && buckets.length > 0 && !isSearchActive" class="bucket-selector">
+    <!-- <div v-if="storageType === 's3' && buckets.length > 0 && !isSearchActive" class="bucket-selector"> -->
+    <div v-if="!isSearchActive" class="bucket-selector">
       <label class="bucket-label">{{ t("files.bucket") }}:</label>
       <div class="bucket-select-wrapper">
-        <select v-model="selectedBucket" @change="onBucketChange" class="bucket-select">
-          <option v-for="bucket in buckets" :key="bucket.name" :value="bucket.name">
-            {{ bucket.name }}
+        <select
+          v-model="selectedBucket"
+          @change="onBucketChange"
+          class="bucket-select"
+        >
+          <option
+            class="bucket-option"
+            v-for="bucket in buckets"
+            :key="bucket.name"
+            :value="bucket.name"
+          >
+            {{ bucket.name || "default" }}
           </option>
         </select>
         <i class="material-icons bucket-arrow">expand_more</i>
@@ -19,15 +34,26 @@
 
     <slot />
 
-
-    <div id="dropdown" :class="{ active: layoutStore.currentPromptName === 'more' }">
+    <div
+      id="dropdown"
+      :class="{ active: layoutStore.currentPromptName === 'more' }"
+    >
       <slot name="actions" />
     </div>
 
-    <Action v-if="ifActionsSlot" id="more" icon="more_vert" :label="t('buttons.more')"
-      @action="layoutStore.showHover('more')" />
+    <Action
+      v-if="ifActionsSlot"
+      id="more"
+      icon="more_vert"
+      :label="t('buttons.more')"
+      @action="layoutStore.showHover('more')"
+    />
 
-    <div class="overlay" v-show="layoutStore.currentPromptName == 'more'" @click="layoutStore.closeHovers" />
+    <div
+      class="overlay"
+      v-show="layoutStore.currentPromptName == 'more'"
+      @click="layoutStore.closeHovers"
+    />
   </header>
 </template>
 
@@ -36,17 +62,15 @@ import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 
 import { logoURL } from "@/utils/constants";
-
-import { bucket, config as configApi } from "@/api";
+import { bucket } from "@/api";
 import Action from "@/components/header/Action.vue";
 import { computed, onMounted, ref, useSlots } from "vue";
 import { useI18n } from "vue-i18n";
 
-const props = defineProps<{
+defineProps<{
   showLogo?: boolean;
   showMenu?: boolean;
 }>();
-
 
 const layoutStore = useLayoutStore();
 const fileStore = useFileStore();
@@ -57,39 +81,19 @@ const { t } = useI18n();
 const ifActionsSlot = computed(() => (slots.actions ? true : false));
 
 // Check if search is currently active
-const isSearchActive = computed(() => layoutStore.currentPromptName === "search");
-const buckets = ref<bucket.Bucket[]>([]);
+const isSearchActive = computed(
+  () => layoutStore.currentPromptName === "search"
+);
+const buckets = computed(() => fileStore.buckets);
 const selectedBucket = ref<string>("");
 const storageType = ref<string>("");
 
-// Load config when component is ready and config is available
-const loadConfig = async () => {
-  try {
-    const appConfig = await configApi.getConfig();
-    storageType.value = appConfig.StorageType || "";
-    selectedBucket.value = appConfig.S3Bucket || "";
-
-    if (storageType.value === "s3") {
-      await loadBuckets();
-    }
-  } catch (error) {
-    console.error("Failed to load config:", error);
-  }
-};
-
-// Load config on mount
-onMounted(async () => {
-  await loadConfig();
+// Load config on mount using preloaded config
+onMounted(() => {
+  const appConfig = (window as any).FileBrowser;
+  storageType.value = appConfig.StorageType || "";
+  selectedBucket.value = appConfig.S3Bucket || "";
 });
-
-const loadBuckets = async () => {
-  try {
-    buckets.value = await bucket.list();
-  } catch (err) {
-    console.error("Failed to load buckets:", err);
-    buckets.value = [];
-  }
-};
 
 const onBucketChange = async () => {
   if (selectedBucket.value) {
@@ -124,7 +128,7 @@ const onBucketChange = async () => {
 
 .bucket-label {
   margin-right: 0.75rem;
-  font-size: 0.9rem;
+  font-size: 1.2rem;
   font-weight: 500;
   color: var(--textPrimary);
   white-space: nowrap;
@@ -162,6 +166,10 @@ const onBucketChange = async () => {
   z-index: 10001;
 }
 
+.bucket-option {
+  font-size: 1.6rem;
+}
+
 .bucket-arrow {
   position: absolute;
   right: 0.5rem;
@@ -184,8 +192,8 @@ const onBucketChange = async () => {
   box-shadow: 0 0 5px var(--borderPrimary);
 }
 
-.bucket-select:hover+.bucket-arrow,
-.bucket-select:focus+.bucket-arrow {
+.bucket-select:hover + .bucket-arrow,
+.bucket-select:focus + .bucket-arrow {
   color: var(--textPrimary);
 }
 

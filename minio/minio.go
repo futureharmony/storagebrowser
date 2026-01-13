@@ -11,6 +11,8 @@ import (
 	"github.com/spf13/afero"
 )
 
+var CachedBuckets []BucketInfo
+
 type Config struct {
 	Bucket    string
 	Endpoint  string
@@ -52,12 +54,40 @@ func Init(config *Config) error {
 	}
 
 	fs = aferos3.NewFs(cfg.Bucket, awsCfg)
+	SetupBucket()
 	return nil
 }
 
 func SwitchBucket(bucket string) error {
 	cfg.Bucket = bucket
 	fs = aferos3.NewFs(cfg.Bucket, awsCfg)
+	return nil
+}
+
+func ListBuckets() ([]string, error) {
+	s3Fs := fs.(*aferos3.Fs)
+	return s3Fs.ListBuckets()
+}
+
+type BucketInfo struct {
+	Name string `json:"name"`
+}
+
+func SetupBucket() error {
+
+	bucketNames, err := ListBuckets()
+	if err != nil {
+		return err
+	}
+
+	buckets := make([]BucketInfo, 0, len(bucketNames))
+	for _, name := range bucketNames {
+		buckets = append(buckets, BucketInfo{
+			Name: name,
+		})
+	}
+
+	CachedBuckets = buckets
 	return nil
 }
 

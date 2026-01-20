@@ -1,22 +1,26 @@
-const name: string = window.FileBrowser.Name || "File Browser";
-const disableExternal: boolean = window.FileBrowser.DisableExternal;
-const disableUsedPercentage: boolean = window.FileBrowser.DisableUsedPercentage;
-const baseURL: string = window.FileBrowser.BaseURL;
-const staticURL: string = window.FileBrowser.StaticURL;
-const recaptcha: string = window.FileBrowser.ReCaptcha;
-const recaptchaKey: string = window.FileBrowser.ReCaptchaKey;
-const signup: boolean = window.FileBrowser.Signup;
-const version: string = window.FileBrowser.Version;
+const getFileBrowser = (): any => {
+  return (window as any).FileBrowser || {};
+};
+
+const name: string = getFileBrowser().Name || "File Browser";
+const disableExternal: boolean = getFileBrowser().DisableExternal;
+const disableUsedPercentage: boolean = getFileBrowser().DisableUsedPercentage;
+const baseURL: string = getFileBrowser().BaseURL || "";
+const staticURL: string = getFileBrowser().StaticURL || "/static";
+const recaptcha: string = getFileBrowser().ReCaptcha;
+const recaptchaKey: string = getFileBrowser().ReCaptchaKey;
+const signup: boolean = getFileBrowser().Signup;
+const version: string = getFileBrowser().Version || "";
 const logoURL = `${staticURL}/img/logo.svg`;
-const noAuth: boolean = window.FileBrowser.NoAuth;
-const authMethod = window.FileBrowser.AuthMethod;
-const loginPage: boolean = window.FileBrowser.LoginPage;
-const theme: UserTheme = window.FileBrowser.Theme;
-const enableThumbs: boolean = window.FileBrowser.EnableThumbs;
-const resizePreview: boolean = window.FileBrowser.ResizePreview;
-const enableExec: boolean = window.FileBrowser.EnableExec;
-const tusSettings = window.FileBrowser.TusSettings;
-const origin = window.location.origin;
+const noAuth: boolean = getFileBrowser().NoAuth;
+const authMethod = getFileBrowser().AuthMethod || "";
+const loginPage: boolean = getFileBrowser().LoginPage;
+const theme: UserTheme = getFileBrowser().Theme || "";
+const enableThumbs: boolean = getFileBrowser().EnableThumbs;
+const resizePreview: boolean = getFileBrowser().ResizePreview;
+const enableExec: boolean = getFileBrowser().EnableExec;
+const tusSettings = getFileBrowser().TusSettings || { chunkSize: 10485760, retryCount: 5 };
+const origin = typeof window !== "undefined" ? window.location.origin : "";
 const tusEndpoint = `/api/tus`;
 
 export {

@@ -14,21 +14,23 @@
     <div v-if="!isSearchActive" class="bucket-selector">
       <label class="bucket-label">{{ t("files.bucket") }}:</label>
       <div class="bucket-select-wrapper">
-        <select
-          v-model="selectedBucket"
-          @change="onBucketChange"
-          class="bucket-select"
-        >
-          <option
-            class="bucket-option"
-            v-for="bucket in buckets"
-            :key="bucket.name"
-            :value="bucket.name"
-          >
-            {{ bucket.name || "default" }}
-          </option>
-        </select>
-        <i class="material-icons bucket-arrow">expand_more</i>
+        <div class="bucket-select" @click="toggleDropdown" ref="selectRef">
+          <span class="bucket-select-text">{{ selectedBucket || "default" }}</span>
+          <i class="material-icons bucket-arrow" :class="{ open: isDropdownOpen }">expand_more</i>
+        </div>
+        <Transition name="dropdown">
+          <div v-if="isDropdownOpen" class="bucket-dropdown">
+            <div
+              v-for="bucket in buckets"
+              :key="bucket.name"
+              class="bucket-option "
+              :class="{ active: selectedBucket === bucket.name }"
+              @click="selectBucket(bucket.name)"
+            >
+              {{ bucket.name || "NONE" }}
+            </div>
+          </div>
+        </Transition>
       </div>
     </div>
 
@@ -61,10 +63,10 @@
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 
-import { logoURL } from "@/utils/constants";
 import { bucket } from "@/api";
 import Action from "@/components/header/Action.vue";
-import { computed, onMounted, ref, useSlots } from "vue";
+import { logoURL } from "@/utils/constants";
+import { computed, onMounted, onUnmounted, ref, useSlots } from "vue";
 import { useI18n } from "vue-i18n";
 
 defineProps<{
@@ -87,12 +89,35 @@ const isSearchActive = computed(
 const buckets = computed(() => fileStore.buckets);
 const selectedBucket = ref<string>("");
 const storageType = ref<string>("");
+const isDropdownOpen = ref(false);
+const selectRef = ref<HTMLElement | null>(null);
+
+const toggleDropdown = () => {
+  isDropdownOpen.value = !isDropdownOpen.value;
+};
+
+const selectBucket = (bucketName: string) => {
+  selectedBucket.value = bucketName;
+  isDropdownOpen.value = false;
+  onBucketChange();
+};
+
+const closeDropdown = (event: MouseEvent) => {
+  if (selectRef.value && !selectRef.value.contains(event.target as Node)) {
+    isDropdownOpen.value = false;
+  }
+};
 
 // Load config on mount using preloaded config
 onMounted(() => {
   const appConfig = (window as any).FileBrowser;
   storageType.value = appConfig.StorageType || "";
   selectedBucket.value = appConfig.S3Bucket || "";
+  document.addEventListener("click", closeDropdown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", closeDropdown);
 });
 
 const onBucketChange = async () => {
@@ -121,20 +146,19 @@ const onBucketChange = async () => {
   margin-right: auto;
   position: relative;
   z-index: 10000;
-  /* Higher than Search component (9999) */
   height: 100%;
-  /* Match search component height */
 }
 
 .bucket-label {
   margin-right: 0.75rem;
-  font-size: 1.2rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  color: var(--textPrimary);
+  color: var(--textSecondary);
   white-space: nowrap;
   position: relative;
   z-index: 10001;
-  /* Match select element z-index */
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .bucket-select-wrapper {
@@ -146,55 +170,115 @@ const onBucketChange = async () => {
 
 .bucket-select {
   background: var(--surfaceSecondary);
-  border-color: var(--surfacePrimary);
-  display: flex;
-  height: 100%;
-  padding: 0 2.5rem 0 0.75rem;
-  /* Extra right padding for arrow */
-  border-radius: 0.3em;
   border: 1px solid var(--borderPrimary);
-  transition: 0.1s ease all;
+  display: flex;
   align-items: center;
-  color: var(--textSecondary);
-  font-size: 0.9rem;
-  min-width: 150px;
+  justify-content: space-between;
+  height: 2.4rem;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  color: var(--textPrimary);
+  font-size: 0.875rem;
+  min-width: 140px;
   cursor: pointer;
-  appearance: none;
-  /* Remove default arrow */
-  background: var(--surfaceSecondary);
   position: relative;
   z-index: 10001;
+  font-weight: 500;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.bucket-option {
-  font-size: 1.6rem;
-}
-
-.bucket-arrow {
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.2rem;
-  color: var(--textSecondary);
-  pointer-events: none;
-  z-index: 10002;
+.bucket-select-text {
+  color: rgb(255, 255, 255);
+  font-size: 1rem;
+  font-family: inherit;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bucket-select:hover {
   border-color: var(--borderSecondary);
-  box-shadow: 0 0 3px var(--borderPrimary);
+  background: var(--surfaceTertiary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.bucket-select:focus {
+.bucket-select:focus,
+.bucket-select.open {
   outline: none;
   border-color: var(--blue);
-  box-shadow: 0 0 5px var(--borderPrimary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.bucket-select:hover + .bucket-arrow,
-.bucket-select:focus + .bucket-arrow {
+.bucket-arrow {
+  font-size: 1.25rem;
+  color: var(--textSecondary);
+  pointer-events: none;
+  z-index: 10002;
+  transition: transform 0.2s ease, color 0.2s ease;
+  margin-left: 0.5rem;
+}
+
+.bucket-arrow.open {
+  transform: rotate(180deg);
   color: var(--textPrimary);
+}
+
+.bucket-select:hover + .bucket-dropdown,
+.bucket-select:focus + .bucket-dropdown {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.bucket-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 100%;
+  background: var(--surfaceSecondary);
+  border: 1px solid var(--borderPrimary);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 10003;
+  overflow: hidden;
+  padding: 0.25rem 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.bucket-option {
+  font-family: inherit;
+  padding: 0.6rem 0.75rem;
+  color: var(--textPrimary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bucket-option:hover {
+  background: var(--surfaceTertiary);
+}
+
+.bucket-option.active {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--blue);
+}
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 html[dir="rtl"] .bucket-label {
@@ -203,8 +287,13 @@ html[dir="rtl"] .bucket-label {
 }
 
 html[dir="rtl"] .bucket-arrow {
-  right: auto;
-  left: 0.5rem;
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+html[dir="rtl"] .bucket-dropdown {
+  left: auto;
+  right: 0;
 }
 
 @media (max-width: 736px) {
@@ -213,15 +302,15 @@ html[dir="rtl"] .bucket-arrow {
   }
 
   .bucket-label {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     margin-right: 0.5rem;
   }
 
   .bucket-select {
-    min-width: 120px;
-    font-size: 0.85rem;
-    padding: 0 2rem 0 0.5rem;
-    /* Adjusted for arrow */
+    min-width: 110px;
+    font-size: 0.8rem;
+    height: 2.2rem;
+    padding: 0 0.5rem;
   }
 
   .bucket-arrow {
@@ -240,13 +329,12 @@ html[dir="rtl"] .bucket-arrow {
 
   .bucket-label {
     display: none;
-    /* Hide label on very small screens to save space */
   }
 
   .bucket-select {
     min-width: 80px;
-    padding: 0 2rem 0 0.4rem;
-    /* Adjusted for arrow */
+    font-size: 0.8rem;
+    height: 2rem;
   }
 
   .bucket-arrow {
@@ -259,27 +347,14 @@ html[dir="rtl"] .bucket-arrow {
     padding: 0 0.4rem;
   }
 
-  .bucket-label {
-    font-size: 0.8rem;
-  }
-
   .bucket-select {
+    min-width: 90px;
+    font-size: 0.75rem;
     min-width: 100px;
-    font-size: 0.8rem;
   }
 
   .bucket-arrow {
     font-size: 0.9rem;
   }
-}
-
-.bucket-label {
-  display: none;
-  /* Hide label on very small screens to save space */
-}
-
-.bucket-select {
-  min-width: 80px;
-  padding: 0.3rem 1.2rem 0.3rem 0.4rem;
 }
 </style>

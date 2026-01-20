@@ -1,37 +1,66 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/filebrowser/logo/master/banner.png" width="550"/>
+  <img src="https://raw.githubusercontent.com/futureharmony/storagebrowser/main/misc/static/Banner.png" width="550"/>
 </p>
 
-[![Build](https://github.com/filebrowser/filebrowser/actions/workflows/main.yaml/badge.svg)](https://github.com/filebrowser/filebrowser/actions/workflows/main.yaml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/filebrowser/filebrowser)](https://goreportcard.com/report/github.com/filebrowser/filebrowser)
-[![Documentation](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/filebrowser/filebrowser)
-[![Version](https://img.shields.io/github/release/filebrowser/filebrowser.svg)](https://github.com/filebrowser/filebrowser/releases/latest)
-[![Chat IRC](https://img.shields.io/badge/freenode-%23filebrowser-blue.svg)](http://webchat.freenode.net/?channels=%23filebrowser)
 
-File Browser provides a file managing interface within a specified directory and it can be used to upload, delete, preview and edit your files. It is a **create-your-own-cloud**-kind of software where you can just install it on your server, direct it to a path and access your files through a nice web interface.
+# Forked From FileBrowser.  And add **s3 storage support**!
+This fork adds S3 storage support, allowing you to browse and manage files in S3-compatible object storage.
+``` 
+File Browser provides a file managing interface within a specified directory and it can be used to upload, delete, preview and edit your files. It is a create-your-own-cloud-kind of software where you can just install it on your server, direct it to a path and access your files through a nice web interface.
+```
 
-## Documentation
 
-Documentation on how to install, configure, and contribute to this project is hosted at [filebrowser.org](https://filebrowser.org).
+### Configuration
 
-## Project Status
+Add S3 settings to your configuration file (e.g., `.filebrowser.json`):
 
-> [!WARNING]
->
-> This project is currently on **maintenance-only** mode, and is looking for new maintainers. For more information, please read the [discussion #4906](https://github.com/filebrowser/filebrowser/discussions/4906). Therefore, please note the following:
->
-> - It can take a while until someone gets back to you. Please be patient.
-> - [Issues][issues] are only being used to track bugs. Any unrelated issues will be converted into a [discussion][discussions].
-> - No new features will be implemented until further notice. The priority is on triaging issues and merge bug fixes.
-> 
-> If you're interested in maintaining this project, please reach out via the discussion above.
+```json
+{
+  "port": "8080",
+  "baseURL": "",
+  "address": "127.0.0.1",
+  "log": "stdout",
+  "database": "filebrowser.db",
+  "root": "/srv",
+  "storageType": "s3",
+  "s3Endpoint": "https://xxx.xx",
+  "s3AccessKey": "",
+  "s3SecretKey": "",
+  "s3Region": "us-east-1"
+}
+```
 
-[issues]: https://github.com/filebrowser/filebrowser/issues
-[discussions]: https://github.com/filebrowser/filebrowser/discussions
+### Command Line Usage
 
-## Contributing
+Start FileBrowser with S3 storage:
 
-Contributions are always welcome. To start contributing to this project, read our [guidelines](CONTRIBUTING.md) first.
+```bash
+./filebrowser \
+  --storage-type s3 \
+  --s3-region us-east-1 \
+  --s3-endpoint s3.amazonaws.com \
+  --s3-access-key {{AK}} \
+  --s3-secret-key {{SK}}
+```
+
+### Environment Variables
+
+You can also use environment variables (FB_ prefix with underscore separators):
+
+```bash
+export FB_STORAGE_TYPE=s3
+export FB_S3_REGION=us-east-1
+export FB_S3_ENDPOINT=s3.amazonaws.com
+export FB_S3_ACCESS_KEY=your-access-key
+export FB_S3_SECRET_KEY=your-secret-key
+```
+
+### Bucket Switching
+
+When using S3 storage, a bucket selector appears in the header, allowing you to:
+- View current bucket name
+- Switch between available buckets in your account
+- Bucket selection persists across sessions
 
 ## License
 

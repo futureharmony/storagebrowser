@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/futureharmony/storagebrowser/main/misc/static/Banner.png" width="550"/>
+  <img src="https://raw.githubusercontent.com/futureharmony/storagebrowser/refs/heads/main/misc/static/Banner.png" width="550"/>
 </p>
 
 

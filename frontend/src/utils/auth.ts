@@ -62,7 +62,7 @@ export async function parseToken(token: string) {
     }, expiresAt.getTime() - Date.now())
   );
 
-  const appConfig = (window as any).FileBrowser;
+  const appConfig = (window as any).FileBrowser || {};
   if (appConfig.StorageType === "s3") {
     await refreshBuckets();
   }

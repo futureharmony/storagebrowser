@@ -1,6 +1,6 @@
 version: 2
 
-project_name: filebrowser
+project_name: storagebrowser
 
 env:
   - GO111MODULE=on
@@ -11,7 +11,7 @@ builds:
     ldflags:
       - -s -w -X github.com/futureharmony/storagebrowser/v2/version.Version={{ .Version }} -X github.com/futureharmony/storagebrowser/v2/version.CommitSHA={{ .ShortCommit }}
     main: main.go
-    binary: filebrowser
+    binary: storagebrowser
     goos:
       - darwin
       - linux
@@ -55,8 +55,8 @@ archives:
 #     goos: linux
 #     goarch: amd64
 #     image_templates:
-#       - "filebrowser/filebrowser:{{ .Tag }}-amd64"
-#       - "filebrowser/filebrowser:v{{ .Major }}-amd64"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-amd64"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-amd64"
 #     extra_files:
 #       - docker
 #   - dockerfile: Dockerfile
@@ -72,8 +72,8 @@ archives:
 #     goos: linux
 #     goarch: arm64
 #     image_templates:
-#       - "filebrowser/filebrowser:{{ .Tag }}-arm64"
-#       - "filebrowser/filebrowser:v{{ .Major }}-arm64"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-arm64"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-arm64"
 #     extra_files:
 #       - docker
 #   - dockerfile: Dockerfile
@@ -90,8 +90,8 @@ archives:
 #     goarch: arm
 #     goarm: "6"
 #     image_templates:
-#       - "filebrowser/filebrowser:{{ .Tag }}-armv6"
-#       - "filebrowser/filebrowser:v{{ .Major }}-armv6"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-armv6"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-armv6"
 #     extra_files:
 #       - docker
 #   - dockerfile: Dockerfile
@@ -108,8 +108,8 @@ archives:
 #     goarch: arm
 #     goarm: "7"
 #     image_templates:
-#       - "filebrowser/filebrowser:{{ .Tag }}-armv7"
-#       - "filebrowser/filebrowser:v{{ .Major }}-armv7"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-armv7"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-armv7"
 #     extra_files:
 #       - docker
 
@@ -127,8 +127,8 @@ archives:
 #     goos: linux
 #     goarch: amd64
 #     image_templates:
-#       - "filebrowser/filebrowser:{{ .Tag }}-amd64-s6"
-#       - "filebrowser/filebrowser:v{{ .Major }}-amd64-s6"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-amd64-s6"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-amd64-s6"
 #     extra_files:
 #       - docker
 #   - dockerfile: Dockerfile.s6
@@ -144,54 +144,54 @@ archives:
 #     goos: linux
 #     goarch: arm64
 #     image_templates:
-#       - "filebrowser/filebrowser:{{ .Tag }}-arm64-s6"
-#       - "filebrowser/filebrowser:v{{ .Major }}-arm64-s6"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-arm64-s6"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-arm64-s6"
 #     extra_files:
 #       - docker
 
 # docker_manifests:
-#   - name_template: "filebrowser/filebrowser:latest"
+#   - name_template: "storagebrowser/storagebrowser:latest"
 #     image_templates:
-#       - "filebrowser/filebrowser:{{ .Tag }}-amd64"
-#       - "filebrowser/filebrowser:{{ .Tag }}-arm64"
-#       - "filebrowser/filebrowser:{{ .Tag }}-armv7"
-#   - name_template: "filebrowser/filebrowser:{{ .Tag }}"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-amd64"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-arm64"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-armv7"
+#   - name_template: "storagebrowser/storagebrowser:{{ .Tag }}"
 #     image_templates:
-#       - "filebrowser/filebrowser:{{ .Tag }}-amd64"
-#       - "filebrowser/filebrowser:{{ .Tag }}-arm64"
-#       - "filebrowser/filebrowser:{{ .Tag }}-armv7"
-#   - name_template: "filebrowser/filebrowser:v{{ .Major }}"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-amd64"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-arm64"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-armv7"
+#   - name_template: "storagebrowser/storagebrowser:v{{ .Major }}"
 #     image_templates:
-#       - "filebrowser/filebrowser:v{{ .Major }}-amd64"
-#       - "filebrowser/filebrowser:v{{ .Major }}-arm64"
-#       - "filebrowser/filebrowser:v{{ .Major }}-armv7"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-amd64"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-arm64"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-armv7"
 #   ## s6 image manifests
-#   - name_template: "filebrowser/filebrowser:s6"
+#   - name_template: "storagebrowser/storagebrowser:s6"
 #     image_templates:
-#       - "filebrowser/filebrowser:{{ .Tag }}-amd64-s6"
-#       - "filebrowser/filebrowser:{{ .Tag }}-arm64-s6"
-#   - name_template: "filebrowser/filebrowser:{{ .Tag }}-s6"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-amd64-s6"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-arm64-s6"
+#   - name_template: "storagebrowser/storagebrowser:{{ .Tag }}-s6"
 #     image_templates:
-#       - "filebrowser/filebrowser:{{ .Tag }}-amd64-s6"
-#       - "filebrowser/filebrowser:{{ .Tag }}-arm64-s6"
-#   - name_template: "filebrowser/filebrowser:v{{ .Major }}-s6"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-amd64-s6"
+#       - "storagebrowser/storagebrowser:{{ .Tag }}-arm64-s6"
+#   - name_template: "storagebrowser/storagebrowser:v{{ .Major }}-s6"
 #     image_templates:
-#       - "filebrowser/filebrowser:v{{ .Major }}-amd64-s6"
-#       - "filebrowser/filebrowser:v{{ .Major }}-arm64-s6"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-amd64-s6"
+#       - "storagebrowser/storagebrowser:v{{ .Major }}-arm64-s6"
 
 # homebrew_casks:
-#   - name: filebrowser
+#   - name: storagebrowser
 #     repository:
-#       owner: filebrowser
+#       owner: storagebrowser
 #       name: homebrew-tap
 #     commit_author:
-#       name: FileBrowser Robot
-#       email: robot@filebrowser.org
+#       name: storagebrowser Robot
+#       email: robot@storagebrowser.org
 #     homepage: https://github.com/futureharmony/storagebrowser
 #     description: File Browser is a create-your-own-cloud-kind of software where you can install it on a server, direct it to a path and then access your files through a nice web interface
 #     hooks:
 #       post:
 #         install: |
 #           if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
-#             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/filebrowser"]
+#             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/storagebrowser"]
 #           end

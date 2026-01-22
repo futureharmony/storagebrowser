@@ -11,8 +11,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/spf13/afero"
 
-	"github.com/filebrowser/filebrowser/v2/rules"
 	aferos3 "github.com/futureharmony/afero-aws-s3"
+
+	"github.com/futureharmony/storagebrowser/v2/rules"
 )
 
 type searchOptions struct {

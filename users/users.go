@@ -5,10 +5,10 @@ import (
 
 	"github.com/spf13/afero"
 
-	"github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/filebrowser/filebrowser/v2/files"
-	"github.com/filebrowser/filebrowser/v2/minio"
-	"github.com/filebrowser/filebrowser/v2/rules"
+	"github.com/futureharmony/storagebrowser/v2/errors"
+	"github.com/futureharmony/storagebrowser/v2/files"
+	"github.com/futureharmony/storagebrowser/v2/minio"
+	"github.com/futureharmony/storagebrowser/v2/rules"
 )
 
 // ViewMode describes a view mode.

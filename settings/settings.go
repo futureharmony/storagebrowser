@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/filebrowser/filebrowser/v2/rules"
+	"github.com/futureharmony/storagebrowser/v2/rules"
 )
 
 const DefaultUsersHomeBasePath = "/users"

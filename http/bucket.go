@@ -5,7 +5,7 @@ import (
 
 	"net/http"
 
-	"github.com/filebrowser/filebrowser/v2/minio"
+	"github.com/futureharmony/storagebrowser/v2/minio"
 )
 
 var bucketListHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {

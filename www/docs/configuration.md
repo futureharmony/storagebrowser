@@ -11,7 +11,7 @@ You can customize File Browser to use your own branding. This includes the follo
 - **Disable Used Percentage**: disables the disk usage information on the sidebar.
 - **Branding Folder**: directory which can contain two items:
     - `custom.css`, containing a global stylesheet to apply to all users.
-    - `img`, a directory which can replace all the [default logotypes](https://github.com/filebrowser/filebrowser/tree/master/frontend/public/img) from the application.
+    - `img`, a directory which can replace all the [default logotypes](https://github.com/futureharmony/storagebrowser/tree/master/frontend/public/img) from the application.
 
 This can be configured by the administrator user, under **Settings → Global Settings**. You can also update the configuration directly using the CLI:
 
@@ -27,7 +27,7 @@ filebrowser config set --branding.name "My Name" \
 
 ### Custom Icons
 
-To replace the default logotype and favicons, you need to create an `img` directory under the branding directory. The structure of this directory must mimic the one from the [default logotypes](https://github.com/filebrowser/filebrowser/tree/master/frontend/public/img):
+To replace the default logotype and favicons, you need to create an `img` directory under the branding directory. The structure of this directory must mimic the one from the [default logotypes](https://github.com/futureharmony/storagebrowser/tree/master/frontend/public/img):
 
 ```
 img/
@@ -98,7 +98,7 @@ filebrowser config set --auth.method=noauth
 
 > [!CAUTION]
 >
-> The **command execution** functionality has been disabled for all existent and new installations by default from version v2.33.8 and onwards, due to continuous and known security vulnerabilities. You should only use this feature if you are aware of all of the security risks involved. For more up to date information, consult issue [#5199](https://github.com/filebrowser/filebrowser/issues/5199).
+> The **command execution** functionality has been disabled for all existent and new installations by default from version v2.33.8 and onwards, due to continuous and known security vulnerabilities. You should only use this feature if you are aware of all of the security risks involved. For more up to date information, consult issue [#5199](https://github.com/futureharmony/storagebrowser/issues/5199).
 
 The command runner is a feature that enables you to execute any shell command you want before or after a certain event. Right now, these are the events:
 
@@ -130,7 +130,7 @@ Or you can use the web interface to manage them via **Settings** → **Global Se
 
 > [!CAUTION]
 >
-> The **command execution** functionality has been disabled for all existent and new installations by default from version v2.33.8 and onwards, due to continuous and known security vulnerabilities. You should only use this feature if you are aware of all of the security risks involved. For more up to date information, consult issue [#5199](https://github.com/filebrowser/filebrowser/issues/5199).
+> The **command execution** functionality has been disabled for all existent and new installations by default from version v2.33.8 and onwards, due to continuous and known security vulnerabilities. You should only use this feature if you are aware of all of the security risks involved. For more up to date information, consult issue [#5199](https://github.com/futureharmony/storagebrowser/issues/5199).
 
 Within File Browser you can toggle the shell (`< >` icon at the top right) and this will open a shell command window at the bottom of the screen. This functionality can be turned on using the environment variable `FB_DISABLE_EXEC=false` or the flag `--disable-exec=false`.
 

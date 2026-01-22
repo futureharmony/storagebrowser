@@ -3,8 +3,8 @@ package auth
 import (
 	"net/http"
 
-	"github.com/filebrowser/filebrowser/v2/settings"
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/futureharmony/storagebrowser/v2/settings"
+	"github.com/futureharmony/storagebrowser/v2/users"
 )
 
 // Auther is the authentication interface.

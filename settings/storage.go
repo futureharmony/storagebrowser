@@ -1,9 +1,9 @@
 package settings
 
 import (
-	"github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/filebrowser/filebrowser/v2/rules"
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/futureharmony/storagebrowser/v2/errors"
+	"github.com/futureharmony/storagebrowser/v2/rules"
+	"github.com/futureharmony/storagebrowser/v2/users"
 )
 
 // StorageBackend is a settings storage backend.

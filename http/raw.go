@@ -18,9 +18,9 @@ import (
 	"github.com/mholt/archives"
 	"github.com/spf13/afero"
 
-	"github.com/filebrowser/filebrowser/v2/files"
-	"github.com/filebrowser/filebrowser/v2/fileutils"
-	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/futureharmony/storagebrowser/v2/files"
+	"github.com/futureharmony/storagebrowser/v2/fileutils"
+	"github.com/futureharmony/storagebrowser/v2/users"
 )
 
 func slashClean(name string) string {
@@ -164,7 +164,7 @@ func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
 				// For regular filesystems, use OS-specific separators
 				fPath = filepath.Join(path, name)
 			}
-			
+
 			subFiles, err := getFiles(d, fPath, commonPath)
 			if err != nil {
 				log.Printf("Failed to get files from %s: %v", fPath, err)
@@ -215,7 +215,7 @@ func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.
 				normalizedFname = "/" + normalizedFname
 			}
 		}
-		
+
 		archiveFiles, err := getFiles(d, normalizedFname, commonDir)
 		if err != nil {
 			log.Printf("Failed to get files from %s: %v", normalizedFname, err)
@@ -233,7 +233,7 @@ func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.
 			// Instead, we should get the name from the root path directly
 			var actual os.FileInfo
 			var statErr error
-			
+
 			if isS3Fs(file.Fs) {
 				// For S3, use the current directory path instead of "."
 				actual, statErr = file.Fs.Stat(file.Path)
@@ -241,7 +241,7 @@ func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.
 				// For regular filesystems, continue with the original logic
 				actual, statErr = file.Fs.Stat(".")
 			}
-			
+
 			if statErr != nil {
 				return http.StatusInternalServerError, statErr
 			}

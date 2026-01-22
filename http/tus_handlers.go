@@ -16,7 +16,7 @@ import (
 	"github.com/jellydator/ttlcache/v3"
 	"github.com/spf13/afero"
 
-	"github.com/filebrowser/filebrowser/v2/files"
+	"github.com/futureharmony/storagebrowser/v2/files"
 )
 
 const maxUploadWait = 3 * time.Minute

@@ -10,10 +10,10 @@ import (
 	"os/exec"
 	"strings"
 
-	fbErrors "github.com/filebrowser/filebrowser/v2/errors"
-	"github.com/filebrowser/filebrowser/v2/files"
-	"github.com/filebrowser/filebrowser/v2/settings"
-	"github.com/filebrowser/filebrowser/v2/users"
+	fbErrors "github.com/futureharmony/storagebrowser/v2/errors"
+	"github.com/futureharmony/storagebrowser/v2/files"
+	"github.com/futureharmony/storagebrowser/v2/settings"
+	"github.com/futureharmony/storagebrowser/v2/users"
 )
 
 // MethodHookAuth is used to identify hook auth.

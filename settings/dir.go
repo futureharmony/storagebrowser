@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/filebrowser/filebrowser/v2/minio"
+	"github.com/futureharmony/storagebrowser/v2/minio"
 )
 
 var (

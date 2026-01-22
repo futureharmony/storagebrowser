@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/filebrowser/filebrowser/v2/cmd"
-	"github.com/filebrowser/filebrowser/v2/errors"
+	"github.com/futureharmony/storagebrowser/v2/cmd"
+	"github.com/futureharmony/storagebrowser/v2/errors"
 )
 
 func main() {

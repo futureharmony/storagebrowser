@@ -4,7 +4,7 @@ site_author: 'File Browser Contributors'
 site_url: 'https://filebrowser.org'
 
 repo_name: 'filebrowser/filebrowser'
-repo_url: 'https://github.com/filebrowser/filebrowser'
+repo_url: 'https://github.com/futureharmony/storagebrowser'
 
 copyright: 'Copyright &copy; 2025 File Browser Contributors'
 
@@ -91,7 +91,7 @@ extra:
   generator: false
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/filebrowser/filebrowser
+      link: https://github.com/futureharmony/storagebrowser
     - icon: fontawesome/brands/docker
       link: https://hub.docker.com/r/filebrowser/filebrowser
 

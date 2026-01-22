@@ -6,9 +6,9 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/filebrowser/filebrowser/v2/auth"
-	"github.com/filebrowser/filebrowser/v2/minio"
-	"github.com/filebrowser/filebrowser/v2/version"
+	"github.com/futureharmony/storagebrowser/v2/auth"
+	"github.com/futureharmony/storagebrowser/v2/minio"
+	"github.com/futureharmony/storagebrowser/v2/version"
 )
 
 var configHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {

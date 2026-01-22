@@ -11,8 +11,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/filebrowser/filebrowser/v2/minio"
 	"github.com/spf13/afero"
+
+	"github.com/futureharmony/storagebrowser/v2/minio"
 )
 
 type FileCache struct {

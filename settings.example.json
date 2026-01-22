@@ -1,0 +1,13 @@
+{
+  "port": "8080",
+  "baseURL": "",
+  "address": "127.0.0.1",
+  "log": "stdout",
+  "database": "filebrowser.db",
+  "root": "/srv",
+  "storageType": "s3",
+  "s3Endpoint": "https://xxx.xx",
+  "s3AccessKey": "",
+  "s3SecretKey": "",
+  "s3Region": "us-east-1"
+}

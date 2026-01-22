@@ -9,29 +9,25 @@
       @action="layoutStore.showHover('sidebar')"
     />
 
-    <!-- Bucket selector always visible in header, but hidden when search is active -->
-    <!-- <div v-if="storageType === 's3' && buckets.length > 0 && !isSearchActive" class="bucket-selector"> -->
-    <div v-if="!isSearchActive" class="bucket-selector">
-      <label class="bucket-label">{{ t("files.bucket") }}:</label>
-      <div class="bucket-select-wrapper">
-        <div class="bucket-select" @click="toggleDropdown" ref="selectRef">
-          <span class="bucket-select-text">{{ selectedBucket || "default" }}</span>
-          <i class="material-icons bucket-arrow" :class="{ open: isDropdownOpen }">expand_more</i>
-        </div>
-        <Transition name="dropdown">
-          <div v-if="isDropdownOpen" class="bucket-dropdown">
-            <div
-              v-for="bucket in buckets"
-              :key="bucket.name"
-              class="bucket-option "
-              :class="{ active: selectedBucket === bucket.name }"
-              @click="selectBucket(bucket.name)"
-            >
-              {{ bucket.name || "NONE" }}
-            </div>
-          </div>
-        </Transition>
+    <div v-if="!isSearchActive && hasBuckets" id="bucket-select">
+      <div id="input" @click="toggleDropdown" ref="selectRef">
+        <i class="material-icons">folder</i>
+        <span class="selected-value">{{ selectedBucket }}</span>
+        <i class="material-icons arrow" :class="{ open: isDropdownOpen }">arrow_drop_down</i>
       </div>
+      <Transition name="dropdown">
+        <div v-if="isDropdownOpen" class="dropdown-menu">
+          <div
+            v-for="bucket in buckets"
+            :key="bucket.name"
+            class="dropdown-item"
+            :class="{ active: selectedBucket === bucket.name }"
+            @click="selectBucket(bucket.name)"
+          >
+            {{ bucket.name }}
+          </div>
+        </div>
+      </Transition>
     </div>
 
     <slot />
@@ -82,49 +78,36 @@ const { t } = useI18n();
 
 const ifActionsSlot = computed(() => (slots.actions ? true : false));
 
-// Check if search is currently active
 const isSearchActive = computed(
   () => layoutStore.currentPromptName === "search"
 );
 const buckets = computed(() => fileStore.buckets);
+const hasBuckets = computed(() => buckets.value.length > 0);
 const selectedBucket = ref<string>("");
-const storageType = ref<string>("");
 const isDropdownOpen = ref(false);
 const selectRef = ref<HTMLElement | null>(null);
+
+const getInitialBucket = () => {
+  const appConfig = (window as any).FileBrowser;
+  if (appConfig.S3Bucket) {
+    return appConfig.S3Bucket;
+  }
+  if (buckets.value.length > 0) {
+    return buckets.value[0].name;
+  }
+  return "";
+};
 
 const toggleDropdown = () => {
   isDropdownOpen.value = !isDropdownOpen.value;
 };
 
-const selectBucket = (bucketName: string) => {
+const selectBucket = async (bucketName: string) => {
   selectedBucket.value = bucketName;
   isDropdownOpen.value = false;
-  onBucketChange();
-};
-
-const closeDropdown = (event: MouseEvent) => {
-  if (selectRef.value && !selectRef.value.contains(event.target as Node)) {
-    isDropdownOpen.value = false;
-  }
-};
-
-// Load config on mount using preloaded config
-onMounted(() => {
-  const appConfig = (window as any).FileBrowser;
-  storageType.value = appConfig.StorageType || "";
-  selectedBucket.value = appConfig.S3Bucket || "";
-  document.addEventListener("click", closeDropdown);
-});
-
-onUnmounted(() => {
-  document.removeEventListener("click", closeDropdown);
-});
-
-const onBucketChange = async () => {
-  if (selectedBucket.value) {
+  if (bucketName) {
     try {
-      await bucket.switchBucket(selectedBucket.value);
-      // Refresh current file listing
+      await bucket.switchBucket(bucketName);
       if (fileStore.reload) {
         fileStore.reload = false;
         fileStore.reload = true;
@@ -136,225 +119,160 @@ const onBucketChange = async () => {
     }
   }
 };
+
+const closeDropdown = (event: MouseEvent) => {
+  if (selectRef.value && !selectRef.value.contains(event.target as Node)) {
+    isDropdownOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  fileStore.loadBucketsFromStorageSync();
+  selectedBucket.value = getInitialBucket();
+  document.addEventListener("click", closeDropdown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", closeDropdown);
+});
 </script>
 
 <style scoped>
-.bucket-selector {
+#bucket-select {
+  position: relative;
+  height: 100%;
+  margin-right: 10px;
   display: flex;
   align-items: center;
-  padding: 0 1rem;
-  margin-right: auto;
-  position: relative;
-  z-index: 10000;
-  height: 100%;
 }
 
-.bucket-label {
-  margin-right: 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--textSecondary);
-  white-space: nowrap;
-  position: relative;
-  z-index: 10001;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.bucket-select-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-
-.bucket-select {
+#bucket-select #input {
   background: var(--surfaceSecondary);
-  border: 1px solid var(--borderPrimary);
+  border-color: var(--surfacePrimary);
   display: flex;
+  height: 100%;
+  padding: 0em 0.75em;
+  border-radius: 0.3em;
+  transition: 0.1s ease all;
   align-items: center;
-  justify-content: space-between;
-  height: 2.4rem;
-  padding: 0 0.75rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-  color: var(--textPrimary);
-  font-size: 0.875rem;
-  min-width: 140px;
   cursor: pointer;
-  position: relative;
-  z-index: 10001;
-  font-weight: 500;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  user-select: none;
 }
 
-.bucket-select-text {
-  color: rgb(255, 255, 255);
-  font-size: 1rem;
-  font-family: inherit;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+#bucket-select #input:hover {
+  background: var(--surfacePrimary);
+  border-color: var(--borderPrimary);
 }
 
-.bucket-select:hover {
-  border-color: var(--borderSecondary);
-  background: var(--surfaceTertiary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.bucket-select:focus,
-.bucket-select.open {
-  outline: none;
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.bucket-arrow {
-  font-size: 1.25rem;
+#bucket-select #input i {
+  margin-right: 0.3em;
+  user-select: none;
   color: var(--textSecondary);
-  pointer-events: none;
-  z-index: 10002;
-  transition: transform 0.2s ease, color 0.2s ease;
-  margin-left: 0.5rem;
 }
 
-.bucket-arrow.open {
+#bucket-select #input .selected-value {
+  color: var(--textSecondary);
+  font-size: 1.1em;
+}
+
+#bucket-select #input .arrow {
+  margin-left: 0.2em;
+  transition: transform 0.15s ease;
+  font-size: 1.2em;
+}
+
+#bucket-select #input .arrow.open {
   transform: rotate(180deg);
-  color: var(--textPrimary);
 }
 
-.bucket-select:hover + .bucket-dropdown,
-.bucket-select:focus + .bucket-dropdown {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-.bucket-dropdown {
+.dropdown-menu {
   position: absolute;
-  top: calc(100% + 4px);
+  top: 100%;
   left: 0;
   min-width: 100%;
-  background: var(--surfaceSecondary);
+  background: var(--surfacePrimary);
   border: 1px solid var(--borderPrimary);
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  z-index: 10003;
+  border-radius: 0.3em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
   overflow: hidden;
-  padding: 0.25rem 0;
-  max-height: 280px;
+  padding: 0.25em 0;
+  max-height: 200px;
   overflow-y: auto;
 }
 
-.bucket-option {
-  font-family: inherit;
-  padding: 0.6rem 0.75rem;
+.dropdown-item {
+  padding: 0.5em 0.75em;
   color: var(--textPrimary);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 1.1em;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.1s ease;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.bucket-option:hover {
-  background: var(--surfaceTertiary);
+.dropdown-item:hover {
+  background: var(--surfaceSecondary);
 }
 
-.bucket-option.active {
-  background: rgba(59, 130, 246, 0.1);
-  color: var(--blue);
+.dropdown-item.active {
+  background: var(--blue);
+  color: white;
 }
 
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-4px);
 }
 
-html[dir="rtl"] .bucket-label {
+html[dir="rtl"] #bucket-select #input i {
   margin-right: 0;
-  margin-left: 0.75rem;
+  margin-left: 0.3em;
 }
 
-html[dir="rtl"] .bucket-arrow {
+html[dir="rtl"] #bucket-select #input .arrow {
   margin-left: 0;
-  margin-right: 0.5rem;
+  margin-right: 0.2em;
 }
 
-html[dir="rtl"] .bucket-dropdown {
+html[dir="rtl"] .dropdown-menu {
   left: auto;
   right: 0;
 }
 
 @media (max-width: 736px) {
-  .bucket-selector {
-    padding: 0 0.5rem;
+  #bucket-select #input {
+    padding: 0em 0.5em;
   }
 
-  .bucket-label {
-    font-size: 0.75rem;
-    margin-right: 0.5rem;
+  #bucket-select #input .selected-value {
+    font-size: 1em;
   }
 
-  .bucket-select {
-    min-width: 110px;
-    font-size: 0.8rem;
-    height: 2.2rem;
-    padding: 0 0.5rem;
-  }
-
-  .bucket-arrow {
-    font-size: 1.1rem;
-  }
-
-  html[dir="rtl"] .bucket-label {
-    margin-left: 0.5rem;
+  .dropdown-item {
+    font-size: 1em;
   }
 }
 
 @media (max-width: 600px) {
-  .bucket-selector {
-    padding: 0 0.3rem;
+  #bucket-select #input {
+    padding: 0em 0.4em;
   }
 
-  .bucket-label {
-    display: none;
+  #bucket-select #input .selected-value {
+    font-size: 0.9em;
   }
 
-  .bucket-select {
-    min-width: 80px;
-    font-size: 0.8rem;
-    height: 2rem;
-  }
-
-  .bucket-arrow {
-    font-size: 1rem;
-  }
-}
-
-@media (max-width: 450px) {
-  .bucket-selector {
-    padding: 0 0.4rem;
-  }
-
-  .bucket-select {
-    min-width: 90px;
-    font-size: 0.75rem;
-    min-width: 100px;
-  }
-
-  .bucket-arrow {
-    font-size: 0.9rem;
+  .dropdown-item {
+    font-size: 0.9em;
+    padding: 0.4em 0.5em;
   }
 }
 </style>

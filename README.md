@@ -12,7 +12,8 @@ File Browser provides a file managing interface within a specified directory and
 
 ### Configuration
 
-Add S3 settings to your configuration file (e.g., `.filebrowser.json`):
+Usage: storagebrowser -c /path/to/xxxx.json
+S3 settings in your configuration file (e.g., `.filebrowser.json`):
 
 ```json
 {

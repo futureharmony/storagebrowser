@@ -117,7 +117,10 @@ func getStaticHandlers(store *storage.Storage, server *settings.Server, assetsFs
 			return http.StatusNotFound, nil
 		}
 
-		if strings.HasSuffix(r.URL.Path, "/") {
+		// stripPrefix removed /static/ prefix, path is relative
+		path := strings.TrimPrefix(r.URL.Path, "/static/")
+
+		if strings.HasSuffix(path, "/") {
 			return http.StatusNotFound, nil
 		}
 
@@ -125,38 +128,53 @@ func getStaticHandlers(store *storage.Storage, server *settings.Server, assetsFs
 		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%v", maxAge))
 
 		if d.settings.Branding.Files != "" {
-			if strings.HasPrefix(r.URL.Path, "img/") {
-				fPath := filepath.Join(d.settings.Branding.Files, r.URL.Path)
-				_, err := os.Stat(fPath)
+			if strings.HasPrefix(path, "img/") {
+				fPath := filepath.Join(d.settings.Branding.Files, path)
+				_, err := os.Stat(fPath) //nolint:govet
 				if err != nil && !os.IsNotExist(err) {
 					log.Printf("could not load branding file override: %v", err)
 				} else if err == nil {
 					http.ServeFile(w, r, fPath)
 					return 0, nil
 				}
-			} else if r.URL.Path == "custom.css" && d.settings.Branding.Files != "" {
+			} else if path == "custom.css" && d.settings.Branding.Files != "" {
 				http.ServeFile(w, r, filepath.Join(d.settings.Branding.Files, "custom.css"))
 				return 0, nil
 			}
 		}
 
-		if !strings.HasSuffix(r.URL.Path, ".js") {
-			http.FileServer(http.FS(assetsFs)).ServeHTTP(w, r)
-			return 0, nil
+		// Map URL path to embed.FS path
+		// - Most paths map directly (img/*, assets/*)
+		// - /static/img/logo.svg maps to static/img/logo.svg (only logo is in static/)
+		// - JS files are gzip-compressed, add .gz extension
+		fsPath := path
+		if path == "img/logo.svg" {
+			fsPath = "static/img/logo.svg"
+		}
+		if strings.HasSuffix(path, ".js") {
+			fsPath = path + ".gz"
 		}
 
-		fileContents, err := fs.ReadFile(assetsFs, r.URL.Path+".gz")
+		fileContents, err := fs.ReadFile(assetsFs, fsPath)
 		if err != nil {
 			return http.StatusNotFound, err
 		}
 
-		w.Header().Set("Content-Encoding", "gzip")
-		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+		// Set appropriate headers based on file type
+		if strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".js.gz") {
+			w.Header().Set("Content-Encoding", "gzip")
+			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+		} else if strings.HasSuffix(path, ".css") {
+			w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		} else if strings.HasSuffix(path, ".svg") {
+			w.Header().Set("Content-Type", "image/svg+xml")
+		} else if strings.HasSuffix(path, ".woff") || strings.HasSuffix(path, ".woff2") {
+			w.Header().Set("Content-Type", "font/woff2")
+		}
 
 		if _, err := w.Write(fileContents); err != nil {
 			return http.StatusInternalServerError, err
 		}
-
 		return 0, nil
 	}, "/static/", store, server)
 

@@ -70,7 +70,7 @@ const route = useRoute();
 const { t } = useI18n({});
 
 const isS3 = computed(() => {
-  const appConfig = (window as any).FileBrowser;
+  const appConfig = (window as any).FileBrowser || {};
   return appConfig.StorageType === "s3";
 });
 
@@ -107,7 +107,7 @@ onMounted(async () => {
   window.addEventListener("keydown", keyEvent);
 
   // Load buckets from storage first if S3 storage
-  const appConfig = (window as any).FileBrowser;
+  const appConfig = (window as any).FileBrowser || {};
   if (appConfig.StorageType === "s3") {
     // First try synchronous load from localStorage
     fileStore.loadBucketsFromStorageSync();

@@ -72,6 +72,7 @@
     "metadata": "元数据",
     "multipleSelectionEnabled": "多选模式已开启",
     "name": "名称",
+    "noBuckets": "暂无可用存储桶。",
     "size": "大小",
     "sortByLastModified": "按最后修改时间排序",
     "sortByName": "按名称排序",

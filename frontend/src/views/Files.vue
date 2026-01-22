@@ -1,5 +1,10 @@
 <template>
-  <div>
+  <div v-if="isS3 && !hasBuckets">
+    <h2 class="message delayed">
+      <span>{{ t("files.noBuckets") }}</span>
+    </h2>
+  </div>
+  <div v-else-if="!isS3 || bucketsLoaded">
     <header-bar showMenu showLogo />
 
     <breadcrumbs base="/files" />
@@ -15,6 +20,16 @@
         <span>{{ t("files.loading") }}</span>
       </h2>
     </div>
+  </div>
+  <div v-else>
+    <h2 class="message delayed">
+      <div class="spinner">
+        <div class="bounce1"></div>
+        <div class="bounce2"></div>
+        <div class="bounce3"></div>
+      </div>
+      <span>{{ t("files.loading") }}</span>
+    </h2>
   </div>
 </template>
 
@@ -54,6 +69,15 @@ const route = useRoute();
 
 const { t } = useI18n({});
 
+const isS3 = computed(() => {
+  const appConfig = (window as any).FileBrowser;
+  return appConfig.StorageType === "s3";
+});
+
+const bucketsLoading = computed(() => fileStore.bucketsLoading);
+const hasBuckets = computed(() => fileStore.buckets.length > 0);
+const bucketsLoaded = computed(() => !isS3.value || (fileStore.buckets.length > 0));
+
 let fetchDataController = new AbortController();
 
 const error = ref<StatusError | null>(null);
@@ -79,15 +103,25 @@ const currentView = computed(() => {
 // Define hooks
 onMounted(async () => {
   await loadConfig();
-  fetchData();
   fileStore.isFiles = true;
   window.addEventListener("keydown", keyEvent);
 
-  // Load buckets if S3 storage
+  // Load buckets from storage first if S3 storage
   const appConfig = (window as any).FileBrowser;
   if (appConfig.StorageType === "s3") {
-    await fileStore.loadBuckets();
+    // First try synchronous load from localStorage
+    fileStore.loadBucketsFromStorageSync();
+    // If no buckets in storage, fetch from API
+    if (fileStore.buckets.length === 0) {
+      await fileStore.loadBuckets();
+    }
+    // If still no buckets available, don't fetch data
+    if (fileStore.buckets.length === 0) {
+      return;
+    }
   }
+
+  fetchData();
 });
 
 onBeforeUnmount(() => {

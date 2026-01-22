@@ -4,6 +4,40 @@ import { useAuthStore } from "@/stores/auth";
 import type { JwtPayload } from "jwt-decode";
 import { jwtDecode } from "jwt-decode";
 import { baseURL, noAuth } from "./constants";
+import type { Bucket } from "@/api/bucket";
+
+const BUCKETS_KEY = "filebrowser_buckets";
+
+export function loadBucketsFromStorageSync(): Bucket[] {
+  const data = localStorage.getItem(BUCKETS_KEY);
+  if (data) {
+    try {
+      return JSON.parse(data) as Bucket[];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+export async function loadBucketsFromStorage(): Promise<Bucket[]> {
+  return loadBucketsFromStorageSync();
+}
+
+export async function saveBucketsToStorage(buckets: Bucket[]) {
+  localStorage.setItem(BUCKETS_KEY, JSON.stringify(buckets));
+}
+
+export async function clearBucketsFromStorage() {
+  localStorage.removeItem(BUCKETS_KEY);
+}
+
+export async function refreshBuckets(): Promise<Bucket[]> {
+  const { bucket } = await import("@/api");
+  const buckets = await bucket.list();
+  await saveBucketsToStorage(buckets);
+  return buckets;
+}
 
 export async function parseToken(token: string) {
   // falsy or malformed jwt will throw InvalidTokenError
@@ -28,6 +62,10 @@ export async function parseToken(token: string) {
     }, expiresAt.getTime() - Date.now())
   );
 
+  const appConfig = (window as any).FileBrowser;
+  if (appConfig.StorageType === "s3") {
+    await refreshBuckets();
+  }
 }
 
 export async function validateLogin() {
@@ -111,6 +149,7 @@ export function logout(reason?: string) {
   authStore.clearUser();
 
   localStorage.setItem("jwt", "");
+  clearBucketsFromStorage();
   if (noAuth) {
     window.location.reload();
   } else {

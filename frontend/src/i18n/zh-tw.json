@@ -72,6 +72,7 @@
     "metadata": "詮釋資料",
     "multipleSelectionEnabled": "多選模式已開啟",
     "name": "名稱",
+    "noBuckets": "暫無可用儲存桶。",
     "size": "大小",
     "sortByLastModified": "按最後修改時間排序",
     "sortByName": "按名稱排序",

@@ -35,10 +35,10 @@ builds:
 
 archives:
   - name_template: "{{.Os}}-{{.Arch}}{{if .Arm}}v{{.Arm}}{{end}}-{{ .ProjectName }}"
-    formats: ["tar.gz"]
+    formats: ["binary"]
     format_overrides:
       - goos: windows
-        formats: ["zip"]
+        formats: ["binary"]
 
 # dockers:
 #   # Alpine docker images

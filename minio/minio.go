@@ -24,24 +24,24 @@ type Config struct {
 
 var (
 	fs     afero.Fs
-	cfg    Config
-	awsCfg aws.Config
+	Cfg    Config
+	AwsCfg aws.Config
 )
 
 func Init(config *Config) error {
-	cfg = *config
+	Cfg = *config
 
 	var err error
-	awsCfg, err = awsconfig.LoadDefaultConfig(context.Background(),
+	AwsCfg, err = awsconfig.LoadDefaultConfig(context.Background(),
 		awsconfig.WithCredentialsProvider(
-			credentials.NewStaticCredentialsProvider(cfg.AccessKey, cfg.SecretKey, ""),
+			credentials.NewStaticCredentialsProvider(Cfg.AccessKey, Cfg.SecretKey, ""),
 		),
-		awsconfig.WithRegion(cfg.Region),
+		awsconfig.WithRegion(Cfg.Region),
 		awsconfig.WithEndpointResolverWithOptions(
 			aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 				if service == s3.ServiceID {
 					return aws.Endpoint{
-						URL:           cfg.Endpoint,
+						URL:           Cfg.Endpoint,
 						SigningRegion: region,
 					}, nil
 				}
@@ -54,7 +54,7 @@ func Init(config *Config) error {
 		return err
 	}
 
-	fs = aferos3.NewFs(awsCfg)
+	fs = aferos3.NewFs(AwsCfg)
 	err = SetupBucket()
 	if err != nil {
 		return err
@@ -63,11 +63,11 @@ func Init(config *Config) error {
 }
 
 func GetCurrenBucket() string {
-	return cfg.Bucket
+	return Cfg.Bucket
 }
 
 func SwitchBucket(bucket string) error {
-	cfg.Bucket = bucket
+	Cfg.Bucket = bucket
 	s3Fs := fs.(*aferos3.Fs)
 	s3Fs.SetBucket(bucket)
 	return nil
@@ -107,6 +107,14 @@ func SetupBucket() error {
 
 func NewBasePathFs() afero.Fs {
 	return fs
+}
+
+func GetS3Client() *s3.Client {
+	return s3.NewFromConfig(AwsCfg)
+}
+
+func GetAWSConfig() aws.Config {
+	return AwsCfg
 }
 
 func FullPath(_ afero.Fs, relativePath string) string {

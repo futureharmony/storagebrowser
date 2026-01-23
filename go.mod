@@ -12,7 +12,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/dsoprea/go-exif/v3 v3.0.1
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568
-	github.com/futureharmony/afero-aws-s3 v0.0.0-20260120152748-80fb9cd6ae1d
+	github.com/futureharmony/afero-aws-s3 v0.0.0-20260123160600-a9adf3b1781e
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
@@ -37,7 +37,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.20.19 // indirect
+require github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.21.0 // indirect
 
 require (
 	github.com/STARRY-S/zip v0.2.3 // indirect

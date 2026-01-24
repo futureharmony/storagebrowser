@@ -1,6 +1,6 @@
 <template>
   <div>
-    <header-bar showMenu showLogo>
+    <header-bar showMenu showLogo showBucketSelect>
       <search />
       <title />
       <action
@@ -280,17 +280,19 @@ import { useClipboardStore } from "@/stores/clipboard";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 
-import { users, files as api } from "@/api";
+import { files as api, users } from "@/api";
 import { enableExec } from "@/utils/constants";
-import * as upload from "@/utils/upload";
 import css from "@/utils/css";
-import { throttle } from "lodash-es";
+import * as upload from "@/utils/upload";
 import { Base64 } from "js-base64";
+import { throttle } from "lodash-es";
 
-import HeaderBar from "@/components/header/HeaderBar.vue";
-import Action from "@/components/header/Action.vue";
-import Search from "@/components/Search.vue";
+import { removePrefix } from "@/api/utils";
 import Item from "@/components/files/ListingItem.vue";
+import Action from "@/components/header/Action.vue";
+import HeaderBar from "@/components/header/HeaderBar.vue";
+import Search from "@/components/Search.vue";
+import { storeToRefs } from "pinia";
 import {
   computed,
   inject,
@@ -300,10 +302,8 @@ import {
   ref,
   watch,
 } from "vue";
-import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { storeToRefs } from "pinia";
-import { removePrefix } from "@/api/utils";
+import { useRoute } from "vue-router";
 
 const showLimit = ref<number>(50);
 const columnWidth = ref<number>(280);

@@ -147,7 +147,7 @@ export default {
   inject: ["$showError"],
   computed: {
     ...mapState(useAuthStore, ["user", "isLoggedIn"]),
-    ...mapState(useFileStore, ["isFiles", "reload"]),
+    ...mapState(useFileStore, ["isFiles", "reload", "req"]),
     ...mapState(useLayoutStore, ["currentPromptName"]),
     active() {
       return this.currentPromptName === "sidebar";
@@ -164,9 +164,14 @@ export default {
       this.usageAbortController.abort();
     },
     async fetchUsage() {
-      const path = this.$route.path.endsWith("/")
+      // For files (req exists and type is not "dir"), don't add trailing slash
+      // For directories, ensure trailing slash
+      const isFile = this.req && this.req.type !== "dir";
+      const path = isFile
         ? this.$route.path
-        : this.$route.path + "/";
+        : this.$route.path.endsWith("/")
+          ? this.$route.path
+          : this.$route.path + "/";
       let usageStats = USAGE_DEFAULT;
       if (this.disableUsedPercentage) {
         return Object.assign(this.usage, usageStats);

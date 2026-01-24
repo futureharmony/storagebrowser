@@ -210,6 +210,13 @@ export default {
       },
       immediate: true,
     },
+    reload: {
+      handler(newValue) {
+        if (newValue && this.$route.path.includes("/files")) {
+          this.fetchUsage();
+        }
+      },
+    },
   },
   unmounted() {
     this.abortOngoingFetchUsage();

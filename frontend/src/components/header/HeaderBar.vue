@@ -9,11 +9,16 @@
       @action="layoutStore.showHover('sidebar')"
     />
 
-    <div v-if="!isSearchActive && hasBuckets" id="bucket-select">
+    <div
+      v-if="!isSearchActive && !isPreviewMode && hasBuckets"
+      id="bucket-select"
+    >
       <div id="input" @click="toggleDropdown" ref="selectRef">
         <i class="material-icons">folder</i>
         <span class="selected-value">{{ selectedBucket }}</span>
-        <i class="material-icons arrow" :class="{ open: isDropdownOpen }">arrow_drop_down</i>
+        <i class="material-icons arrow" :class="{ open: isDropdownOpen }"
+          >arrow_drop_down</i
+        >
       </div>
       <Transition name="dropdown">
         <div v-if="isDropdownOpen" class="dropdown-menu">
@@ -81,6 +86,7 @@ const ifActionsSlot = computed(() => (slots.actions ? true : false));
 const isSearchActive = computed(
   () => layoutStore.currentPromptName === "search"
 );
+const isPreviewMode = computed(() => fileStore.req && !fileStore.req.isDir);
 const buckets = computed(() => fileStore.buckets);
 const hasBuckets = computed(() => buckets.value.length > 0);
 const selectedBucket = ref<string>("");
@@ -148,7 +154,7 @@ onUnmounted(() => {
 
 #bucket-select #input {
   background: var(--surfaceSecondary);
-  border-color: var(--surfacePrimary);
+  border: 1px solid var(--surfacePrimary);
   display: flex;
   height: 100%;
   padding: 0em 0.75em;
@@ -160,8 +166,7 @@ onUnmounted(() => {
 }
 
 #bucket-select #input:hover {
-  background: var(--surfacePrimary);
-  border-color: var(--borderPrimary);
+  border: 1px solid var(--borderPrimary);
 }
 
 #bucket-select #input i {

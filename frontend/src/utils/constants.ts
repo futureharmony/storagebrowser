@@ -19,7 +19,10 @@ const theme: UserTheme = getFileBrowser().Theme || "";
 const enableThumbs: boolean = getFileBrowser().EnableThumbs;
 const resizePreview: boolean = getFileBrowser().ResizePreview;
 const enableExec: boolean = getFileBrowser().EnableExec;
-const tusSettings = getFileBrowser().TusSettings || { chunkSize: 10485760, retryCount: 5 };
+const tusSettings = getFileBrowser().TusSettings || {
+  chunkSize: 10485760,
+  retryCount: 5,
+};
 const origin = typeof window !== "undefined" ? window.location.origin : "";
 const tusEndpoint = `/api/tus`;
 

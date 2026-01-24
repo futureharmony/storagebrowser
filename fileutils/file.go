@@ -7,6 +7,8 @@ import (
 	"path"
 	"path/filepath"
 
+	aferos3 "github.com/futureharmony/afero-aws-s3"
+
 	"github.com/spf13/afero"
 )
 
@@ -46,8 +48,15 @@ func CopyFile(afs afero.Fs, source, dest string, fileMode, dirMode fs.FileMode) 
 		return err
 	}
 
-	// Create the destination file.
-	dst, err := afs.OpenFile(dest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	var dst afero.File
+	// Check if it's an S3 filesystem
+	if _, ok := afs.(*aferos3.Fs); ok {
+		// For S3, use Create instead of OpenFile since S3 doesn't support O_RDWR
+		dst, err = afs.Create(dest)
+	} else {
+		// For regular filesystems, use OpenFile
+		dst, err = afs.OpenFile(dest, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	}
 	if err != nil {
 		return err
 	}
@@ -59,14 +68,16 @@ func CopyFile(afs afero.Fs, source, dest string, fileMode, dirMode fs.FileMode) 
 		return err
 	}
 
-	// Copy the mode
-	info, err := afs.Stat(source)
-	if err != nil {
-		return err
-	}
-	err = afs.Chmod(dest, info.Mode())
-	if err != nil {
-		return err
+	// Copy the mode (skip for S3 as it may not support chmod)
+	if _, ok := afs.(*aferos3.Fs); !ok {
+		info, err := afs.Stat(source)
+		if err != nil {
+			return err
+		}
+		err = afs.Chmod(dest, info.Mode())
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

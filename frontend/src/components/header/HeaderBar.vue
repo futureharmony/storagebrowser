@@ -1,34 +1,19 @@
 <template>
   <header>
     <img v-if="showLogo" :src="logoURL" />
-    <Action
-      v-if="showMenu"
-      class="menu-button"
-      icon="menu"
-      :label="t('buttons.toggleSidebar')"
-      @action="layoutStore.showHover('sidebar')"
-    />
+    <Action v-if="showMenu" class="menu-button" icon="menu" :label="t('buttons.toggleSidebar')"
+      @action="layoutStore.showHover('sidebar')" />
 
-    <div
-      v-if="!isSearchActive && !isPreviewMode && hasBuckets"
-      id="bucket-select"
-    >
+    <div v-if="!isSearchActive && !isPreviewMode && hasBuckets && showBucketSelect" id="bucket-select">
       <div id="input" @click="toggleDropdown" ref="selectRef">
         <i class="material-icons">folder</i>
         <span class="selected-value">{{ selectedBucket }}</span>
-        <i class="material-icons arrow" :class="{ open: isDropdownOpen }"
-          >arrow_drop_down</i
-        >
+        <i class="material-icons arrow" :class="{ open: isDropdownOpen }">arrow_drop_down</i>
       </div>
       <Transition name="dropdown">
         <div v-if="isDropdownOpen" class="dropdown-menu">
-          <div
-            v-for="bucket in buckets"
-            :key="bucket.name"
-            class="dropdown-item"
-            :class="{ active: selectedBucket === bucket.name }"
-            @click="selectBucket(bucket.name)"
-          >
+          <div v-for="bucket in buckets" :key="bucket.name" class="dropdown-item"
+            :class="{ active: selectedBucket === bucket.name }" @click="selectBucket(bucket.name)">
             {{ bucket.name }}
           </div>
         </div>
@@ -37,26 +22,14 @@
 
     <slot />
 
-    <div
-      id="dropdown"
-      :class="{ active: layoutStore.currentPromptName === 'more' }"
-    >
+    <div id="dropdown" :class="{ active: layoutStore.currentPromptName === 'more' }">
       <slot name="actions" />
     </div>
 
-    <Action
-      v-if="ifActionsSlot"
-      id="more"
-      icon="more_vert"
-      :label="t('buttons.more')"
-      @action="layoutStore.showHover('more')"
-    />
+    <Action v-if="ifActionsSlot" id="more" icon="more_vert" :label="t('buttons.more')"
+      @action="layoutStore.showHover('more')" />
 
-    <div
-      class="overlay"
-      v-show="layoutStore.currentPromptName == 'more'"
-      @click="layoutStore.closeHovers"
-    />
+    <div class="overlay" v-show="layoutStore.currentPromptName == 'more'" @click="layoutStore.closeHovers" />
   </header>
 </template>
 
@@ -73,6 +46,7 @@ import { useI18n } from "vue-i18n";
 defineProps<{
   showLogo?: boolean;
   showMenu?: boolean;
+  showBucketSelect?: boolean;
 }>();
 
 const layoutStore = useLayoutStore();

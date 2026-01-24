@@ -76,7 +76,9 @@ const isS3 = computed(() => {
 
 const bucketsLoading = computed(() => fileStore.bucketsLoading);
 const hasBuckets = computed(() => fileStore.buckets.length > 0);
-const bucketsLoaded = computed(() => !isS3.value || (fileStore.buckets.length > 0));
+const bucketsLoaded = computed(
+  () => !isS3.value || fileStore.buckets.length > 0
+);
 
 let fetchDataController = new AbortController();
 

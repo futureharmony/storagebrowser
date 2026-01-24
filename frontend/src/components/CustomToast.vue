@@ -15,7 +15,9 @@ defineProps<{
 }>();
 
 const clicked = () => {
-  window.open("https://github.com/futureharmony/storagebrowser/issues/new/choose");
+  window.open(
+    "https://github.com/futureharmony/storagebrowser/issues/new/choose"
+  );
 };
 </script>
 

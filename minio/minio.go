@@ -23,7 +23,7 @@ type Config struct {
 }
 
 var (
-	fs     afero.Fs
+	afs    afero.Fs
 	Cfg    Config
 	AwsCfg aws.Config
 )
@@ -54,7 +54,7 @@ func Init(config *Config) error {
 		return err
 	}
 
-	fs = aferos3.NewFs(AwsCfg)
+	afs = aferos3.NewFs(AwsCfg)
 	err = SetupBucket()
 	if err != nil {
 		return err
@@ -68,13 +68,13 @@ func GetCurrenBucket() string {
 
 func SwitchBucket(bucket string) error {
 	Cfg.Bucket = bucket
-	s3Fs := fs.(*aferos3.Fs)
+	s3Fs := afs.(*aferos3.Fs)
 	s3Fs.SetBucket(bucket)
 	return nil
 }
 
 func ListBuckets() ([]string, error) {
-	s3Fs := fs.(*aferos3.Fs)
+	s3Fs := afs.(*aferos3.Fs)
 	return s3Fs.ListBuckets()
 }
 
@@ -106,7 +106,7 @@ func SetupBucket() error {
 }
 
 func NewBasePathFs() afero.Fs {
-	return fs
+	return afs
 }
 
 func GetS3Client() *s3.Client {

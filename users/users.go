@@ -24,6 +24,7 @@ type User struct {
 	ID           uint          `storm:"id,increment" json:"id"`
 	Username     string        `storm:"unique" json:"username"`
 	Password     string        `json:"password"`
+	Bucket       string        `json:"bucket"`
 	Scope        string        `json:"scope"`
 	Locale       string        `json:"locale"`
 	LockPassword bool          `json:"lockPassword"`
@@ -46,6 +47,7 @@ func (u *User) GetRules() []rules.Rule {
 var checkableFields = []string{
 	"Username",
 	"Password",
+	"Bucket",
 	"Scope",
 	"ViewMode",
 	"Commands",
@@ -72,6 +74,9 @@ func (u *User) Clean(baseScope string, fields ...string) error {
 			if u.Password == "" {
 				return errors.ErrEmptyPassword
 			}
+		case "Bucket":
+			// Allow empty bucket (means all buckets)
+			continue
 		case "ViewMode":
 			if u.ViewMode == "" {
 				u.ViewMode = ListViewMode
@@ -94,7 +99,14 @@ func (u *User) Clean(baseScope string, fields ...string) error {
 	if u.Fs == nil {
 		scope := u.Scope
 		scope = filepath.Join(baseScope, filepath.Join("/", scope)) //nolint:gocritic
-		u.Fs = minio.NewBasePathFs()
+		baseFs := minio.NewBasePathFs()
+
+		// Wrap the filesystem with S3 permission wrapper if using S3 storage
+		userInfo := &minio.User{
+			Bucket: u.Bucket,
+			Scope:  scope,
+		}
+		u.Fs = minio.NewS3PermissionWrapper(baseFs, userInfo)
 	}
 
 	return nil

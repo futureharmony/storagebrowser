@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/afero"
 	aferos3 "github.com/futureharmony/afero-aws-s3"
+	"github.com/spf13/afero"
 )
 
 // S3PermissionWrapper wraps an S3 filesystem to enforce bucket and scope permissions
@@ -218,4 +218,3 @@ func (w *S3PermissionWrapper) IsS3Fs() bool {
 	_, ok := w.GetUnderlyingS3Fs()
 	return ok
 }
-

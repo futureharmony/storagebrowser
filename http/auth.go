@@ -13,6 +13,7 @@ import (
 	"github.com/golang-jwt/jwt/v4/request"
 
 	fbErrors "github.com/futureharmony/storagebrowser/v2/errors"
+	"github.com/futureharmony/storagebrowser/v2/minio"
 	"github.com/futureharmony/storagebrowser/v2/users"
 )
 
@@ -116,6 +117,38 @@ func loginHandler(tokenExpireTime time.Duration) handleFunc {
 			return http.StatusForbidden, nil
 		case err != nil:
 			return http.StatusInternalServerError, err
+		}
+
+		// If using S3 storage, validate that the user's bucket is available
+		if d.server.StorageType == "s3" {
+			availableBuckets, err := minio.ListBuckets()
+			if err != nil {
+				log.Printf("Failed to list available buckets: %v", err)
+				return http.StatusInternalServerError, err
+			}
+
+			if len(availableBuckets) == 0 {
+				log.Printf("No available S3 buckets found")
+				return http.StatusInternalServerError, errors.New("no available S3 buckets")
+			}
+
+			// Check if user has a specific bucket set and it's in the available list
+			if user.Bucket != "" {
+				// Check if the user's bucket is in the available buckets list
+				bucketFound := false
+				for _, bucket := range availableBuckets {
+					if bucket == user.Bucket {
+						bucketFound = true
+						minio.SwitchBucket(bucket)
+						break
+					}
+				}
+
+				if !bucketFound {
+					log.Printf("User's bucket '%s' not found in available buckets", user.Bucket)
+					return http.StatusForbidden, errors.New("user's bucket not available")
+				}
+			}
 		}
 
 		return printToken(w, r, d, user, tokenExpireTime)

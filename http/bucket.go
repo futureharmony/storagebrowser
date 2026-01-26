@@ -35,7 +35,7 @@ var bucketSwitchHandler = withUser(func(w http.ResponseWriter, r *http.Request, 
 		return http.StatusBadRequest, nil
 	}
 
-	err = minio.SwitchBucket(req.Bucket)
+	err = minio.SwitchBase(req.Bucket, "")
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}

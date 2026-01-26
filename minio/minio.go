@@ -54,7 +54,7 @@ func Init(config *Config) error {
 		return err
 	}
 
-	afs = aferos3.NewFs(AwsCfg)
+	afs = aferos3.NewFsWrapper(AwsCfg, Cfg.Bucket, "") // Using the wrapper with fixed bucket
 	err = SetupBucket()
 	if err != nil {
 		return err
@@ -66,10 +66,11 @@ func GetCurrenBucket() string {
 	return Cfg.Bucket
 }
 
-func SwitchBucket(bucket string) error {
+func SwitchBase(bucket, scope string) error {
 	Cfg.Bucket = bucket
-	if s3fs, ok := GetS3FileSystem(afs); ok {
-		s3fs.SetBucket(bucket)
+	if _, ok := GetS3FileSystem(afs); ok {
+		// With the new API, we need to create a new wrapper with the new bucket
+		afs = aferos3.NewFsWrapper(AwsCfg, bucket, scope)
 		return nil
 	}
 	return fmt.Errorf("underlying filesystem is not an S3 filesystem")
@@ -103,8 +104,7 @@ func SetupBucket() error {
 			Name: name,
 		})
 	}
-
-	SwitchBucket(buckets[0].Name)
+	SwitchBase(buckets[0].Name, "")
 	CachedBuckets = buckets
 	return nil
 }
@@ -127,8 +127,8 @@ func FullPath(_ afero.Fs, relativePath string) string {
 
 // GetS3FileSystem returns the underlying S3 filesystem if it exists, accounting for wrappers
 func GetS3FileSystem(fs afero.Fs) (*aferos3.Fs, bool) {
-	if s3fs, ok := fs.(*aferos3.Fs); ok {
-		return s3fs, true
+	if s3wrapper, ok := fs.(*aferos3.FsWrapper); ok {
+		return s3wrapper.Fs, true
 	}
 
 	if wrapper, ok := fs.(*S3PermissionWrapper); ok {
@@ -140,7 +140,7 @@ func GetS3FileSystem(fs afero.Fs) (*aferos3.Fs, bool) {
 
 // IsS3FileSystem checks if the given filesystem is an S3 filesystem, accounting for wrappers
 func IsS3FileSystem(fs afero.Fs) bool {
-	if _, ok := fs.(*aferos3.Fs); ok {
+	if _, ok := fs.(*aferos3.FsWrapper); ok {
 		return true
 	}
 

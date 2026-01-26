@@ -32,13 +32,14 @@ func (d *data) Check(path string) bool {
 		return false
 	}
 
+	// TODO
 	// Check bucket and scope permissions for S3 storage
-	if d.server.StorageType == "s3" {
+	// if d.server.StorageType == "s3" {
 
-		if !d.checkS3Permissions(path) {
-			return false
-		}
-	}
+	// 	if !d.checkS3Permissions(path) {
+	// 		return false
+	// 	}
+	// }
 
 	allow := true
 	for _, rule := range d.settings.Rules {
@@ -58,6 +59,7 @@ func (d *data) Check(path string) bool {
 
 // checkS3Permissions checks if the user has permission to access the given path based on bucket and scope
 func (d *data) checkS3Permissions(path string) bool {
+	path = d.user.Scope + path
 	// If user has no specific bucket restriction, allow access
 	if d.user.Bucket != "" {
 		// If the user has a specific bucket set, they can only access that bucket

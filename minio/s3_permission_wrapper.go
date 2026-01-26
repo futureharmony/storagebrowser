@@ -46,26 +46,27 @@ func NewS3PermissionWrapper(fs afero.Fs, user *User) *S3PermissionWrapper {
 // EnforcePathPermission checks if the given path is within the user's permissions
 func (w *S3PermissionWrapper) EnforcePathPermission(p string) error {
 	// Normalize the path
+	p = p + w.user.Scope
 	p = strings.TrimPrefix(p, "/")
 
 	// If user has a specific bucket set, check if it matches the current bucket
 	if w.user.Bucket != "" {
 		// Get the current bucket from the underlying S3 filesystem
-		if s3fs, ok := w.GetUnderlyingS3Fs(); ok {
-			currentBucket := s3fs.GetBucket()
+		if s3wrapper, ok := w.fs.(*aferos3.FsWrapper); ok {
+			currentBucket := s3wrapper.Bucket
 			if currentBucket != w.user.Bucket {
 				return os.ErrPermission
 			}
 		}
 	}
 
-	// Check if the path is within the allowed prefix
-	if w.prefix != "" {
-		// If the path doesn't start with the allowed prefix, deny access
-		if !strings.HasPrefix(p, w.prefix) {
-			return os.ErrPermission
-		}
-	}
+	// // Check if the path is within the allowed prefix
+	// if w.prefix != "" {
+	// 	// If the path doesn't start with the allowed prefix, deny access
+	// 	if !strings.HasPrefix(p, w.prefix) {
+	// 		return os.ErrPermission
+	// 	}
+	// }
 
 	return nil
 }
@@ -201,8 +202,8 @@ func (w *S3PermissionWrapper) Chown(name string, uid, gid int) error {
 
 // GetUnderlyingS3Fs returns the underlying S3 filesystem if it exists
 func (w *S3PermissionWrapper) GetUnderlyingS3Fs() (*aferos3.Fs, bool) {
-	if s3fs, ok := w.fs.(*aferos3.Fs); ok {
-		return s3fs, true
+	if s3wrapper, ok := w.fs.(*aferos3.FsWrapper); ok {
+		return s3wrapper.Fs, true
 	}
 
 	// If the wrapped fs is another S3PermissionWrapper, recursively check
@@ -217,4 +218,18 @@ func (w *S3PermissionWrapper) GetUnderlyingS3Fs() (*aferos3.Fs, bool) {
 func (w *S3PermissionWrapper) IsS3Fs() bool {
 	_, ok := w.GetUnderlyingS3Fs()
 	return ok
+}
+
+// GetUnderlyingS3Fs returns the underlying S3 filesystem if it exists
+func (w *S3PermissionWrapper) GetS3FsWrapper() (*aferos3.FsWrapper, bool) {
+	if s3wrapper, ok := w.fs.(*aferos3.FsWrapper); ok {
+		return s3wrapper, true
+	}
+
+	// If the wrapped fs is another S3PermissionWrapper, recursively check
+	if wrapper, ok := w.fs.(*S3PermissionWrapper); ok {
+		return wrapper.GetS3FsWrapper()
+	}
+
+	return nil, false
 }

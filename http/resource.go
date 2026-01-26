@@ -298,12 +298,8 @@ func writeFile(afs afero.Fs, dst string, in io.Reader, fileMode, dirMode fs.File
 	// s3 does not support os.O_RDWR, so we have to use os.O_WRONLY or os.O_CREATE|os.O_TRUNC
 	if minio.IsS3FileSystem(afs) {
 		// For S3, get the underlying S3 filesystem to call Create
-		if s3fs, ok := minio.GetS3FileSystem(afs); ok {
-			file, err = s3fs.Create(dst)
-		} else {
-			// Fallback to OpenFile if we can't get the S3 filesystem
-			file, err = afs.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fileMode)
-		}
+		// Use the filesystem directly since it's already wrapped with bucket/prefix
+		file, err = afs.Create(dst)
 	} else {
 		file, err = afs.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 	}

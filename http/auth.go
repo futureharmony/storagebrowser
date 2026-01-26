@@ -139,7 +139,7 @@ func loginHandler(tokenExpireTime time.Duration) handleFunc {
 				for _, bucket := range availableBuckets {
 					if bucket == user.Bucket {
 						bucketFound = true
-						minio.SwitchBucket(bucket)
+						minio.SwitchBase(bucket, user.Scope)
 						break
 					}
 				}

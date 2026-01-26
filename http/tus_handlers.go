@@ -206,9 +206,10 @@ func tusPostHandler() handleFunc {
 		registerUpload(file.RealPath(), uploadLength)
 
 		// Check if it's an S3 filesystem to handle it differently
-		if s3fs, ok := minio.GetS3FileSystem(d.user.Fs); ok {
+		if permissionWrapper, ok := d.user.Fs.(*minio.S3PermissionWrapper); ok {
+			s3wrapper, _ := permissionWrapper.GetS3FsWrapper()
 			// Initiate multipart upload for S3
-			uploadID, initErr := s3fs.InitiateMultipartUpload(r.URL.Path)
+			uploadID, initErr := s3wrapper.InitiateMultipartUpload(r.URL.Path)
 			if initErr != nil {
 				return http.StatusInternalServerError, fmt.Errorf("failed to initiate multipart upload: %w", initErr)
 			}
@@ -318,7 +319,8 @@ func tusPatchHandler() handleFunc {
 		}
 
 		// Check if it's an S3 filesystem to handle it differently
-		if s3fs, ok := minio.GetS3FileSystem(d.user.Fs); ok {
+		if permissionWrapper, ok := d.user.Fs.(*minio.S3PermissionWrapper); ok {
+			s3wrapper, _ := permissionWrapper.GetS3FsWrapper()
 			// Handle S3 multipart upload
 			state, err := getUploadState(file.RealPath())
 			if err != nil || state == nil || state.UploadID == "" {
@@ -349,7 +351,7 @@ func tusPatchHandler() handleFunc {
 
 			// Upload part
 			partNumber := int32(len(state.Parts) + 1) // #nosec G115 -- number of parts is small
-			etag, uploadErr := s3fs.UploadPart(r.URL.Path, state.UploadID, partNumber, bodyBytes)
+			etag, uploadErr := s3wrapper.UploadPart(r.URL.Path, state.UploadID, partNumber, bodyBytes)
 			if uploadErr != nil {
 				return http.StatusInternalServerError, fmt.Errorf("could not upload part: %w", uploadErr)
 			}
@@ -368,7 +370,7 @@ func tusPatchHandler() handleFunc {
 
 			if newOffset >= uploadLength {
 				// Complete the multipart upload
-				err = s3fs.CompleteMultipartUpload(r.URL.Path, state.UploadID, state.Parts)
+				err = s3wrapper.CompleteMultipartUpload(r.URL.Path, state.UploadID, state.Parts)
 				if err != nil {
 					return http.StatusInternalServerError, fmt.Errorf("could not complete multipart upload: %w", err)
 				}

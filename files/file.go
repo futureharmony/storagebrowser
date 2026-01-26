@@ -494,95 +494,86 @@ func (i *FileInfo) readListing(checker rules.Checker, readHeader bool) error {
 
 // simpleReadListingFromS3 is used for S3-compatible filesystems that implement Readdir
 func (i *FileInfo) simpleReadListingFromS3(checker rules.Checker, readHeader bool) error {
-	// Check if the filesystem supports Readdir with count parameter (like afero-s3fs does)
-	if minio.IsS3FileSystem(i.Fs) {
-		// Get the underlying S3 filesystem to call Readdir
-		if s3fs, ok := minio.GetS3FileSystem(i.Fs); ok {
-			// Use Readdir with count -1 to get all entries (equivalent to ReadDir)
-			pathFile, err := s3fs.Open(i.Path)
-			if err != nil {
-				return err
-			}
-
-			dir, err := pathFile.Readdir(-1)
-			if err != nil {
-				return err
-			}
-
-			listing := &Listing{
-				Items:    []*FileInfo{},
-				NumDirs:  0,
-				NumFiles: 0,
-			}
-
-			for _, f := range dir {
-				name := f.Name()
-				fPath := path.Join(i.Path, name)
-
-				if !checker.Check(fPath) {
-					continue
-				}
-
-				isSymlink, isInvalidLink := false, false
-				if IsSymlink(f.Mode()) {
-					isSymlink = true
-					// It's a symbolic link. We try to follow it. If it doesn't work,
-					// we stay with the link information instead of the target's.
-					info, err := i.Fs.Stat(fPath)
-					if err == nil {
-						f = info
-					} else {
-						isInvalidLink = true
-					}
-				}
-
-				file := &FileInfo{
-					Fs:         i.Fs,
-					Name:       name,
-					Size:       f.Size(),
-					ModTime:    f.ModTime(),
-					Mode:       f.Mode(),
-					IsDir:      f.IsDir(),
-					IsSymlink:  isSymlink,
-					Extension:  filepath.Ext(name),
-					Path:       fPath,
-					currentDir: dir,
-				}
-
-				// if !file.IsDir && strings.HasPrefix(mime.TypeByExtension(file.Extension), "image/") {
-				// 	resolution, err := calculateImageResolution(file.Fs, file.Path)
-				// 	if err != nil {
-				// 		log.Printf("Error calculating resolution for image %s: %v", file.Path, err)
-				// 	} else {
-				// 		file.Resolution = resolution
-				// 	}
-				// }
-
-				if file.IsDir {
-					listing.NumDirs++
-				} else {
-					listing.NumFiles++
-
-					if isInvalidLink {
-						file.Type = "invalid_link"
-					} else {
-						err := file.detectTypeByFileName(true, false, false)
-						if err != nil {
-							return err
-						}
-					}
-				}
-
-				listing.Items = append(listing.Items, file)
-			}
-
-			i.Listing = listing
-			return nil
-		}
+	// Use the filesystem directly since it's already wrapped with bucket/prefix
+	pathFile, err := i.Fs.Open(i.Path)
+	if err != nil {
+		return err
 	}
 
-	// Fallback to regular readListing if no S3-specific method is supported
-	return i.readListing(checker, readHeader)
+	dir, err := pathFile.Readdir(-1)
+	if err != nil {
+		return err
+	}
+
+	listing := &Listing{
+		Items:    []*FileInfo{},
+		NumDirs:  0,
+		NumFiles: 0,
+	}
+
+	for _, f := range dir {
+		name := f.Name()
+		fPath := path.Join(i.Path, name)
+
+		if !checker.Check(fPath) {
+			continue
+		}
+
+		isSymlink, isInvalidLink := false, false
+		if IsSymlink(f.Mode()) {
+			isSymlink = true
+			// It's a symbolic link. We try to follow it. If it doesn't work,
+			// we stay with the link information instead of the target's.
+			info, err := i.Fs.Stat(fPath)
+			if err == nil {
+				f = info
+			} else {
+				isInvalidLink = true
+			}
+		}
+
+		file := &FileInfo{
+			Fs:         i.Fs,
+			Name:       name,
+			Size:       f.Size(),
+			ModTime:    f.ModTime(),
+			Mode:       f.Mode(),
+			IsDir:      f.IsDir(),
+			IsSymlink:  isSymlink,
+			Extension:  filepath.Ext(name),
+			Path:       fPath,
+			currentDir: dir,
+		}
+
+		// if !file.IsDir && strings.HasPrefix(mime.TypeByExtension(file.Extension), "image/") {
+		// 	resolution, err := calculateImageResolution(file.Fs, file.Path)
+		// 	if err != nil {
+		// 		log.Printf("Error calculating resolution for image %s: %v", file.Path, err)
+		// 	} else {
+		// 		file.Resolution = resolution
+		// 	}
+		// }
+
+		if file.IsDir {
+			listing.NumDirs++
+		} else {
+			listing.NumFiles++
+
+			if isInvalidLink {
+				file.Type = "invalid_link"
+			} else {
+				err := file.detectTypeByFileName(true, false, false)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		listing.Items = append(listing.Items, file)
+	}
+
+	i.Listing = listing
+	return nil
 }
 
 func (i *FileInfo) detectTypeByFileName(modify, saveContent, readHeader bool) error {

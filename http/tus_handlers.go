@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/afero"
 
 	"github.com/futureharmony/storagebrowser/v2/files"
+	"github.com/futureharmony/storagebrowser/v2/minio"
 )
 
 const maxUploadWait = 3 * time.Minute
@@ -205,7 +206,7 @@ func tusPostHandler() handleFunc {
 		registerUpload(file.RealPath(), uploadLength)
 
 		// Check if it's an S3 filesystem to handle it differently
-		if s3fs, ok := d.user.Fs.(*aferos3.Fs); ok {
+		if s3fs, ok := minio.GetS3FileSystem(d.user.Fs); ok {
 			// Initiate multipart upload for S3
 			uploadID, initErr := s3fs.InitiateMultipartUpload(r.URL.Path)
 			if initErr != nil {
@@ -256,7 +257,7 @@ func tusHeadHandler() handleFunc {
 
 		// Check if S3
 		offset := file.Size
-		if _, ok := d.user.Fs.(*aferos3.Fs); ok {
+		if minio.IsS3FileSystem(d.user.Fs) {
 			state, err := getUploadState(file.RealPath())
 			if err == nil && state != nil {
 				offset = 0
@@ -317,7 +318,7 @@ func tusPatchHandler() handleFunc {
 		}
 
 		// Check if it's an S3 filesystem to handle it differently
-		if s3fs, ok := d.user.Fs.(*aferos3.Fs); ok {
+		if s3fs, ok := minio.GetS3FileSystem(d.user.Fs); ok {
 			// Handle S3 multipart upload
 			state, err := getUploadState(file.RealPath())
 			if err != nil || state == nil || state.UploadID == "" {

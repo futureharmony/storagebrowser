@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/spf13/afero"
+	aferos3 "github.com/futureharmony/afero-aws-s3"
 )
 
 // S3PermissionWrapper wraps an S3 filesystem to enforce bucket and scope permissions
 type S3PermissionWrapper struct {
 	fs     afero.Fs
 	user   *User
-	bucket string
 	prefix string
 }
 
@@ -27,13 +27,7 @@ type User struct {
 
 // NewS3PermissionWrapper creates a new S3PermissionWrapper
 func NewS3PermissionWrapper(fs afero.Fs, user *User) *S3PermissionWrapper {
-	var bucket, prefix string
-
-	if user.Bucket != "" {
-		bucket = user.Bucket
-	} else {
-		bucket = Cfg.Bucket // Use default bucket if none specified
-	}
+	var prefix string
 
 	if user.Scope != "" {
 		prefix = strings.TrimPrefix(user.Scope, "/")
@@ -45,7 +39,6 @@ func NewS3PermissionWrapper(fs afero.Fs, user *User) *S3PermissionWrapper {
 	return &S3PermissionWrapper{
 		fs:     fs,
 		user:   user,
-		bucket: bucket,
 		prefix: prefix,
 	}
 }
@@ -55,12 +48,18 @@ func (w *S3PermissionWrapper) EnforcePathPermission(p string) error {
 	// Normalize the path
 	p = strings.TrimPrefix(p, "/")
 
-	// If user has no specific bucket restriction, allow access
-	if w.user.Bucket == "" {
-		return nil
+	// If user has a specific bucket set, check if it matches the current bucket
+	if w.user.Bucket != "" {
+		// Get the current bucket from the underlying S3 filesystem
+		if s3fs, ok := w.GetUnderlyingS3Fs(); ok {
+			currentBucket := s3fs.GetBucket()
+			if currentBucket != w.user.Bucket {
+				return os.ErrPermission
+			}
+		}
 	}
 
-	// Check if the path is within the allowed bucket and prefix
+	// Check if the path is within the allowed prefix
 	if w.prefix != "" {
 		// If the path doesn't start with the allowed prefix, deny access
 		if !strings.HasPrefix(p, w.prefix) {
@@ -199,3 +198,24 @@ func (w *S3PermissionWrapper) As(name string) (afero.File, error) {
 func (w *S3PermissionWrapper) Chown(name string, uid, gid int) error {
 	return fmt.Errorf("Chown not supported in S3PermissionWrapper")
 }
+
+// GetUnderlyingS3Fs returns the underlying S3 filesystem if it exists
+func (w *S3PermissionWrapper) GetUnderlyingS3Fs() (*aferos3.Fs, bool) {
+	if s3fs, ok := w.fs.(*aferos3.Fs); ok {
+		return s3fs, true
+	}
+
+	// If the wrapped fs is another S3PermissionWrapper, recursively check
+	if wrapper, ok := w.fs.(*S3PermissionWrapper); ok {
+		return wrapper.GetUnderlyingS3Fs()
+	}
+
+	return nil, false
+}
+
+// IsS3Fs returns true if the underlying filesystem is S3
+func (w *S3PermissionWrapper) IsS3Fs() bool {
+	_, ok := w.GetUnderlyingS3Fs()
+	return ok
+}
+

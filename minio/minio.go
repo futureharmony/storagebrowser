@@ -68,14 +68,18 @@ func GetCurrenBucket() string {
 
 func SwitchBucket(bucket string) error {
 	Cfg.Bucket = bucket
-	s3Fs := afs.(*aferos3.Fs)
-	s3Fs.SetBucket(bucket)
-	return nil
+	if s3fs, ok := GetS3FileSystem(afs); ok {
+		s3fs.SetBucket(bucket)
+		return nil
+	}
+	return fmt.Errorf("underlying filesystem is not an S3 filesystem")
 }
 
 func ListBuckets() ([]string, error) {
-	s3Fs := afs.(*aferos3.Fs)
-	return s3Fs.ListBuckets()
+	if s3fs, ok := GetS3FileSystem(afs); ok {
+		return s3fs.ListBuckets()
+	}
+	return nil, fmt.Errorf("underlying filesystem is not an S3 filesystem")
 }
 
 type BucketInfo struct {
@@ -119,4 +123,30 @@ func GetAWSConfig() aws.Config {
 
 func FullPath(_ afero.Fs, relativePath string) string {
 	return relativePath
+}
+
+// GetS3FileSystem returns the underlying S3 filesystem if it exists, accounting for wrappers
+func GetS3FileSystem(fs afero.Fs) (*aferos3.Fs, bool) {
+	if s3fs, ok := fs.(*aferos3.Fs); ok {
+		return s3fs, true
+	}
+
+	if wrapper, ok := fs.(*S3PermissionWrapper); ok {
+		return wrapper.GetUnderlyingS3Fs()
+	}
+
+	return nil, false
+}
+
+// IsS3FileSystem checks if the given filesystem is an S3 filesystem, accounting for wrappers
+func IsS3FileSystem(fs afero.Fs) bool {
+	if _, ok := fs.(*aferos3.Fs); ok {
+		return true
+	}
+
+	if wrapper, ok := fs.(*S3PermissionWrapper); ok {
+		return wrapper.IsS3Fs()
+	}
+
+	return false
 }

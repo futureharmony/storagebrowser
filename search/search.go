@@ -13,6 +13,7 @@ import (
 
 	aferos3 "github.com/futureharmony/afero-aws-s3"
 
+	"github.com/futureharmony/storagebrowser/v2/minio"
 	"github.com/futureharmony/storagebrowser/v2/rules"
 )
 
@@ -25,7 +26,7 @@ type searchOptions struct {
 // Search searches for a query in a fs.
 func Search(fs afero.Fs, scope, query string, checker rules.Checker, found func(path string, f os.FileInfo) error) error {
 	// Check if the filesystem is an S3 filesystem and use optimized S3 search
-	if s3fs, ok := fs.(*aferos3.Fs); ok {
+	if s3fs, ok := minio.GetS3FileSystem(fs); ok {
 		return s3Search(s3fs, scope, query, checker, found)
 	}
 

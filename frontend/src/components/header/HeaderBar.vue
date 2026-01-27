@@ -68,10 +68,6 @@ const isDropdownOpen = ref(false);
 const selectRef = ref<HTMLElement | null>(null);
 
 const getInitialBucket = () => {
-  const appConfig = (window as any).FileBrowser;
-  if (appConfig.S3Bucket) {
-    return appConfig.S3Bucket;
-  }
   if (buckets.value.length > 0) {
     return buckets.value[0].name;
   }

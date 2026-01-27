@@ -13,7 +13,20 @@ var bucketListHandler = withUser(func(w http.ResponseWriter, r *http.Request, d 
 		return renderJSON(w, r, []minio.BucketInfo{})
 	}
 
-	return renderJSON(w, r, minio.CachedBuckets)
+	// Admin users can see all buckets
+	if d.user.Perm.Admin {
+		return renderJSON(w, r, minio.CachedBuckets)
+	}
+
+	// Non-admin users can only see their assigned bucket (if any)
+	var userBuckets []minio.BucketInfo
+	if d.user.Bucket != "" {
+		userBuckets = []minio.BucketInfo{
+			{Name: d.user.Bucket},
+		}
+	}
+
+	return renderJSON(w, r, userBuckets)
 })
 
 type bucketSwitchRequest struct {

@@ -40,5 +40,21 @@ var bucketSwitchHandler = withUser(func(w http.ResponseWriter, r *http.Request, 
 		return http.StatusInternalServerError, err
 	}
 
+	// Update the user's bucket in the database
+	currentUser, err := d.store.Users.Get(d.server.Root, d.user.ID)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	currentUser.Bucket = req.Bucket
+	err = d.store.Users.Update(currentUser, "Bucket")
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	// Update the user's filesystem to use the new bucket and scope
+	currentUser.Fs = minio.CreateUserFs(req.Bucket, currentUser.Scope)
+	d.user = currentUser // Update the current request's user reference
+
 	return renderJSON(w, r, map[string]string{"bucket": req.Bucket})
 })

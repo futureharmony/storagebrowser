@@ -206,8 +206,7 @@ func tusPostHandler() handleFunc {
 		registerUpload(file.RealPath(), uploadLength)
 
 		// Check if it's an S3 filesystem to handle it differently
-		if permissionWrapper, ok := d.user.Fs.(*minio.S3PermissionWrapper); ok {
-			s3wrapper, _ := permissionWrapper.GetS3FsWrapper()
+		if s3wrapper, ok := d.user.Fs.(*aferos3.FsWrapper); ok {
 			// Initiate multipart upload for S3
 			uploadID, initErr := s3wrapper.InitiateMultipartUpload(r.URL.Path)
 			if initErr != nil {
@@ -319,8 +318,7 @@ func tusPatchHandler() handleFunc {
 		}
 
 		// Check if it's an S3 filesystem to handle it differently
-		if permissionWrapper, ok := d.user.Fs.(*minio.S3PermissionWrapper); ok {
-			s3wrapper, _ := permissionWrapper.GetS3FsWrapper()
+		if s3wrapper, ok := d.user.Fs.(*aferos3.FsWrapper); ok {
 			// Handle S3 multipart upload
 			state, err := getUploadState(file.RealPath())
 			if err != nil || state == nil || state.UploadID == "" {

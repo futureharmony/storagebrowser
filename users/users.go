@@ -99,14 +99,9 @@ func (u *User) Clean(baseScope string, fields ...string) error {
 	if u.Fs == nil {
 		scope := u.Scope
 		scope = filepath.Join(baseScope, filepath.Join("/", scope)) //nolint:gocritic
-		baseFs := minio.NewBasePathFs()
 
-		// Wrap the filesystem with S3 permission wrapper if using S3 storage
-		userInfo := &minio.User{
-			Bucket: u.Bucket,
-			Scope:  scope,
-		}
-		u.Fs = minio.NewS3PermissionWrapper(baseFs, userInfo)
+		// Create a user-specific filesystem wrapper if using S3 storage
+		u.Fs = minio.CreateUserFs(u.Bucket, scope)
 	}
 
 	return nil

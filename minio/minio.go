@@ -76,6 +76,28 @@ func SwitchBase(bucket, scope string) error {
 	return fmt.Errorf("underlying filesystem is not an S3 filesystem")
 }
 
+// SwitchUserBase switches the bucket and scope for a user's specific filesystem
+func SwitchUserBase(userFs *afero.Fs, bucket, scope string) {
+	// Create a new wrapper with the updated bucket and scope
+	*userFs = aferos3.NewFsWrapper(AwsCfg, bucket, scope)
+	return
+}
+
+func CreateUserFs(bucket, scope string) afero.Fs {
+	if bucket == "" {
+		bucketNames, err := ListBuckets()
+		if err != nil {
+			return nil
+		}
+
+		if len(bucketNames) == 0 {
+			return nil
+		}
+		return aferos3.NewFsWrapper(AwsCfg, bucketNames[0], scope)
+	}
+	return aferos3.NewFsWrapper(AwsCfg, bucket, scope)
+}
+
 func ListBuckets() ([]string, error) {
 	if s3fs, ok := GetS3FileSystem(afs); ok {
 		return s3fs.ListBuckets()
@@ -105,6 +127,7 @@ func SetupBucket() error {
 		})
 	}
 	SwitchBase(buckets[0].Name, "")
+
 	CachedBuckets = buckets
 	return nil
 }
@@ -131,10 +154,6 @@ func GetS3FileSystem(fs afero.Fs) (*aferos3.Fs, bool) {
 		return s3wrapper.Fs, true
 	}
 
-	if wrapper, ok := fs.(*S3PermissionWrapper); ok {
-		return wrapper.GetUnderlyingS3Fs()
-	}
-
 	return nil, false
 }
 
@@ -142,10 +161,6 @@ func GetS3FileSystem(fs afero.Fs) (*aferos3.Fs, bool) {
 func IsS3FileSystem(fs afero.Fs) bool {
 	if _, ok := fs.(*aferos3.FsWrapper); ok {
 		return true
-	}
-
-	if wrapper, ok := fs.(*S3PermissionWrapper); ok {
-		return wrapper.IsS3Fs()
 	}
 
 	return false

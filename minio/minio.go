@@ -23,7 +23,7 @@ type Config struct {
 }
 
 var (
-	fs     afero.Fs
+	afs    afero.Fs
 	Cfg    Config
 	AwsCfg aws.Config
 )
@@ -54,7 +54,7 @@ func Init(config *Config) error {
 		return err
 	}
 
-	fs = aferos3.NewFs(AwsCfg)
+	afs = aferos3.NewFsWrapper(AwsCfg, Cfg.Bucket, "") // Using the wrapper with fixed bucket
 	err = SetupBucket()
 	if err != nil {
 		return err
@@ -66,16 +66,43 @@ func GetCurrenBucket() string {
 	return Cfg.Bucket
 }
 
-func SwitchBucket(bucket string) error {
+func SwitchBase(bucket, scope string) error {
 	Cfg.Bucket = bucket
-	s3Fs := fs.(*aferos3.Fs)
-	s3Fs.SetBucket(bucket)
-	return nil
+	if _, ok := GetS3FileSystem(afs); ok {
+		// With the new API, we need to create a new wrapper with the new bucket
+		afs = aferos3.NewFsWrapper(AwsCfg, bucket, scope)
+		return nil
+	}
+	return fmt.Errorf("underlying filesystem is not an S3 filesystem")
+}
+
+// SwitchUserBase switches the bucket and scope for a user's specific filesystem
+func SwitchUserBase(userFs *afero.Fs, bucket, scope string) {
+	// Create a new wrapper with the updated bucket and scope
+	*userFs = aferos3.NewFsWrapper(AwsCfg, bucket, scope)
+	return
+}
+
+func CreateUserFs(bucket, scope string) afero.Fs {
+	if bucket == "" {
+		bucketNames, err := ListBuckets()
+		if err != nil {
+			return nil
+		}
+
+		if len(bucketNames) == 0 {
+			return nil
+		}
+		return aferos3.NewFsWrapper(AwsCfg, bucketNames[0], scope)
+	}
+	return aferos3.NewFsWrapper(AwsCfg, bucket, scope)
 }
 
 func ListBuckets() ([]string, error) {
-	s3Fs := fs.(*aferos3.Fs)
-	return s3Fs.ListBuckets()
+	if s3fs, ok := GetS3FileSystem(afs); ok {
+		return s3fs.ListBuckets()
+	}
+	return nil, fmt.Errorf("underlying filesystem is not an S3 filesystem")
 }
 
 type BucketInfo struct {
@@ -99,14 +126,14 @@ func SetupBucket() error {
 			Name: name,
 		})
 	}
+	SwitchBase(buckets[0].Name, "")
 
-	SwitchBucket(buckets[0].Name)
 	CachedBuckets = buckets
 	return nil
 }
 
 func NewBasePathFs() afero.Fs {
-	return fs
+	return afs
 }
 
 func GetS3Client() *s3.Client {
@@ -119,4 +146,22 @@ func GetAWSConfig() aws.Config {
 
 func FullPath(_ afero.Fs, relativePath string) string {
 	return relativePath
+}
+
+// GetS3FileSystem returns the underlying S3 filesystem if it exists, accounting for wrappers
+func GetS3FileSystem(fs afero.Fs) (*aferos3.Fs, bool) {
+	if s3wrapper, ok := fs.(*aferos3.FsWrapper); ok {
+		return s3wrapper.Fs, true
+	}
+
+	return nil, false
+}
+
+// IsS3FileSystem checks if the given filesystem is an S3 filesystem, accounting for wrappers
+func IsS3FileSystem(fs afero.Fs) bool {
+	if _, ok := fs.(*aferos3.FsWrapper); ok {
+		return true
+	}
+
+	return false
 }

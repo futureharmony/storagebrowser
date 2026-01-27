@@ -14,13 +14,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	aferos3 "github.com/futureharmony/afero-aws-s3"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/spf13/afero"
 
 	fbErrors "github.com/futureharmony/storagebrowser/v2/errors"
 	"github.com/futureharmony/storagebrowser/v2/files"
 	"github.com/futureharmony/storagebrowser/v2/fileutils"
+	"github.com/futureharmony/storagebrowser/v2/minio"
 )
 
 var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
@@ -108,7 +108,7 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 		// Directories creation on POST.
 		if strings.HasSuffix(r.URL.Path, "/") {
 			// For S3 filesystems, we need to handle the root directory specially since MkdirAll("/") fails
-			if _, ok := d.user.Fs.(*aferos3.Fs); ok {
+			if minio.IsS3FileSystem(d.user.Fs) {
 				if r.URL.Path != "/" {
 					err := d.user.Fs.MkdirAll(r.URL.Path, d.settings.DirMode)
 					return errToStatus(err), err
@@ -278,7 +278,7 @@ func writeFile(afs afero.Fs, dst string, in io.Reader, fileMode, dirMode fs.File
 	dir, _ := path.Split(dst)
 
 	// For S3 filesystems, skip MkdirAll if the directory is the root "/"
-	if _, ok := afs.(*aferos3.Fs); ok {
+	if minio.IsS3FileSystem(afs) {
 		if dir != "/" {
 			err := afs.MkdirAll(dir, dirMode)
 			if err != nil {
@@ -296,9 +296,10 @@ func writeFile(afs afero.Fs, dst string, in io.Reader, fileMode, dirMode fs.File
 	var file afero.File
 	var err error
 	// s3 does not support os.O_RDWR, so we have to use os.O_WRONLY or os.O_CREATE|os.O_TRUNC
-	if _, ok := afs.(*aferos3.Fs); ok {
-		// For S3, just use Create which should handle the file creation properly
-		file, err = afs.(*aferos3.Fs).Create(dst)
+	if minio.IsS3FileSystem(afs) {
+		// For S3, get the underlying S3 filesystem to call Create
+		// Use the filesystem directly since it's already wrapped with bucket/prefix
+		file, err = afs.Create(dst)
 	} else {
 		file, err = afs.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
 	}
@@ -389,7 +390,7 @@ var diskUsage = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (
 	if err != nil {
 		return errToStatus(err), err
 	}
-	if _, ok := d.user.Fs.(*aferos3.Fs); ok {
+	if minio.IsS3FileSystem(d.user.Fs) {
 		return renderJSON(w, r, &DiskUsageResponse{
 			Total: uint64(file.Size),
 			Used:  uint64(file.Size),

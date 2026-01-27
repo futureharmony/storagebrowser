@@ -98,6 +98,8 @@ export async function login(
 
   if (res.status === 200) {
     parseToken(body);
+    // Force refresh buckets after login
+    await refreshBuckets();
   } else {
     throw new StatusError(
       body || `${res.status} ${res.statusText}`,

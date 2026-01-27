@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	NonModifiableFieldsForNonAdmin = []string{"Username", "Scope", "LockPassword", "Perm", "Commands", "Rules"}
+	NonModifiableFieldsForNonAdmin = []string{"Username", "Bucket", "Scope", "LockPassword", "Perm", "Commands", "Rules"}
 )
 
 type modifyUserRequest struct {
@@ -98,6 +98,7 @@ var userGetHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 	u.Password = ""
 	if !d.user.Perm.Admin {
 		u.Scope = ""
+		u.Bucket = ""
 	}
 	return renderJSON(w, r, u)
 })

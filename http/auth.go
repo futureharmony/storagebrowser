@@ -11,8 +11,10 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/golang-jwt/jwt/v4/request"
+	"github.com/spf13/afero"
 
 	fbErrors "github.com/futureharmony/storagebrowser/v2/errors"
+	"github.com/futureharmony/storagebrowser/v2/minio"
 	"github.com/futureharmony/storagebrowser/v2/users"
 )
 
@@ -116,6 +118,43 @@ func loginHandler(tokenExpireTime time.Duration) handleFunc {
 			return http.StatusForbidden, nil
 		case err != nil:
 			return http.StatusInternalServerError, err
+		}
+
+		// If using S3 storage, validate that the user's bucket is available and create user-specific filesystem
+		if d.server.StorageType == "s3" {
+			availableBuckets, err := minio.ListBuckets()
+			if err != nil {
+				log.Printf("Failed to list available buckets: %v", err)
+				return http.StatusInternalServerError, err
+			}
+
+			if len(availableBuckets) == 0 {
+				log.Printf("No available S3 buckets found")
+				return http.StatusInternalServerError, errors.New("no available S3 buckets")
+			}
+
+			// Check if user has a specific bucket set and it's in the available list
+			var userFs afero.Fs
+			if user.Bucket != "" {
+				// Check if the user's bucket is in the available buckets list
+				bucketFound := false
+				for _, bucket := range availableBuckets {
+					if bucket == user.Bucket {
+						bucketFound = true
+						userFs = minio.CreateUserFs(user.Bucket, user.Scope)
+						break
+					}
+				}
+
+				if !bucketFound {
+					log.Printf("User's bucket '%s' not found in available buckets", user.Bucket)
+					return http.StatusForbidden, errors.New("user's bucket not available")
+				}
+			} else {
+				userFs = minio.CreateUserFs(availableBuckets[0], user.Scope)
+			}
+
+			user.Fs = userFs
 		}
 
 		return printToken(w, r, d, user, tokenExpireTime)

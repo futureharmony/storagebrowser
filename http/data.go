@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/tomasen/realip"
 
@@ -31,6 +32,15 @@ func (d *data) Check(path string) bool {
 		return false
 	}
 
+	// TODO
+	// Check bucket and scope permissions for S3 storage
+	// if d.server.StorageType == "s3" {
+
+	// 	if !d.checkS3Permissions(path) {
+	// 		return false
+	// 	}
+	// }
+
 	allow := true
 	for _, rule := range d.settings.Rules {
 		if rule.Matches(path) {
@@ -45,6 +55,36 @@ func (d *data) Check(path string) bool {
 	}
 
 	return allow
+}
+
+// checkS3Permissions checks if the user has permission to access the given path based on bucket and scope
+func (d *data) checkS3Permissions(path string) bool {
+	path = d.user.Scope + path
+	// If user has no specific bucket restriction, allow access
+	if d.user.Bucket != "" {
+		// If the user has a specific bucket set, they can only access that bucket
+		// The S3PermissionWrapper handles this internally
+	} else {
+		return true
+	}
+
+	// Check scope permission - if user has a scope set, path must be within that scope
+	if d.user.Scope != "" {
+		normalizedPath := strings.TrimPrefix(path, "/")
+		normalizedScope := strings.TrimPrefix(d.user.Scope, "/")
+
+		// Ensure scope ends with a slash for proper prefix matching, except for root
+		if normalizedScope != "" && !strings.HasSuffix(normalizedScope, "/") {
+			normalizedScope += "/"
+		}
+
+		// If scope is set, path must start with the scope prefix
+		if normalizedScope != "/" && !strings.HasPrefix(normalizedPath, normalizedScope) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func handle(fn handleFunc, prefix string, store *storage.Storage, server *settings.Server) http.Handler {

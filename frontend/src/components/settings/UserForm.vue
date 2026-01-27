@@ -21,6 +21,21 @@
       />
     </p>
 
+    <!-- Bucket selection for S3 storage -->
+    <p v-if="isS3Storage">
+      <label for="bucket">{{ t("settings.bucket") }}</label>
+      <select
+        class="input input--block"
+        v-model="user.bucket"
+        id="bucket"
+      >
+        <option value="">{{ t("settings.allBuckets") }}</option>
+        <option v-for="bucket in buckets" :key="bucket.name" :value="bucket.name">
+          {{ bucket.name }}
+        </option>
+      </select>
+    </p>
+
     <p>
       <label for="scope">{{ t("settings.scope") }}</label>
       <input
@@ -67,30 +82,48 @@
 </template>
 
 <script setup lang="ts">
-import Languages from "./Languages.vue";
-import Rules from "./Rules.vue";
-import Permissions from "./Permissions.vue";
-import Commands from "./Commands.vue";
+import { list as listBuckets } from "@/api/bucket";
+import { useAuthStore } from "@/stores/auth";
 import { enableExec } from "@/utils/constants";
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import Commands from "./Commands.vue";
+import Languages from "./Languages.vue";
+import Permissions from "./Permissions.vue";
+import Rules from "./Rules.vue";
 
 const { t } = useI18n();
+const authStore = useAuthStore();
 
 const createUserDirData = ref<boolean | null>(null);
 const originalUserScope = ref<string | null>(null);
+const buckets = ref<{ name: string }[]>([]);
+const isS3Storage = ref<boolean>(false);
 
 const props = defineProps<{
-  user: IUserForm;
+  user: IUserForm & { bucket?: string };
   isNew: boolean;
   isDefault: boolean;
   createUserDir?: boolean;
 }>();
 
-onMounted(() => {
+onMounted(async () => {
   if (props.user.scope) {
     originalUserScope.value = props.user.scope;
     createUserDirData.value = props.createUserDir;
+  }
+
+  // Determine if storage type is S3 - using the global FileBrowser config
+  const appConfig = (window as any).FileBrowser || {};
+  isS3Storage.value = appConfig.StorageType === 's3';
+
+  // Load buckets if storage type is S3
+  if (isS3Storage.value) {
+    try {
+      buckets.value = await listBuckets();
+    } catch (error) {
+      console.error('Failed to load buckets:', error);
+    }
   }
 });
 

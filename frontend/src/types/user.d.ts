@@ -21,6 +21,7 @@ interface IUserForm {
   id?: number;
   username?: string;
   password?: string;
+  bucket?: string;
   scope?: string;
   locale?: string;
   perm?: Permissions;

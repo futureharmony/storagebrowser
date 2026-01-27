@@ -222,6 +222,8 @@
     "ruleExample2": "封鎖使用者存取其目錄範圍的根目錄下名為 Caddyfile 的檔案。",
     "rules": "規則",
     "rulesHelp": "您可以為該使用者製定一組黑名單或白名單式的規則，被屏蔽的檔案將不會顯示在清單中，使用者也無權限存取,支持相對於目錄範圍的路徑。",
+    "bucket": "儲存桶",
+    "allBuckets": "所有儲存桶",
     "scope": "目錄範圍",
     "setDateFormat": "顯示精確的日期格式",
     "settingsUpdated": "設定已更新！",

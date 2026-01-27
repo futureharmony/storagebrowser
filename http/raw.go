@@ -14,12 +14,12 @@ import (
 	"strconv"
 	"strings"
 
-	aferos3 "github.com/futureharmony/afero-aws-s3"
 	"github.com/mholt/archives"
 	"github.com/spf13/afero"
 
 	"github.com/futureharmony/storagebrowser/v2/files"
 	"github.com/futureharmony/storagebrowser/v2/fileutils"
+	"github.com/futureharmony/storagebrowser/v2/minio"
 	"github.com/futureharmony/storagebrowser/v2/users"
 )
 
@@ -179,8 +179,7 @@ func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
 
 // Helper function to check if the filesystem is an S3 filesystem
 func isS3Fs(fs afero.Fs) bool {
-	_, ok := fs.(*aferos3.Fs)
-	return ok
+	return minio.IsS3FileSystem(fs)
 }
 
 func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.FileInfo) (int, error) {
@@ -276,7 +275,7 @@ func rawFileHandler(w http.ResponseWriter, r *http.Request, file *files.FileInfo
 	// We need to get the actual filesystem from the data object in the rawHandler function
 	// Since we cannot import aferos3 in files package, we check by name or type
 	// We'll pass filesystem type information through the request context or check differently
-	if _, ok := file.Fs.(*aferos3.Fs); ok {
+	if minio.IsS3FileSystem(file.Fs) {
 		// For S3 files, we can't use http.ServeContent because it requires seeking
 		// Instead, we'll set headers manually and copy the content
 		w.Header().Set("Content-Type", "application/octet-stream") // Default to binary

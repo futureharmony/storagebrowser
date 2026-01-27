@@ -7,9 +7,9 @@ import (
 	"path"
 	"path/filepath"
 
-	aferos3 "github.com/futureharmony/afero-aws-s3"
-
 	"github.com/spf13/afero"
+
+	"github.com/futureharmony/storagebrowser/v2/minio"
 )
 
 // MoveFile moves file from src to dst.
@@ -50,7 +50,7 @@ func CopyFile(afs afero.Fs, source, dest string, fileMode, dirMode fs.FileMode) 
 
 	var dst afero.File
 	// Check if it's an S3 filesystem
-	if _, ok := afs.(*aferos3.Fs); ok {
+	if minio.IsS3FileSystem(afs) {
 		// For S3, use Create instead of OpenFile since S3 doesn't support O_RDWR
 		dst, err = afs.Create(dest)
 	} else {
@@ -69,7 +69,7 @@ func CopyFile(afs afero.Fs, source, dest string, fileMode, dirMode fs.FileMode) 
 	}
 
 	// Copy the mode (skip for S3 as it may not support chmod)
-	if _, ok := afs.(*aferos3.Fs); !ok {
+	if !minio.IsS3FileSystem(afs) {
 		info, err := afs.Stat(source)
 		if err != nil {
 			return err

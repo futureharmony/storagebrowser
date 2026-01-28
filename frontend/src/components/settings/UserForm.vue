@@ -22,7 +22,6 @@
     </p>
 
     <!-- Multiple Buckets and Scopes for S3 storage -->
-    {{isS3Storage}}
     <div v-if="isS3Storage">
       <label>{{ t("settings.bucketsAndScopes") }}</label>
       <div class="buckets-container">
@@ -203,7 +202,7 @@ const removeBucket = (index: number) => {
 
 // Method to get available buckets excluding already selected ones
 const getAvailableBuckets = (currentIndex: number) => {
-  if (!buckets.value) return [];
+  if (!buckets.value || !props.user.availableScopes) return [];
 
   // Get all bucket names that are already selected (excluding the current index)
   const selectedBuckets = props.user.availableScopes

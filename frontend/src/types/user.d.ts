@@ -7,6 +7,7 @@ interface IUser {
   id: number;
   username: string;
   password: string;
+  scope: string;
   availableScopes: IScope[];  // Available scopes for user
   currentScope: IScope;       // Current selected scope
   locale: string;
@@ -27,6 +28,7 @@ interface IUserForm {
   id?: number;
   username?: string;
   password?: string;
+  scope?: string;
   availableScopes?: IScope[];
   currentScope?: IScope;
   locale?: string;

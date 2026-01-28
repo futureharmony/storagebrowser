@@ -92,14 +92,6 @@ var bucketSwitchHandler = withUser(func(w http.ResponseWriter, r *http.Request, 
 		}
 	}
 
-	// If no specific scope found for the bucket, create a default one
-	if currentUser.CurrentScope.Name == "" || currentUser.CurrentScope.Name == req.Bucket {
-		currentUser.CurrentScope = users.Scope{
-			Name:       req.Bucket,
-			RootPrefix: "/",
-		}
-	}
-
 	err = d.store.Users.Update(currentUser, "CurrentScope")
 	if err != nil {
 		return http.StatusInternalServerError, err

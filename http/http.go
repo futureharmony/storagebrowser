@@ -6,7 +6,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/futureharmony/storagebrowser/v2/minio"
 	"github.com/futureharmony/storagebrowser/v2/settings"
 	"github.com/futureharmony/storagebrowser/v2/storage"
 )
@@ -24,16 +23,6 @@ func NewHandler(
 	assetsFs fs.FS,
 ) (http.Handler, error) {
 	server.Clean()
-
-	if err := minio.Init(&minio.Config{
-		Bucket:    "",
-		Endpoint:  server.S3Endpoint,
-		AccessKey: server.S3AccessKey,
-		SecretKey: server.S3SecretKey,
-		Region:    server.S3Region,
-	}); err != nil {
-		return nil, err
-	}
 
 	r := mux.NewRouter()
 	r.Use(func(next http.Handler) http.Handler {

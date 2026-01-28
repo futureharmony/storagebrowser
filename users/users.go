@@ -45,13 +45,6 @@ type Scope struct {
 	RootPrefix string `json:"rootPrefix"`
 }
 
-func (u *User) SetAvailableBuckets(scope ...Scope) {
-	u.AvailableScopes = scope
-	if len(scope) > 0 && u.CurrentScope.Name == "" {
-		u.CurrentScope = scope[0] // Set first scope as current if not set
-	}
-}
-
 // SetS3Scopes sets up available scopes for S3 storage type from an array of Scope objects
 func (u *User) SetS3Scopes(scopes []Scope) {
 	u.AvailableScopes = scopes

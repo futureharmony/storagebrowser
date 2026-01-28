@@ -9,3 +9,4 @@ import search from "./search";
 import commands from "./commands";
 
 export { files, share, users, settings, bucket, config, pub, commands, search };
+export type { Scope } from "./bucket";

@@ -49,15 +49,15 @@
 </template>
 
 <script setup lang="ts">
+import { users as api, settings } from "@/api";
+import { StatusError } from "@/api/utils";
+import UserForm from "@/components/settings/UserForm.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useLayoutStore } from "@/stores/layout";
-import { users as api, settings } from "@/api";
-import UserForm from "@/components/settings/UserForm.vue";
 import Errors from "@/views/Errors.vue";
 import { computed, inject, onMounted, ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { StatusError } from "@/api/utils";
+import { useRoute, useRouter } from "vue-router";
 
 const error = ref<StatusError>();
 const originalUser = ref<IUser>();
@@ -99,6 +99,8 @@ const fetchData = async () => {
         rules: [],
         lockPassword: false,
         id: 0,
+        availableScopes: [],
+        currentScope: { name: "", rootPrefix: "/" },
       };
     } else {
       const id = Array.isArray(route.params.id)

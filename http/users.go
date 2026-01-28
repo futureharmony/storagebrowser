@@ -219,6 +219,11 @@ var userPutHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 			}
 		}
 
+		// If no specific fields are mentioned (empty which means update everything), check if scopes are in the payload
+		if !updateScopes && len(req.Which) == 0 && (len(req.Data.AvailableScopes) > 0 || req.Data.CurrentScope.Name != "") {
+			updateScopes = true
+		}
+
 		if updateScopes {
 			// If availableScopes is provided, use it directly
 			if len(req.Data.AvailableScopes) > 0 {

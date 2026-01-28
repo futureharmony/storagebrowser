@@ -97,7 +97,7 @@ main {
   background: var(--background);
   border-bottom: 1px solid var(--divider);
   position: sticky;
-  z-index: 1000;
+  z-index: 999; /* Lower than header elements to prevent overlap */
   top: 4em;
 }
 

@@ -125,6 +125,11 @@ var userPostHandler = withAdmin(func(w http.ResponseWriter, r *http.Request, d *
 		return http.StatusBadRequest, fbErrors.ErrEmptyPassword
 	}
 
+	// If using S3 storage type, validate that user has at least one AvailableScope
+	if d.server.StorageType == "s3" && len(req.Data.AvailableScopes) == 0 {
+		return http.StatusBadRequest, fbErrors.ErrNoAvailableScopes
+	}
+
 	req.Data.Password, err = users.ValidateAndHashPwd(req.Data.Password, d.settings.MinimumPasswordLength)
 	if err != nil {
 		return http.StatusBadRequest, err
@@ -185,6 +190,11 @@ var userPutHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 		}
 
 		req.Which = []string{}
+
+		// If using S3 storage type, validate that user has at least one AvailableScope when updating all fields
+		if d.server.StorageType == "s3" && len(req.Data.AvailableScopes) == 0 {
+			return http.StatusBadRequest, fbErrors.ErrNoAvailableScopes
+		}
 	}
 
 	for k, v := range req.Which {
@@ -222,6 +232,11 @@ var userPutHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 		// If no specific fields are mentioned (empty which means update everything), check if scopes are in the payload
 		if !updateScopes && len(req.Which) == 0 && (len(req.Data.AvailableScopes) > 0 || req.Data.CurrentScope.Name != "") {
 			updateScopes = true
+		}
+
+		// Validate that user has at least one AvailableScope when updating scopes
+		if updateScopes && len(req.Data.AvailableScopes) == 0 {
+			return http.StatusBadRequest, fbErrors.ErrNoAvailableScopes
 		}
 
 		if updateScopes {

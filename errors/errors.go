@@ -31,6 +31,7 @@ var (
 	ErrInvalidRequestParams = errors.New("invalid request params")
 	ErrSourceIsParent       = errors.New("source is parent")
 	ErrRootUserDeletion     = errors.New("user with id 1 can't be deleted")
+	ErrNoAvailableScopes    = errors.New("user must have at least one available scope when using S3 storage")
 	ErrSigTerm              = errors.New("exit on signal: sigterm")
 	ErrSighup               = errors.New("exit on signal: sighup")
 	ErrSigint               = errors.New("exit on signal: sigint")

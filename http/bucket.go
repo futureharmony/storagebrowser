@@ -18,44 +18,22 @@ var bucketListHandler = withUser(func(w http.ResponseWriter, r *http.Request, d 
 	}
 
 	// Admin users can see all buckets as available scopes
-	if d.user.Perm.Admin {
-		// Convert cached buckets to scopes
-		scopes := make([]users.Scope, len(minio.CachedBuckets))
-		for i, bucket := range minio.CachedBuckets {
-			scopes[i] = users.Scope{
-				Name:       bucket.Name,
-				RootPrefix: "/",
-			}
-		}
-
-		// Set current scope if not already set
-		currentScope := d.user.CurrentScope
-		if currentScope.Name == "" && len(scopes) > 0 {
-			currentScope = scopes[0]
-		}
-
-		return renderJSON(w, r, map[string]interface{}{
-			"availableScopes": scopes,
-			"currentScope":    currentScope,
-		})
-	} else {
-		// Non-admin users use their existing available scopes
-		scopes := d.user.AvailableScopes
-		if len(scopes) == 0 {
-			// If no available scopes set, return empty array
-			scopes = []users.Scope{}
-		}
-
-		currentScope := d.user.CurrentScope
-		if currentScope.Name == "" && len(scopes) > 0 {
-			currentScope = scopes[0]
-		}
-
-		return renderJSON(w, r, map[string]interface{}{
-			"availableScopes": scopes,
-			"currentScope":    currentScope,
-		})
+	// Non-admin users use their existing available scopes
+	scopes := d.user.AvailableScopes
+	if len(scopes) == 0 {
+		// If no available scopes set, return empty array
+		scopes = []users.Scope{}
 	}
+
+	currentScope := d.user.CurrentScope
+	if currentScope.Name == "" && len(scopes) > 0 {
+		currentScope = scopes[0]
+	}
+
+	return renderJSON(w, r, map[string]interface{}{
+		"availableScopes": scopes,
+		"currentScope":    currentScope,
+	})
 })
 
 type bucketSwitchRequest struct {

@@ -1,8 +1,14 @@
+interface IScope {
+  name: string;
+  rootPrefix: string;
+}
+
 interface IUser {
   id: number;
   username: string;
   password: string;
-  scope: string;
+  availableScopes: IScope[];  // Available scopes for user
+  currentScope: IScope;       // Current selected scope
   locale: string;
   perm: Permissions;
   commands: string[];
@@ -21,8 +27,8 @@ interface IUserForm {
   id?: number;
   username?: string;
   password?: string;
-  bucket?: string;
-  scope?: string;
+  availableScopes?: IScope[];
+  currentScope?: IScope;
   locale?: string;
   perm?: Permissions;
   commands?: string[];

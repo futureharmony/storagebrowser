@@ -133,26 +133,8 @@ func loginHandler(tokenExpireTime time.Duration) handleFunc {
 				return http.StatusInternalServerError, errors.New("no available S3 buckets")
 			}
 
-			// Check if user has a specific bucket set and it's in the available list
-			var userFs afero.Fs
-			if user.Bucket != "" {
-				// Check if the user's bucket is in the available buckets list
-				bucketFound := false
-				for _, bucket := range availableBuckets {
-					if bucket == user.Bucket {
-						bucketFound = true
-						userFs = minio.CreateUserFs(user.Bucket, user.Scope)
-						break
-					}
-				}
-
-				if !bucketFound {
-					log.Printf("User's bucket '%s' not found in available buckets", user.Bucket)
-					return http.StatusForbidden, errors.New("user's bucket not available")
-				}
-			} else {
-				userFs = minio.CreateUserFs(availableBuckets[0], user.Scope)
-			}
+			// Check if user has available scopes and they're in the available buckets list
+			var userFs afero.Fs = minio.CreateUserFs(user.CurrentScope.Name, user.CurrentScope.RootPrefix)
 
 			user.Fs = userFs
 		}

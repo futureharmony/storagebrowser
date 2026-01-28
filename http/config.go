@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/futureharmony/storagebrowser/v2/auth"
-	"github.com/futureharmony/storagebrowser/v2/minio"
 	"github.com/futureharmony/storagebrowser/v2/version"
 )
 
@@ -36,7 +35,6 @@ var configHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *dat
 		"ResizePreview":         d.server.ResizePreview,
 		"EnableExec":            d.server.EnableExec,
 		"TusSettings":           d.settings.Tus,
-		"S3Bucket":              minio.GetCurrenBucket(),
 		"StorageType":           d.server.StorageType,
 	}
 

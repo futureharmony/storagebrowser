@@ -59,19 +59,23 @@ func (d *data) Check(path string) bool {
 
 // checkS3Permissions checks if the user has permission to access the given path based on bucket and scope
 func (d *data) checkS3Permissions(path string) bool {
-	path = d.user.Scope + path
-	// If user has no specific bucket restriction, allow access
-	if d.user.Bucket != "" {
-		// If the user has a specific bucket set, they can only access that bucket
-		// The S3PermissionWrapper handles this internally
-	} else {
+	// Use the current scope for path checking
+	currentScope := d.user.CurrentScope
+	if currentScope.RootPrefix == "" && len(d.user.AvailableScopes) > 0 {
+		currentScope = d.user.AvailableScopes[0] // Use first available scope as fallback
+	}
+
+	path = currentScope.RootPrefix + path
+
+	// If user has no available scopes, allow access
+	if len(d.user.AvailableScopes) == 0 {
 		return true
 	}
 
 	// Check scope permission - if user has a scope set, path must be within that scope
-	if d.user.Scope != "" {
+	if currentScope.RootPrefix != "" {
 		normalizedPath := strings.TrimPrefix(path, "/")
-		normalizedScope := strings.TrimPrefix(d.user.Scope, "/")
+		normalizedScope := strings.TrimPrefix(currentScope.RootPrefix, "/")
 
 		// Ensure scope ends with a slash for proper prefix matching, except for root
 		if normalizedScope != "" && !strings.HasSuffix(normalizedScope, "/") {

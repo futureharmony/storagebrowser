@@ -21,22 +21,43 @@ const (
 
 // User describes a user.
 type User struct {
-	ID           uint          `storm:"id,increment" json:"id"`
-	Username     string        `storm:"unique" json:"username"`
-	Password     string        `json:"password"`
-	Bucket       string        `json:"bucket"`
-	Scope        string        `json:"scope"`
-	Locale       string        `json:"locale"`
-	LockPassword bool          `json:"lockPassword"`
-	ViewMode     ViewMode      `json:"viewMode"`
-	SingleClick  bool          `json:"singleClick"`
-	Perm         Permissions   `json:"perm"`
-	Commands     []string      `json:"commands"`
-	Sorting      files.Sorting `json:"sorting"`
-	Fs           afero.Fs      `json:"-" yaml:"-"`
-	Rules        []rules.Rule  `json:"rules"`
-	HideDotfiles bool          `json:"hideDotfiles"`
-	DateFormat   bool          `json:"dateFormat"`
+	ID              uint          `storm:"id,increment" json:"id"`
+	Username        string        `storm:"unique" json:"username"`
+	Password        string        `json:"password"`
+	AvailableScopes []Scope       `json:"availableScopes"`
+	CurrentScope    Scope         `json:"currentScope"`
+	Scope           string        `json:"scope"`
+	Locale          string        `json:"locale"`
+	LockPassword    bool          `json:"lockPassword"`
+	ViewMode        ViewMode      `json:"viewMode"`
+	SingleClick     bool          `json:"singleClick"`
+	Perm            Permissions   `json:"perm"`
+	Commands        []string      `json:"commands"`
+	Sorting         files.Sorting `json:"sorting"`
+	Fs              afero.Fs      `json:"-" yaml:"-"`
+	Rules           []rules.Rule  `json:"rules"`
+	HideDotfiles    bool          `json:"hideDotfiles"`
+	DateFormat      bool          `json:"dateFormat"`
+}
+
+type Scope struct {
+	Name       string `json:"name"`
+	RootPrefix string `json:"rootPrefix"`
+}
+
+func (u *User) SetAvailableBuckets(scope ...Scope) {
+	u.AvailableScopes = scope
+	if len(scope) > 0 && u.CurrentScope.Name == "" {
+		u.CurrentScope = scope[0] // Set first scope as current if not set
+	}
+}
+
+// SetS3Scopes sets up available scopes for S3 storage type from an array of Scope objects
+func (u *User) SetS3Scopes(scopes []Scope) {
+	u.AvailableScopes = scopes
+	if len(scopes) > 0 && u.CurrentScope.Name == "" {
+		u.CurrentScope = scopes[0] // Set first scope as current if not set
+	}
 }
 
 // GetRules implements rules.Provider.
@@ -97,11 +118,9 @@ func (u *User) Clean(baseScope string, fields ...string) error {
 	}
 
 	if u.Fs == nil {
-		scope := u.Scope
-		scope = filepath.Join(baseScope, filepath.Join("/", scope)) //nolint:gocritic
-
+		scope := filepath.Join(baseScope, filepath.Join("/", u.CurrentScope.RootPrefix)) //nolint:gocritic
 		// Create a user-specific filesystem wrapper if using S3 storage
-		u.Fs = minio.CreateUserFs(u.Bucket, scope)
+		u.Fs = minio.CreateUserFs(u.CurrentScope.Name, scope)
 	}
 
 	return nil

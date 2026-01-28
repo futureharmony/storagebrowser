@@ -54,7 +54,7 @@ func Init(config *Config) error {
 		return err
 	}
 
-	afs = aferos3.NewFsWrapper(AwsCfg, Cfg.Bucket, "") // Using the wrapper with fixed bucket
+	afs = aferos3.NewFsWrapper(AwsCfg, "", "") // Using the wrapper with fixed bucket
 	err = SetupBucket()
 	if err != nil {
 		return err
@@ -62,36 +62,13 @@ func Init(config *Config) error {
 	return nil
 }
 
-func GetCurrenBucket() string {
-	return Cfg.Bucket
-}
-
-func SwitchBase(bucket, scope string) error {
-	Cfg.Bucket = bucket
-	if _, ok := GetS3FileSystem(afs); ok {
-		// With the new API, we need to create a new wrapper with the new bucket
-		afs = aferos3.NewFsWrapper(AwsCfg, bucket, scope)
-		return nil
-	}
-	return fmt.Errorf("underlying filesystem is not an S3 filesystem")
-}
-
-// SwitchUserBase switches the bucket and scope for a user's specific filesystem
-func SwitchUserBase(userFs *afero.Fs, bucket, scope string) {
-	// Create a new wrapper with the updated bucket and scope
-	*userFs = aferos3.NewFsWrapper(AwsCfg, bucket, scope)
-	return
-}
-
 func CreateUserFs(bucket, scope string) afero.Fs {
 	if bucket == "" {
+		// If no bucket is specified, use the first available bucket
 		bucketNames, err := ListBuckets()
-		if err != nil {
-			return nil
-		}
-
-		if len(bucketNames) == 0 {
-			return nil
+		if err != nil || len(bucketNames) == 0 {
+			// Fallback to empty bucket if no buckets are available
+			return aferos3.NewFsWrapper(AwsCfg, "", scope)
 		}
 		return aferos3.NewFsWrapper(AwsCfg, bucketNames[0], scope)
 	}
@@ -103,6 +80,16 @@ func ListBuckets() ([]string, error) {
 		return s3fs.ListBuckets()
 	}
 	return nil, fmt.Errorf("underlying filesystem is not an S3 filesystem")
+}
+
+func SwitchBase(bucket, scope string) error {
+	Cfg.Bucket = bucket
+	if _, ok := GetS3FileSystem(afs); ok {
+		// With the new API, we need to create a new wrapper with the new bucket
+		afs = aferos3.NewFsWrapper(AwsCfg, bucket, scope)
+		return nil
+	}
+	return fmt.Errorf("underlying filesystem is not an S3 filesystem")
 }
 
 type BucketInfo struct {

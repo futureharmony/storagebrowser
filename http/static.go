@@ -14,7 +14,6 @@ import (
 	"text/template"
 
 	"github.com/futureharmony/storagebrowser/v2/auth"
-	"github.com/futureharmony/storagebrowser/v2/minio"
 	"github.com/futureharmony/storagebrowser/v2/settings"
 	"github.com/futureharmony/storagebrowser/v2/storage"
 	"github.com/futureharmony/storagebrowser/v2/version"
@@ -47,7 +46,6 @@ func handleWithStaticData(w http.ResponseWriter, _ *http.Request, d *data, fSys 
 		"ResizePreview":         d.server.ResizePreview,
 		"EnableExec":            d.server.EnableExec,
 		"TusSettings":           d.settings.Tus,
-		"S3Bucket":              minio.GetCurrenBucket(),
 		"StorageType":           d.server.StorageType,
 	}
 

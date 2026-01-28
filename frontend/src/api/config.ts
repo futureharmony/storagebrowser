@@ -19,7 +19,6 @@ export interface Config {
   ResizePreview: boolean;
   EnableExec: boolean;
   TusSettings: any;
-  S3Bucket: string;
   StorageType: string;
 }
 

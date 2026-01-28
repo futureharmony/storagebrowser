@@ -30,6 +30,7 @@ import (
 	"github.com/futureharmony/storagebrowser/v2/frontend"
 	fbhttp "github.com/futureharmony/storagebrowser/v2/http"
 	"github.com/futureharmony/storagebrowser/v2/img"
+	"github.com/futureharmony/storagebrowser/v2/minio"
 	"github.com/futureharmony/storagebrowser/v2/settings"
 	"github.com/futureharmony/storagebrowser/v2/storage"
 	"github.com/futureharmony/storagebrowser/v2/users"
@@ -522,6 +523,22 @@ func quickSetup(flags *pflag.FlagSet, d pythonData) error {
 		return err
 	}
 
+	// If using S3 storage type, initialize minio to cache buckets before creating the admin user
+	if ser.StorageType == "s3" {
+		minioConfig := &minio.Config{
+			Endpoint:  ser.S3Endpoint,
+			AccessKey: ser.S3AccessKey,
+			SecretKey: ser.S3SecretKey,
+			Region:    ser.S3Region,
+		}
+
+		// Initialize minio with the S3 configuration
+		err = minio.Init(minioConfig)
+		if err != nil {
+			log.Printf("Warning: Failed to initialize S3: %v", err)
+		}
+	}
+
 	username := getStringParam(flags, "username")
 	password := getStringParam(flags, "password")
 
@@ -553,6 +570,21 @@ func quickSetup(flags *pflag.FlagSet, d pythonData) error {
 
 	set.Defaults.Apply(user)
 	user.Perm.Admin = true
+
+	// If using S3 storage type, set up default S3 scopes for the admin user
+	if ser.StorageType == "s3" {
+		// Create scopes from cached buckets with root prefix "/"
+		scopes := make([]users.Scope, len(minio.CachedBuckets))
+		for i, bucket := range minio.CachedBuckets {
+			scopes[i] = users.Scope{
+				Name:       bucket.Name,
+				RootPrefix: "/",
+			}
+		}
+
+		// Set the S3 scopes for the user
+		user.SetS3Scopes(scopes)
+	}
 
 	return d.store.Users.Save(user)
 }

@@ -37,7 +37,7 @@
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 
-import { bucket } from "@/api";
+import { bucket, type Scope } from "@/api";
 import Action from "@/components/header/Action.vue";
 import { logoURL } from "@/utils/constants";
 import { computed, onMounted, onUnmounted, ref, useSlots } from "vue";

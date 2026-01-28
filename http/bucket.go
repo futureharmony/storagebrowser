@@ -6,27 +6,56 @@ import (
 	"net/http"
 
 	"github.com/futureharmony/storagebrowser/v2/minio"
+	"github.com/futureharmony/storagebrowser/v2/users"
 )
 
 var bucketListHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	if d.server.StorageType != "s3" {
-		return renderJSON(w, r, []minio.BucketInfo{})
+		return renderJSON(w, r, map[string]interface{}{
+			"availableScopes": d.user.AvailableScopes,
+			"currentScope":    d.user.CurrentScope,
+		})
 	}
 
-	// Admin users can see all buckets
+	// Admin users can see all buckets as available scopes
 	if d.user.Perm.Admin {
-		return renderJSON(w, r, minio.CachedBuckets)
-	}
-
-	// Non-admin users can only see their assigned bucket (if any)
-	var userBuckets []minio.BucketInfo
-	if d.user.Bucket != "" {
-		userBuckets = []minio.BucketInfo{
-			{Name: d.user.Bucket},
+		// Convert cached buckets to scopes
+		scopes := make([]users.Scope, len(minio.CachedBuckets))
+		for i, bucket := range minio.CachedBuckets {
+			scopes[i] = users.Scope{
+				Name:       bucket.Name,
+				RootPrefix: "/",
+			}
 		}
-	}
 
-	return renderJSON(w, r, userBuckets)
+		// Set current scope if not already set
+		currentScope := d.user.CurrentScope
+		if currentScope.Name == "" && len(scopes) > 0 {
+			currentScope = scopes[0]
+		}
+
+		return renderJSON(w, r, map[string]interface{}{
+			"availableScopes": scopes,
+			"currentScope":    currentScope,
+		})
+	} else {
+		// Non-admin users use their existing available scopes
+		scopes := d.user.AvailableScopes
+		if len(scopes) == 0 {
+			// If no available scopes set, return empty array
+			scopes = []users.Scope{}
+		}
+
+		currentScope := d.user.CurrentScope
+		if currentScope.Name == "" && len(scopes) > 0 {
+			currentScope = scopes[0]
+		}
+
+		return renderJSON(w, r, map[string]interface{}{
+			"availableScopes": scopes,
+			"currentScope":    currentScope,
+		})
+	}
 })
 
 type bucketSwitchRequest struct {
@@ -48,26 +77,40 @@ var bucketSwitchHandler = withUser(func(w http.ResponseWriter, r *http.Request, 
 		return http.StatusBadRequest, nil
 	}
 
-	err = minio.SwitchBase(req.Bucket, "")
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	// Update the user's bucket in the database
+	// Update the user's current scope in the database
 	currentUser, err := d.store.Users.Get(d.server.Root, d.user.ID)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	currentUser.Bucket = req.Bucket
-	err = d.store.Users.Update(currentUser, "Bucket")
+	// Find the corresponding scope for the selected bucket
+	// If the bucket matches a scope name, update the current scope
+	for _, scope := range currentUser.AvailableScopes {
+		if scope.Name == req.Bucket || scope.Name == req.Bucket+"/" {
+			currentUser.CurrentScope = scope
+			break
+		}
+	}
+
+	// If no specific scope found for the bucket, create a default one
+	if currentUser.CurrentScope.Name == "" || currentUser.CurrentScope.Name == req.Bucket {
+		currentUser.CurrentScope = users.Scope{
+			Name:       req.Bucket,
+			RootPrefix: "/",
+		}
+	}
+
+	err = d.store.Users.Update(currentUser, "CurrentScope")
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
 	// Update the user's filesystem to use the new bucket and scope
-	currentUser.Fs = minio.CreateUserFs(req.Bucket, currentUser.Scope)
+	currentUser.Fs = minio.CreateUserFs(req.Bucket, currentUser.CurrentScope.RootPrefix)
 	d.user = currentUser // Update the current request's user reference
 
-	return renderJSON(w, r, map[string]string{"bucket": req.Bucket})
+	return renderJSON(w, r, map[string]interface{}{
+		"bucket":       req.Bucket,
+		"currentScope": currentUser.CurrentScope,
+	})
 })

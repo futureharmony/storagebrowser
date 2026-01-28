@@ -98,7 +98,6 @@ var userGetHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 	u.Password = ""
 	if !d.user.Perm.Admin {
 		u.Scope = ""
-		u.Bucket = ""
 	}
 	return renderJSON(w, r, u)
 })
@@ -138,6 +137,14 @@ var userPostHandler = withAdmin(func(w http.ResponseWriter, r *http.Request, d *
 	}
 	req.Data.Scope = userHome
 	log.Printf("user: %s, home dir: [%s].", req.Data.Username, userHome)
+
+	// If using S3 storage type, set up available scopes
+	if d.server.StorageType == "s3" {
+		// If availableScopes is provided, use it directly
+		if len(req.Data.AvailableScopes) > 0 {
+			req.Data.SetS3Scopes(req.Data.AvailableScopes)
+		}
+	}
 
 	err = d.store.Users.Save(req.Data)
 	if err != nil {
@@ -199,6 +206,26 @@ var userPutHandler = withSelfOrAdmin(func(w http.ResponseWriter, r *http.Request
 			if !d.user.Perm.Admin && v == f {
 				return http.StatusForbidden, nil
 			}
+		}
+	}
+
+	// If using S3 storage type, handle available scopes properly
+	if d.server.StorageType == "s3" {
+		var updateScopes bool
+		for _, field := range req.Which {
+			if field == "Bucket" || field == "Scope" || field == "AvailableScopes" {
+				updateScopes = true
+				break
+			}
+		}
+
+		if updateScopes {
+			// If availableScopes is provided, use it directly
+			if len(req.Data.AvailableScopes) > 0 {
+				req.Data.SetS3Scopes(req.Data.AvailableScopes)
+			}
+			// Also update AvailableScopes and CurrentScope fields if they changed
+			req.Which = append(req.Which, "AvailableScopes", "CurrentScope")
 		}
 	}
 

@@ -36,6 +36,7 @@
 import { files as api } from "@/api";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
+import { useAuthStore } from "@/stores/auth";
 import { storeToRefs } from "pinia";
 import {
   computed,
@@ -61,6 +62,7 @@ const Preview = defineAsyncComponent(() => import("@/views/files/Preview.vue"));
 
 const layoutStore = useLayoutStore();
 const fileStore = useFileStore();
+const authStore = useAuthStore();
 
 const { reload } = storeToRefs(fileStore);
 
@@ -73,11 +75,10 @@ const isS3 = computed(() => {
   return appConfig.StorageType === "s3";
 });
 
-const bucketsLoading = computed(() => fileStore.bucketsLoading);
-const hasBuckets = computed(() => fileStore.buckets.length > 0);
-const bucketsLoaded = computed(
-  () => !isS3.value || fileStore.buckets.length > 0
-);
+const hasBuckets = computed(() => {
+  return !isS3.value || (authStore.user?.availableScopes && authStore.user.availableScopes.length > 0);
+});
+const bucketsLoaded = computed(() => !isS3.value || hasBuckets.value);
 
 let fetchDataController = new AbortController();
 
@@ -107,17 +108,11 @@ onMounted(async () => {
   fileStore.isFiles = true;
   window.addEventListener("keydown", keyEvent);
 
-  // Load buckets from storage first if S3 storage
+  // If using S3 storage, check if user has available scopes
   const appConfig = (window as any).FileBrowser || {};
   if (appConfig.StorageType === "s3") {
-    // First try synchronous load from localStorage
-    fileStore.loadBucketsFromStorageSync();
-    // If no buckets in storage, fetch from API
-    if (fileStore.buckets.length === 0) {
-      await fileStore.loadBuckets();
-    }
-    // If still no buckets available, don't fetch data
-    if (fileStore.buckets.length === 0) {
+    // Check if user has available scopes
+    if (!authStore.user?.availableScopes || authStore.user.availableScopes.length === 0) {
       return;
     }
   }

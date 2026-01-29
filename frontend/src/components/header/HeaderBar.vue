@@ -138,7 +138,6 @@ import { useLayoutStore } from "@/stores/layout";
 import { useAuthStore } from "@/stores/auth";
 import { useClipboardStore } from "@/stores/clipboard";
 
-import { bucket, type Scope } from "@/api";
 import { files as api, users } from "@/api";
 import Action from "@/components/header/Action.vue";
 import Search from "@/components/Search.vue";
@@ -182,7 +181,7 @@ const isSearchActive = computed(
   () => layoutStore.currentPromptName === "search"
 );
 const isPreviewMode = computed(() => fileStore.req && !fileStore.req.isDir);
-const buckets = computed(() => fileStore.buckets);
+const buckets = computed(() => authStore.user?.availableScopes || []);
 const hasBuckets = computed(() => buckets.value.length > 0);
 const selectedBucket = ref<string>("");
 const isDropdownOpen = ref(false);
@@ -231,14 +230,28 @@ const toggleDropdown = () => {
 const selectBucket = async (bucketName: string) => {
   selectedBucket.value = bucketName;
   isDropdownOpen.value = false;
-  if (bucketName) {
+  if (bucketName && authStore.user) {
     try {
-      await bucket.switchBucket(bucketName);
-      if (fileStore.reload) {
-        fileStore.reload = false;
-        fileStore.reload = true;
-      } else {
-        fileStore.reload = true;
+      // Find the scope with the selected bucket name
+      const selectedScope = authStore.user.availableScopes.find(
+        (scope) => scope.name === bucketName
+      );
+      if (selectedScope) {
+        // Update user's current scope
+        const data = {
+          id: authStore.user.id,
+          currentScope: selectedScope,
+        };
+        await users.update(data, ["currentScope"]);
+        // Update local state immediately for better UX
+        authStore.updateUser(data);
+        // Reload files to show content from new bucket
+        if (fileStore.reload) {
+          fileStore.reload = false;
+          fileStore.reload = true;
+        } else {
+          fileStore.reload = true;
+        }
       }
     } catch (err) {
       console.error("Failed to switch bucket:", err);
@@ -331,8 +344,11 @@ const uploadFunc = () => {
 };
 
 onMounted(() => {
-  fileStore.loadBucketsFromStorageSync();
-  selectedBucket.value = getInitialBucket();
+  if (authStore.user?.currentScope.name) {
+    selectedBucket.value = authStore.user.currentScope.name;
+  } else if (buckets.value.length > 0) {
+    selectedBucket.value = buckets.value[0].name;
+  }
   document.addEventListener("click", closeDropdown);
 });
 

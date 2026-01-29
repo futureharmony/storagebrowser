@@ -23,10 +23,3 @@ export async function list(): Promise<Bucket[]> {
 export async function listWithScopes(): Promise<BucketListResponse> {
   return await fetchJSON<BucketListResponse>(`/api/buckets`, {});
 }
-
-export async function switchBucket(bucketName: string) {
-  await fetchURL(`/api/buckets`, {
-    method: "PUT",
-    body: JSON.stringify({ bucket: bucketName }),
-  });
-}

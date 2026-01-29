@@ -74,6 +74,18 @@
         />
         <action icon="info" :label="t('buttons.info')" show="info" />
         <action
+          v-if="authStore.user?.perm.create"
+          icon="create_new_folder"
+          :label="t('sidebar.newFolder')"
+          show="newDir"
+        />
+        <action
+          v-if="authStore.user?.perm.create"
+          icon="description"
+          :label="t('sidebar.newFile')"
+          show="newFile"
+        />
+        <action
           icon="check_circle"
           :label="t('buttons.selectMultiple')"
           @action="toggleMultipleSelection"

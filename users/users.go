@@ -67,6 +67,8 @@ var checkableFields = []string{
 	"Commands",
 	"Sorting",
 	"Rules",
+	"AvailableScopes",
+	"CurrentScope",
 }
 
 // Clean cleans up a user and verifies if all its fields
@@ -106,6 +108,15 @@ func (u *User) Clean(baseScope string, fields ...string) error {
 		case "Rules":
 			if u.Rules == nil {
 				u.Rules = []rules.Rule{}
+			}
+		case "AvailableScopes":
+			if u.AvailableScopes == nil {
+				u.AvailableScopes = []Scope{}
+			}
+		case "CurrentScope":
+			// CurrentScope is a struct, ensure it has valid values
+			if u.CurrentScope.RootPrefix == "" {
+				u.CurrentScope.RootPrefix = "/"
 			}
 		}
 	}

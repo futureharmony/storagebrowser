@@ -7,6 +7,7 @@
         }"
       ></div>
     </div>
+    <header-bar showMenu showLogo :showBucketSelect="route.path.includes('/files')"></header-bar>
     <sidebar></sidebar>
     <main>
       <router-view></router-view>
@@ -30,6 +31,7 @@ import Sidebar from "@/components/Sidebar.vue";
 import Prompts from "@/components/prompts/Prompts.vue";
 import Shell from "@/components/Shell.vue";
 import UploadFiles from "@/components/prompts/UploadFiles.vue";
+import HeaderBar from "@/components/header/HeaderBar.vue";
 import { enableExec } from "@/utils/constants";
 import { computed, watch } from "vue";
 import { useRoute } from "vue-router";

@@ -150,18 +150,20 @@ export function logout(reason?: string) {
   const authStore = useAuthStore();
   authStore.clearUser();
 
-  localStorage.setItem("jwt", "");
+  localStorage.removeItem("jwt");
   clearBucketsFromStorage();
+
   if (noAuth) {
     window.location.reload();
   } else {
+    // 使用 replace 而不是 push 来避免导航历史记录问题
     if (typeof reason === "string" && reason.trim() !== "") {
-      router.push({
+      router.replace({
         path: "/login",
         query: { "logout-reason": reason },
       });
     } else {
-      router.push({
+      router.replace({
         path: "/login",
       });
     }

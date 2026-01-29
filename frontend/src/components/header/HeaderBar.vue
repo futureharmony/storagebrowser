@@ -20,13 +20,112 @@
       </Transition>
     </div>
 
+    <!-- 插槽内容 - 允许组件内部定义自定义内容 -->
     <slot />
 
+    <!-- 搜索组件 - 仅在 /files 路由显示且没有插槽内容时 -->
+    <template v-if="route.path.includes('/files') && !hasSlotContent">
+      <search />
+      <title />
+      <action
+        class="search-button"
+        icon="search"
+        :label="t('buttons.search')"
+        @action="openSearch"
+      />
+    </template>
+
     <div id="dropdown" :class="{ active: layoutStore.currentPromptName === 'more' }">
+      <!-- 插槽操作内容 - 允许组件内部定义自定义操作按钮 -->
       <slot name="actions" />
+
+      <!-- 文件路由的操作按钮 - 仅在 /files 路由显示且没有插槽操作内容时 -->
+      <template v-if="route.path.includes('/files') && !hasActionsSlotContent">
+        <template v-if="!isMobile">
+          <action
+            v-if="headerButtons.share"
+            icon="share"
+            :label="t('buttons.share')"
+            show="share"
+          />
+          <action
+            v-if="headerButtons.rename"
+            icon="mode_edit"
+            :label="t('buttons.rename')"
+            show="rename"
+          />
+          <action
+            v-if="headerButtons.copy"
+            id="copy-button"
+            icon="content_copy"
+            :label="t('buttons.copyFile')"
+            show="copy"
+          />
+          <action
+            v-if="headerButtons.move"
+            id="move-button"
+            icon="forward"
+            :label="t('buttons.moveFile')"
+            show="move"
+          />
+          <action
+            v-if="headerButtons.delete"
+            id="delete-button"
+            icon="delete"
+            :label="t('buttons.delete')"
+            show="delete"
+          />
+        </template>
+
+        <action
+          v-if="headerButtons.shell"
+          icon="code"
+          :label="t('buttons.shell')"
+          @action="layoutStore.toggleShell"
+        />
+        <action
+          :icon="viewIcon"
+          :label="t('buttons.switchView')"
+          @action="switchView"
+        />
+        <action
+          v-if="headerButtons.download"
+          icon="file_download"
+          :label="t('buttons.download')"
+          @action="download"
+          :counter="fileStore.selectedCount"
+        />
+        <action
+          v-if="headerButtons.upload"
+          icon="file_upload"
+          id="upload-button"
+          :label="t('buttons.upload')"
+          @action="uploadFunc"
+        />
+        <action icon="info" :label="t('buttons.info')" show="info" />
+        <action
+          v-if="authStore.user?.perm.create"
+          icon="create_new_folder"
+          :label="t('sidebar.newFolder')"
+          show="newDir"
+        />
+        <action
+          v-if="authStore.user?.perm.create"
+          icon="description"
+          :label="t('sidebar.newFile')"
+          show="newFile"
+        />
+        <action
+          icon="check_circle"
+          :label="t('buttons.selectMultiple')"
+          @action="toggleMultipleSelection"
+        />
+      </template>
+
+      <!-- 其他路由的操作按钮可以在这里添加 -->
     </div>
 
-    <Action v-if="ifActionsSlot" id="more" icon="more_vert" :label="t('buttons.more')"
+    <Action v-if="hasActions || hasActionsSlotContent" id="more" icon="more_vert" :label="t('buttons.more')"
       @action="layoutStore.showHover('more')" />
 
     <div class="overlay" v-show="layoutStore.currentPromptName == 'more'" @click="layoutStore.closeHovers" />
@@ -36,12 +135,18 @@
 <script setup lang="ts">
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
+import { useAuthStore } from "@/stores/auth";
+import { useClipboardStore } from "@/stores/clipboard";
 
 import { bucket, type Scope } from "@/api";
+import { files as api, users } from "@/api";
 import Action from "@/components/header/Action.vue";
+import Search from "@/components/Search.vue";
 import { logoURL } from "@/utils/constants";
+import { enableExec } from "@/utils/constants";
 import { computed, onMounted, onUnmounted, ref, useSlots } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 
 defineProps<{
   showLogo?: boolean;
@@ -51,11 +156,27 @@ defineProps<{
 
 const layoutStore = useLayoutStore();
 const fileStore = useFileStore();
+const authStore = useAuthStore();
+const clipboardStore = useClipboardStore();
 const slots = useSlots();
+const route = useRoute();
 
 const { t } = useI18n();
 
-const ifActionsSlot = computed(() => (slots.actions ? true : false));
+// 检查是否有插槽内容
+const hasSlotContent = computed(() => {
+  return !!slots.default;
+});
+
+// 检查是否有操作插槽内容
+const hasActionsSlotContent = computed(() => {
+  return !!slots.actions;
+});
+
+// 检查是否有操作按钮（默认操作按钮或插槽操作按钮）
+const hasActions = computed(() => {
+  return route.path.includes('/files') || hasActionsSlotContent.value;
+});
 
 const isSearchActive = computed(
   () => layoutStore.currentPromptName === "search"
@@ -66,6 +187,35 @@ const hasBuckets = computed(() => buckets.value.length > 0);
 const selectedBucket = ref<string>("");
 const isDropdownOpen = ref(false);
 const selectRef = ref<HTMLElement | null>(null);
+const isMobile = computed(() => {
+  return window.innerWidth <= 736;
+});
+
+// 视图模式图标
+const viewIcon = computed(() => {
+  const icons = {
+    list: "view_module",
+    mosaic: "grid_view",
+    "mosaic gallery": "view_list",
+  };
+  return authStore.user === null
+    ? icons["list"]
+    : icons[authStore.user.viewMode];
+});
+
+// 头部按钮状态
+const headerButtons = computed(() => {
+  return {
+    upload: authStore.user?.perm.create,
+    download: authStore.user?.perm.download,
+    shell: authStore.user?.perm.execute && enableExec,
+    delete: fileStore.selectedCount > 0 && authStore.user?.perm.delete,
+    rename: fileStore.selectedCount === 1 && authStore.user?.perm.rename,
+    share: fileStore.selectedCount === 1 && authStore.user?.perm.share,
+    move: fileStore.selectedCount > 0 && authStore.user?.perm.rename,
+    copy: fileStore.selectedCount > 0 && authStore.user?.perm.create,
+  };
+});
 
 const getInitialBucket = () => {
   if (buckets.value.length > 0) {
@@ -99,6 +249,84 @@ const selectBucket = async (bucketName: string) => {
 const closeDropdown = (event: MouseEvent) => {
   if (selectRef.value && !selectRef.value.contains(event.target as Node)) {
     isDropdownOpen.value = false;
+  }
+};
+
+// 搜索函数
+const openSearch = () => {
+  layoutStore.showHover("search");
+};
+
+// 多选切换
+const toggleMultipleSelection = () => {
+  fileStore.toggleMultiple();
+  layoutStore.closeHovers();
+};
+
+// 视图切换
+const switchView = async () => {
+  layoutStore.closeHovers();
+
+  const modes = {
+    list: "mosaic",
+    mosaic: "mosaic gallery",
+    "mosaic gallery": "list",
+  };
+
+  const data = {
+    id: authStore.user?.id,
+    viewMode: (modes[authStore.user?.viewMode ?? "list"] ||
+      "list") as any,
+  };
+
+  users.update(data, ["viewMode"]).catch((error: any) => {
+    console.error(error);
+  });
+
+  authStore.updateUser(data);
+};
+
+// 下载函数
+const download = () => {
+  if (fileStore.req === null) return;
+
+  if (
+    fileStore.selectedCount === 1 &&
+    !fileStore.req.items[fileStore.selected[0]].isDir
+  ) {
+    api.download(null, fileStore.req.items[fileStore.selected[0]].url);
+    return;
+  }
+
+  layoutStore.showHover({
+    prompt: "download",
+    confirm: (format: any) => {
+      layoutStore.closeHovers();
+
+      const files = [];
+
+      if (fileStore.selectedCount > 0 && fileStore.req !== null) {
+        for (const i of fileStore.selected) {
+          files.push(fileStore.req.items[i].url);
+        }
+      } else {
+        files.push(route.path);
+      }
+
+      api.download(format, ...files);
+    },
+  });
+};
+
+// 上传函数
+const uploadFunc = () => {
+  if (
+    typeof window.DataTransferItem !== "undefined" &&
+    typeof DataTransferItem.prototype.webkitGetAsEntry !== "undefined"
+  ) {
+    layoutStore.showHover("upload");
+  } else {
+    document.getElementById("upload-input")?.click();
   }
 };
 

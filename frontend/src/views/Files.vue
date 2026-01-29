@@ -1,5 +1,4 @@
 <template>
-  <header-bar v-if="!isS3 || bucketsLoaded" showMenu showLogo showBucketSelect/>
 
   <div v-if="isS3 && !hasBuckets">
     <h2 class="message delayed">
@@ -35,7 +34,6 @@
 
 <script setup lang="ts">
 import { files as api } from "@/api";
-import HeaderBar from "@/components/header/HeaderBar.vue";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 import { storeToRefs } from "pinia";

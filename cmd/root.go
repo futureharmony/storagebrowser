@@ -129,6 +129,18 @@ user created with the credentials from options "username" and "password".`,
 			if err != nil {
 				return err
 			}
+		} else {
+			// For existing database, initialize S3 storage if configured
+			server, err := getRunParams(cmd.Flags(), d.store)
+			if err != nil {
+				return err
+			}
+
+			if server.StorageType == "s3" {
+				if err := initS3AndSetupUserScopes(server, d.store); err != nil {
+					log.Printf("Warning: Failed to initialize S3 for existing database: %v", err)
+				}
+			}
 		}
 
 		// build img service
@@ -524,19 +536,8 @@ func quickSetup(flags *pflag.FlagSet, d pythonData) error {
 	}
 
 	// If using S3 storage type, initialize minio to cache buckets before creating the admin user
-	if ser.StorageType == "s3" {
-		minioConfig := &minio.Config{
-			Endpoint:  ser.S3Endpoint,
-			AccessKey: ser.S3AccessKey,
-			SecretKey: ser.S3SecretKey,
-			Region:    ser.S3Region,
-		}
-
-		// Initialize minio with the S3 configuration
-		err = minio.Init(minioConfig)
-		if err != nil {
-			log.Printf("Warning: Failed to initialize S3: %v", err)
-		}
+	if err := initS3Storage(ser); err != nil {
+		log.Printf("Warning: Failed to initialize S3: %v", err)
 	}
 
 	username := getStringParam(flags, "username")
@@ -573,16 +574,7 @@ func quickSetup(flags *pflag.FlagSet, d pythonData) error {
 
 	// If using S3 storage type, set up default S3 scopes for the admin user
 	if ser.StorageType == "s3" {
-		// Create scopes from cached buckets with root prefix "/"
-		scopes := make([]users.Scope, len(minio.CachedBuckets))
-		for i, bucket := range minio.CachedBuckets {
-			scopes[i] = users.Scope{
-				Name:       bucket.Name,
-				RootPrefix: "/",
-			}
-		}
-
-		// Set the S3 scopes for the user
+		scopes := buildS3ScopesFromCachedBuckets()
 		user.SetS3Scopes(scopes)
 	}
 
@@ -617,4 +609,61 @@ func initConfig() {
 	} else {
 		cfgFile = "Using config file: " + v.ConfigFileUsed()
 	}
+}
+
+// initS3Storage initializes minio with the given server configuration.
+// This should be called when StorageType is "s3".
+func initS3Storage(server *settings.Server) error {
+	if server.StorageType != "s3" {
+		return nil
+	}
+
+	minioConfig := &minio.Config{
+		Endpoint:  server.S3Endpoint,
+		AccessKey: server.S3AccessKey,
+		SecretKey: server.S3SecretKey,
+		Region:    server.S3Region,
+	}
+
+	return minio.Init(minioConfig)
+}
+
+// buildS3ScopesFromCachedBuckets creates S3 scopes from cached minio buckets.
+// Each bucket gets a scope with root prefix "/".
+func buildS3ScopesFromCachedBuckets() []users.Scope {
+	scopes := make([]users.Scope, len(minio.CachedBuckets))
+	for i, bucket := range minio.CachedBuckets {
+		scopes[i] = users.Scope{
+			Name:       bucket.Name,
+			RootPrefix: "/",
+		}
+	}
+	return scopes
+}
+
+// initS3AndSetupUserScopes initializes S3 storage and sets up S3 scopes for all admin users.
+// This is used when the database already exists but S3 configuration may have changed.
+func initS3AndSetupUserScopes(server *settings.Server, store *storage.Storage) error {
+	// Initialize S3 storage
+	if err := initS3Storage(server); err != nil {
+		return fmt.Errorf("failed to initialize S3 storage: %w", err)
+	}
+
+	// Get all users and set up S3 scopes for admin users
+	allUsers, err := store.Users.Gets(server.Root)
+	if err != nil {
+		return fmt.Errorf("failed to get users: %w", err)
+	}
+
+	scopes := buildS3ScopesFromCachedBuckets()
+	for _, user := range allUsers {
+		if user.Perm.Admin {
+			user.SetS3Scopes(scopes)
+			if err := store.Users.Update(user); err != nil {
+				log.Printf("Warning: Failed to update S3 scopes for user %s: %v", user.Username, err)
+			}
+		}
+	}
+
+	return nil
 }

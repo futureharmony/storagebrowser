@@ -29,7 +29,6 @@ import { useAuthStore } from "@/stores/auth";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 import { mapActions, mapState } from "pinia";
-import { useRoute } from "vue-router";
 
 import { files } from "@/api";
 import { StatusError } from "@/api/utils.js";
@@ -75,8 +74,8 @@ export default {
       this.nextAbortController.abort();
     },
     fillOptions(req) {
-      // Sets the current path and resets
-      // the current items.
+      // Sets up current path and resets
+      // current items.
       this.current = req.url;
       this.items = [];
 
@@ -84,19 +83,42 @@ export default {
 
       // Determine root path based on bucket
       let rootPath = "/files/";
-      const route = useRoute();
-      const match = route.path.match(/^\/buckets\/([^/]+)/);
+      let bucket = "";
+      const match = this.$route.path.match(/^\/buckets\/([^/]+)/);
       if (match) {
+        bucket = match[1];
         rootPath = `/buckets/${match[1]}/`;
       }
 
-      // If the path isn't at root path,
-      // show a button to navigate to the previous
-      // directory.
+      // Calculate parent directory URL
+      let parentUrl = null;
       if (req.url !== rootPath) {
+        if (bucket) {
+          // For S3 bucket paths, calculate parent relative to bucket
+          const relativePath = req.url.slice(rootPath.length);
+          const parentRelative = url.removeLastDir(relativePath);
+          
+          if (parentRelative === "" || parentRelative === "/") {
+            // We're at bucket root, parent is bucket root
+            parentUrl = rootPath;
+          } else {
+            // Reconstruct parent path
+            parentUrl = rootPath.slice(0, -1) + "/" + parentRelative;
+            if (!parentUrl.endsWith("/")) {
+              parentUrl += "/";
+            }
+          }
+        } else {
+          // For non-S3 paths, use standard removeLastDir
+          parentUrl = url.removeLastDir(req.url) + "/";
+        }
+      }
+
+      // If parent directory exists and is not the current path, show ".." button
+      if (parentUrl && parentUrl !== req.url) {
         this.items.push({
           name: "..",
-          url: url.removeLastDir(req.url) + "/",
+          url: parentUrl,
         });
       }
 
@@ -104,7 +126,7 @@ export default {
       if (req.items === null) return;
 
       // Otherwise we add every directory to
-      // the move options.
+      // move options.
       for (const item of req.items) {
         if (!item.isDir) continue;
         if (this.exclude?.includes(item.url)) continue;
@@ -116,14 +138,27 @@ export default {
       }
     },
     next: function (event) {
-      // Retrieves the URL of the directory the user
-      // just clicked on and fills the options with its
+      // Retrieves URL of directory
+      // user just clicked on and fills up options with its
       // content.
-      const uri = event.currentTarget.dataset.url;
+      let uri = event.currentTarget.dataset.url;
+      
+      // Get current scope from route
+      const match = this.$route.path.match(/^\/buckets\/([^/]+)/);
+      const scope = match ? match[1] : undefined;
+      
+      // For S3 bucket paths, remove bucket prefix before calling fetch
+      if (scope && uri.match(/^\/buckets\/[^/]+/)) {
+        const bucketMatch = uri.match(/^\/buckets\/([^/]+)/);
+        if (bucketMatch) {
+          uri = uri.slice(bucketMatch[0].length) || '/';
+        }
+      }
+      
       this.abortOngoingNext();
       this.nextAbortController = new AbortController();
       files
-        .fetch(uri, this.nextAbortController.signal)
+        .fetch(uri, this.nextAbortController.signal, scope)
         .then(this.fillOptions)
         .catch((e) => {
           if (e instanceof StatusError && e.is_canceled) {

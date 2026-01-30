@@ -186,49 +186,59 @@ const applyPreSelection = () => {
   fileStore.selected.push(index);
 };
 
-const fetchData = async () => {
-  fileStore.reload = false;
-  fileStore.selected = [];
-  fileStore.multiple = false;
-  layoutStore.closeHovers();
+  const fetchData = async () => {
+    fileStore.reload = false;
+    fileStore.selected = [];
+    fileStore.multiple = false;
+    layoutStore.closeHovers();
 
-  layoutStore.loading = true;
-  error.value = null;
+    layoutStore.loading = true;
+    error.value = null;
 
-  let url = route.path;
-  if (url === "") url = "/";
-  if (url[0] !== "/") url = "/" + url;
+    let url = route.path;
+    if (url === "") url = "/";
+    if (url[0] !== "/") url = "/" + url;
 
-  // For S3 storage, strip the bucket name from the URL before sending to API
-  const appConfig = (window as any).FileBrowser || {};
-  if (appConfig.StorageType === "s3") {
-    const bucketMatch = url.match(/^\/buckets\/([^/]+)/);
-    if (bucketMatch) {
-      // Remove /buckets/bucket from URL, keeping only the path
-      url = url.replace(/^\/buckets\/[^/]+/, "") || "/";
-    }
-  }
-
-  fetchDataController.abort();
-  fetchDataController = new AbortController();
-  try {
+    // For S3 storage, strip the bucket name from the URL before sending to API
+    const appConfig = (window as any).FileBrowser || {};
     const scope = currentBucket.value;
-    const res = await api.fetch(url, fetchDataController.signal, scope);
-    fileStore.updateRequest(res);
-    document.title = `${res.name || t("sidebar.myFiles")} - ${t("files.files")} - ${name}`;
-    layoutStore.loading = false;
+    if (appConfig.StorageType === "s3" && scope) {
+      // When scope is provided, url is the path within the bucket (e.g., "/")
+      // Don't need to process further - url is already correct
+      if (!url.match(/^\/buckets\/([^/]+)/)) {
+        // URL doesn't contain bucket prefix, it's already processed (from FileList)
+        // Keep as is
+      } else {
+        // URL contains bucket prefix, strip it
+        url = url.replace(/^\/buckets\/[^/]+/, "") || "/";
+      }
+    } else if (appConfig.StorageType === "s3") {
+      // For S3 storage without scope, strip bucket name from the URL
+      const bucketMatch = url.match(/^\/buckets\/([^/]+)/);
+      if (bucketMatch) {
+        url = url.replace(/^\/buckets\/[^/]+/, "") || "/";
+      }
+    }
 
-    applyPreSelection();
-  } catch (err) {
-    if (err instanceof StatusError && err.is_canceled) {
-      return;
+    fetchDataController.abort();
+    fetchDataController = new AbortController();
+    try {
+      const res = await api.fetch(url, fetchDataController.signal, scope);
+      fileStore.updateRequest(res);
+      document.title = `${res.name || t("sidebar.myFiles")} - ${t("files.files")} - ${name}`;
+      layoutStore.loading = false;
+
+      applyPreSelection();
+    } catch (err) {
+      if (err instanceof StatusError && err.is_canceled) {
+        return;
+      }
+      if (err instanceof Error) {
+        error.value = err;
+      }
+      layoutStore.loading = false;
     }
-    if (err instanceof Error) {
-      error.value = err;
-    }
-    layoutStore.loading = false;
-  }
-};
+  };
 const keyEvent = (event: KeyboardEvent) => {
   if (event.key === "F1") {
     event.preventDefault();

@@ -68,16 +68,30 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
 }
 
 async function resourceAction(url: string, method: ApiMethod, content?: any, scope?: string) {
-  url = removePrefix(url);
+  // Extract query parameters before processing the path
+  const [pathWithoutQuery, queryPart] = url.split('?');
+  let processedPath = pathWithoutQuery;
 
-  // For S3 storage, also strip the bucket name from the URL
+  // For S3 storage with scope, the path is already processed (doesn't include bucket)
+  // For non-S3 storage or without scope, apply removePrefix
   const appConfig = (window as any).FileBrowser || {};
-  if (appConfig.StorageType === "s3") {
-    const bucketMatch = url.match(/^\/([^/]+)/);
-    if (bucketMatch) {
-      url = url.slice(bucketMatch[0].length) || '/';
+  if (appConfig.StorageType === "s3" && scope) {
+    // Path is already processed in moveCopy, no need to remove bucket/prefix
+    processedPath = pathWithoutQuery;
+  } else {
+    processedPath = removePrefix(pathWithoutQuery);
+    
+    // For S3 storage without scope, strip the bucket name from the URL
+    if (appConfig.StorageType === "s3") {
+      const bucketMatch = processedPath.match(/^\/([^/]+)/);
+      if (bucketMatch) {
+        processedPath = processedPath.slice(bucketMatch[0].length) || '/';
+      }
     }
   }
+
+  // Reconstruct URL with processed path and original query parameters
+  const finalUrl = queryPart ? `${processedPath}?${queryPart}` : processedPath;
 
   const opts: ApiOpts = {
     method,
@@ -87,7 +101,7 @@ async function resourceAction(url: string, method: ApiMethod, content?: any, sco
     opts.body = content;
   }
 
-  const res = await fetchURL(`/api/resources${url}`, opts, true, scope);
+  const res = await fetchURL(`/api/resources${finalUrl}`, opts, true, scope);
 
   return res;
 }
@@ -208,15 +222,38 @@ function moveCopy(
   rename = false
 ) {
   const layoutStore = useLayoutStore();
+  const appConfig = (window as any).FileBrowser || {};
   const promises = [];
 
   for (const item of items) {
     const from = item.from;
-    const to = encodeURIComponent(removePrefix(item.to ?? ""));
-    const url = `${from}?action=${
+    const to = item.to;
+    
+    let scope: string | undefined;
+    let processedFrom = from;
+    let processedTo = to ?? "";
+    
+    if (appConfig.StorageType === "s3") {
+      const bucketMatch = from.match(/^\/buckets\/([^/]+)/);
+      if (bucketMatch) {
+        scope = bucketMatch[1];
+        processedFrom = from.slice(bucketMatch[0].length) || '/';
+        
+        const toBucketMatch = to?.match(/^\/buckets\/([^/]+)/);
+        if (toBucketMatch) {
+          processedTo = to.slice(toBucketMatch[0].length) || '/';
+        }
+      }
+    } else {
+      // For non-S3 storage, apply removePrefix
+      processedFrom = removePrefix(from);
+      processedTo = removePrefix(to ?? "");
+    }
+    
+    const url = `${processedFrom}?action=${
       copy ? "copy" : "rename"
-    }&destination=${to}&override=${overwrite}&rename=${rename}`;
-    promises.push(resourceAction(url, "PATCH"));
+    }&destination=${encodeURIComponent(processedTo)}&override=${overwrite}&rename=${rename}`;
+    promises.push(resourceAction(url, "PATCH", undefined, scope));
   }
   layoutStore.closeHovers();
   return Promise.all(promises);

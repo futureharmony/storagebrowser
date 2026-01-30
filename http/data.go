@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/spf13/afero"
 	"github.com/tomasen/realip"
 
 	"github.com/futureharmony/storagebrowser/v2/rules"
@@ -19,11 +20,13 @@ type handleFunc func(w http.ResponseWriter, r *http.Request, d *data) (int, erro
 
 type data struct {
 	*runner.Runner
-	settings *settings.Settings
-	server   *settings.Server
-	store    *storage.Storage
-	user     *users.User
-	raw      interface{}
+	settings   *settings.Settings
+	server     *settings.Server
+	store      *storage.Storage
+	user       *users.User
+	raw        interface{}
+	requestFs  afero.Fs  // Filesystem instance for this specific request (created based on scope parameter)
+	requestScope *users.Scope // Scope used for this request (from scope parameter or user.CurrentScope)
 }
 
 // Check implements rules.Checker.
@@ -59,10 +62,13 @@ func (d *data) Check(path string) bool {
 
 // checkS3Permissions checks if the user has permission to access the given path based on bucket and scope
 func (d *data) checkS3Permissions(path string) bool {
-	// Use the current scope for path checking
-	currentScope := d.user.CurrentScope
+	// Use the request scope for path checking
+	currentScope := d.requestScope
+	if currentScope == nil {
+		currentScope = &d.user.CurrentScope
+	}
 	if currentScope.RootPrefix == "" && len(d.user.AvailableScopes) > 0 {
-		currentScope = d.user.AvailableScopes[0] // Use first available scope as fallback
+		currentScope = &d.user.AvailableScopes[0] // Use first available scope as fallback
 	}
 
 	path = currentScope.RootPrefix + path

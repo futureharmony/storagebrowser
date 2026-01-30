@@ -41,7 +41,7 @@
       </div>
     </div>
     <template v-else>
-      <Breadcrumbs base="/files" noLink />
+      <Breadcrumbs base="/buckets" noLink />
 
       <div
         v-show="isPreview && isMarkdownFile"
@@ -195,7 +195,9 @@ const save = async () => {
   buttons.loading("save");
 
   try {
-    await api.put(route.path, editor.value?.getValue());
+    // Get current scope from auth store
+    const currentScope = authStore.user?.currentScope?.name;
+    await api.put(route.path, editor.value?.getValue(), currentScope);
     editor.value?.session.getUndoManager().markClean();
     buttons.success(button);
   } catch (e: any) {

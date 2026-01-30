@@ -4,7 +4,8 @@ import { baseURL } from "@/utils/constants";
 import { upload as postTus, useTus } from "./tus";
 import { createURL, fetchURL, removePrefix, StatusError } from "./utils";
 
-export async function fetch(url: string, signal?: AbortSignal) {
+export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
+  console.log('[API FETCH] original url:', url);
   url = removePrefix(url);
 
   // For S3 storage, also strip the bucket name from the URL
@@ -16,7 +17,7 @@ export async function fetch(url: string, signal?: AbortSignal) {
     }
   }
 
-  const res = await fetchURL(`/api/resources${url}`, { signal });
+  const res = await fetchURL(`/api/resources${url}`, { signal }, true, scope);
 
   let data: Resource;
   try {
@@ -48,7 +49,7 @@ export async function fetch(url: string, signal?: AbortSignal) {
   return data;
 }
 
-async function resourceAction(url: string, method: ApiMethod, content?: any) {
+async function resourceAction(url: string, method: ApiMethod, content?: any, scope?: string) {
   url = removePrefix(url);
 
   // For S3 storage, also strip the bucket name from the URL
@@ -68,17 +69,17 @@ async function resourceAction(url: string, method: ApiMethod, content?: any) {
     opts.body = content;
   }
 
-  const res = await fetchURL(`/api/resources${url}`, opts);
+  const res = await fetchURL(`/api/resources${url}`, opts, true, scope);
 
   return res;
 }
 
-export async function remove(url: string) {
-  return resourceAction(url, "DELETE");
+export async function remove(url: string, scope?: string) {
+  return resourceAction(url, "DELETE", undefined, scope);
 }
 
-export async function put(url: string, content = "") {
-  return resourceAction(url, "PUT", content);
+export async function put(url: string, content = "", scope?: string) {
+  return resourceAction(url, "PUT", content, scope);
 }
 
 export function download(format: any, ...files: string[]) {

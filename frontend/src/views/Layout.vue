@@ -7,7 +7,7 @@
         }"
       ></div>
     </div>
-    <header-bar showMenu showLogo :showBucketSelect="route.path.includes('/files')"></header-bar>
+    <header-bar showMenu showLogo :showBucketSelect="route.path.includes('/files') || route.path.includes('/buckets')"></header-bar>
     <sidebar></sidebar>
     <main>
       <router-view></router-view>

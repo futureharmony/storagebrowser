@@ -115,7 +115,7 @@ func tusPostHandler() handleFunc {
 			return http.StatusForbidden, nil
 		}
 		file, err := files.NewFileInfo(&files.FileOptions{
-			Fs:         d.user.Fs,
+			Fs:         d.requestFs,
 			Path:       r.URL.Path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
@@ -130,8 +130,8 @@ func tusPostHandler() handleFunc {
 			// Uncomment the following lines if you want to create parent directories
 
 			// dirPath := filepath.Dir(r.URL.Path)
-			// if _, statErr := d.user.Fs.Stat(dirPath); os.IsNotExist(statErr) {
-			// 	if mkdirErr := d.user.Fs.MkdirAll(dirPath, d.settings.DirMode); mkdirErr != nil {
+			// if _, statErr := d.requestFs.Stat(dirPath); os.IsNotExist(statErr) {
+			// 	if mkdirErr := d.requestFs.MkdirAll(dirPath, d.settings.DirMode); mkdirErr != nil {
 			// 		return http.StatusInternalServerError, err
 			// 	}
 			// }
@@ -160,7 +160,7 @@ func tusPostHandler() handleFunc {
 			fileFlags |= os.O_TRUNC
 		}
 
-		openFile, err := d.user.Fs.OpenFile(r.URL.Path, fileFlags, d.settings.FileMode)
+		openFile, err := d.requestFs.OpenFile(r.URL.Path, fileFlags, d.settings.FileMode)
 		if err != nil {
 			return errToStatus(err), err
 		}
@@ -169,7 +169,7 @@ func tusPostHandler() handleFunc {
 		// For afero-s3 compatibility, we need to handle the case where the file
 		// may not be immediately visible after creation
 		file, err = files.NewFileInfo(&files.FileOptions{
-			Fs:         d.user.Fs,
+			Fs:         d.requestFs,
 			Path:       r.URL.Path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
@@ -183,7 +183,7 @@ func tusPostHandler() handleFunc {
 			if errors.Is(err, afero.ErrFileNotFound) {
 				// Create a basic file info for the new file
 				file = &files.FileInfo{
-					Fs:        d.user.Fs,
+					Fs:        d.requestFs,
 					Path:      r.URL.Path,
 					Name:      filepath.Base(r.URL.Path),
 					IsDir:     false,
@@ -206,7 +206,7 @@ func tusPostHandler() handleFunc {
 		registerUpload(file.RealPath(), uploadLength)
 
 		// Check if it's an S3 filesystem to handle it differently
-		if s3wrapper, ok := d.user.Fs.(*aferos3.FsWrapper); ok {
+		if s3wrapper, ok := d.requestFs.(*aferos3.FsWrapper); ok {
 			// Initiate multipart upload for S3
 			uploadID, initErr := s3wrapper.InitiateMultipartUpload(r.URL.Path)
 			if initErr != nil {
@@ -239,7 +239,7 @@ func tusHeadHandler() handleFunc {
 		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
-			Fs:         d.user.Fs,
+			Fs:         d.requestFs,
 			Path:       r.URL.Path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
@@ -257,7 +257,7 @@ func tusHeadHandler() handleFunc {
 
 		// Check if S3
 		offset := file.Size
-		if minio.IsS3FileSystem(d.user.Fs) {
+		if minio.IsS3FileSystem(d.requestFs) {
 			state, err := getUploadState(file.RealPath())
 			if err == nil && state != nil {
 				offset = 0
@@ -289,7 +289,7 @@ func tusPatchHandler() handleFunc {
 		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
-			Fs:         d.user.Fs,
+			Fs:         d.requestFs,
 			Path:       r.URL.Path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
@@ -318,7 +318,7 @@ func tusPatchHandler() handleFunc {
 		}
 
 		// Check if it's an S3 filesystem to handle it differently
-		if s3wrapper, ok := d.user.Fs.(*aferos3.FsWrapper); ok {
+		if s3wrapper, ok := d.requestFs.(*aferos3.FsWrapper); ok {
 			// Handle S3 multipart upload
 			state, err := getUploadState(file.RealPath())
 			if err != nil || state == nil || state.UploadID == "" {
@@ -389,7 +389,7 @@ func tusPatchHandler() handleFunc {
 			)
 		}
 
-		openFile, err := d.user.Fs.OpenFile(r.URL.Path, os.O_WRONLY|os.O_APPEND, d.settings.FileMode)
+		openFile, err := d.requestFs.OpenFile(r.URL.Path, os.O_WRONLY|os.O_APPEND, d.settings.FileMode)
 		if err != nil {
 			return errToStatus(err), err
 		}
@@ -420,7 +420,7 @@ func tusDeleteHandler() handleFunc {
 		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
-			Fs:         d.user.Fs,
+			Fs:         d.requestFs,
 			Path:       r.URL.Path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
@@ -436,7 +436,7 @@ func tusDeleteHandler() handleFunc {
 			return http.StatusNotFound, err
 		}
 
-		err = d.user.Fs.RemoveAll(r.URL.Path)
+		err = d.requestFs.RemoveAll(r.URL.Path)
 		if err != nil {
 			return errToStatus(err), err
 		}

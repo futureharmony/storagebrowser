@@ -91,7 +91,7 @@ var rawHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) 
 	}
 
 	file, err := files.NewFileInfo(&files.FileOptions{
-		Fs:         d.user.Fs,
+		Fs:         d.requestFs,
 		Path:       r.URL.Path,
 		Modify:     d.user.Perm.Modify,
 		Expand:     false,
@@ -119,7 +119,7 @@ func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
 		return nil, nil
 	}
 
-	info, err := d.user.Fs.Stat(path)
+	info, err := d.requestFs.Stat(path)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
 		nameInArchive := strings.TrimPrefix(path, commonPath)
 		// Use forward slash separator for nameInArchive to be consistent across filesystems
 		nameInArchive = strings.TrimPrefix(nameInArchive, "/")
-		if !isS3Fs(d.user.Fs) {
+		if !isS3Fs(d.requestFs) {
 			nameInArchive = strings.TrimPrefix(nameInArchive, string(filepath.Separator))
 		}
 
@@ -138,13 +138,13 @@ func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
 			FileInfo:      info,
 			NameInArchive: nameInArchive,
 			Open: func() (fs.File, error) {
-				return d.user.Fs.Open(path)
+				return d.requestFs.Open(path)
 			},
 		})
 	}
 
 	if info.IsDir() {
-		f, err := d.user.Fs.Open(path)
+		f, err := d.requestFs.Open(path)
 		if err != nil {
 			return nil, err
 		}
@@ -157,7 +157,7 @@ func getFiles(d *data, path, commonPath string) ([]archives.FileInfo, error) {
 
 		for _, name := range names {
 			var fPath string
-			if isS3Fs(d.user.Fs) {
+			if isS3Fs(d.requestFs) {
 				// For S3 filesystems, use forward slash path separators
 				fPath = gopath.Join(path, name)
 			} else {
@@ -194,7 +194,7 @@ func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.
 	}
 
 	var commonDir string
-	if isS3Fs(d.user.Fs) {
+	if isS3Fs(d.requestFs) {
 		// For S3 filesystems, use forward slash as separator for CommonPrefix
 		commonDir = fileutils.CommonPrefix('/', filenames...)
 	} else {
@@ -206,7 +206,7 @@ func rawDirHandler(w http.ResponseWriter, r *http.Request, d *data, file *files.
 	for _, fname := range filenames {
 		// For S3 filesystems, we need to normalize the path format
 		normalizedFname := fname
-		if isS3Fs(d.user.Fs) {
+		if isS3Fs(d.requestFs) {
 			// Convert OS-specific paths to S3-compatible paths with forward slashes
 			normalizedFname = gopath.Clean(strings.ReplaceAll(fname, string(filepath.Separator), "/"))
 			// Ensure it starts with a forward slash for S3

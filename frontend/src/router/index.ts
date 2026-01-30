@@ -51,7 +51,7 @@ const routes = [
     ],
   },
   {
-    path: "/files",
+    path: "/buckets",
     component: Layout,
     meta: {
       requiresAuth: true,
@@ -150,16 +150,12 @@ const routes = [
     },
   },
   {
-    path: "/:catchAll(.*)*",
-    redirect: (to: RouteLocation) => {
-      const authStore = useAuthStore();
-      const catchAll = [...to.params.catchAll].join("/");
-      // If user has available scopes, redirect to the first bucket
-      if (authStore.user?.availableScopes && authStore.user.availableScopes.length) {
-        return `/files/${authStore.user.availableScopes[0].name}${catchAll ? '/' + catchAll : ''}`;
-      }
-      return `/files/${catchAll}`;
-    },
+    path: "/",
+    redirect: "/login",
+  },
+  {
+    path: "/buckets",
+    redirect: "/",
   },
 ];
 
@@ -207,11 +203,25 @@ router.beforeResolve(async (to, from, next) => {
   }
 
   if (to.path.endsWith("/login") && authStore.isLoggedIn) {
-    const appConfig = (window as any).FileBrowser || {};
-    const redirectPath = appConfig.StorageType === "s3" && authStore.user?.availableScopes?.length
-      ? `/files/${authStore.user.availableScopes[0].name}/`
-      : "/files/";
+    const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
+    const redirectPath = bucket ? `/buckets/${bucket}/` : "/settings/profile";
     next({ path: redirectPath });
+    return;
+  }
+
+  // Handle root redirect to bucket
+  if (to.path === "/") {
+    if (!authStore.isLoggedIn) {
+      next({ path: "/login" });
+      return;
+    }
+    const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
+    if (bucket) {
+      next(`/buckets/${bucket}/`);
+      return;
+    }
+    // No available scopes, redirect to settings profile
+    next({ path: "/settings/profile" });
     return;
   }
 

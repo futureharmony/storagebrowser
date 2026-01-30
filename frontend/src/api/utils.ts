@@ -17,17 +17,25 @@ export class StatusError extends Error {
 export async function fetchURL(
   url: string,
   opts: ApiOpts,
-  auth = true
+  auth = true,
+  scope?: string
 ): Promise<Response> {
   const authStore = useAuthStore();
 
   opts = opts || {};
   opts.headers = opts.headers || {};
 
+  // Add scope parameter to URL if provided
+  let finalUrl = url;
+  if (scope) {
+    const separator = url.includes('?') ? '&' : '?';
+    finalUrl = `${url}${separator}scope=${encodeURIComponent(scope)}`;
+  }
+
   const { headers, ...rest } = opts;
   let res;
   try {
-    res = await fetch(`${baseURL}${url}`, {
+    res = await fetch(`${baseURL}${finalUrl}`, {
       headers: {
         "X-Auth": authStore.jwt,
         ...headers,
@@ -63,8 +71,8 @@ export async function fetchURL(
   return res;
 }
 
-export async function fetchJSON<T>(url: string, opts?: any): Promise<T> {
-  const res = await fetchURL(url, opts);
+export async function fetchJSON<T>(url: string, opts?: any, scope?: string): Promise<T> {
+  const res = await fetchURL(url, opts, true, scope);
 
   if (res.status === 200) {
     return res.json() as Promise<T>;

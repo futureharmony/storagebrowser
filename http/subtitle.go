@@ -16,7 +16,7 @@ var subtitleHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *d
 	}
 
 	file, err := files.NewFileInfo(&files.FileOptions{
-		Fs:         d.user.Fs,
+		Fs:         d.requestFs,
 		Path:       r.URL.Path,
 		Modify:     d.user.Perm.Modify,
 		Expand:     false,

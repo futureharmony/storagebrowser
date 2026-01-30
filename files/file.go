@@ -17,7 +17,6 @@ import (
 	"os"
 	"path"
 
-
 	"path/filepath"
 	"regexp"
 	"strings"

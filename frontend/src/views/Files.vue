@@ -6,7 +6,7 @@
     </h2>
   </div>
   <div v-else-if="!isS3 || bucketsLoaded">
-    <breadcrumbs base="/files" />
+    <breadcrumbs :base="breadcrumbBase" />
     <errors v-if="error" :errorCode="error.status" />
     <component v-else-if="currentView" :is="currentView"></component>
     <div v-else>
@@ -80,6 +80,15 @@ const hasBuckets = computed(() => {
 });
 const bucketsLoaded = computed(() => !isS3.value || hasBuckets.value);
 
+const currentBucket = computed(() => {
+  const match = route.path.match(/^\/buckets\/([^/]+)/);
+  return match ? match[1] : "";
+});
+
+const breadcrumbBase = computed(() => {
+  return currentBucket.value ? `/buckets/${currentBucket.value}` : "/";
+});
+
 let fetchDataController = new AbortController();
 
 const error = ref<StatusError | null>(null);
@@ -114,6 +123,17 @@ onMounted(async () => {
     // Check if user has available scopes
     if (!authStore.user?.availableScopes || authStore.user.availableScopes.length === 0) {
       return;
+    }
+
+    // Check if URL has a bucket and switch to it if different from current scope
+    const bucketMatch = route.path.match(/^\/buckets\/([^/]+)/);
+    if (bucketMatch) {
+      const bucketName = bucketMatch[1];
+      // Check if bucket is valid (exists in available scopes)
+      const validBucket = authStore.user.availableScopes.find(s => s.name === bucketName);
+      if (bucketName && validBucket && authStore.user.currentScope?.name && bucketName !== authStore.user.currentScope.name) {
+        await authStore.switchBucket(bucketName);
+      }
     }
   }
 
@@ -178,10 +198,22 @@ const fetchData = async () => {
   let url = route.path;
   if (url === "") url = "/";
   if (url[0] !== "/") url = "/" + url;
+
+  // For S3 storage, strip the bucket name from the URL before sending to API
+  const appConfig = (window as any).FileBrowser || {};
+  if (appConfig.StorageType === "s3") {
+    const bucketMatch = url.match(/^\/buckets\/([^/]+)/);
+    if (bucketMatch) {
+      // Remove /buckets/bucket from URL, keeping only the path
+      url = url.replace(/^\/buckets\/[^/]+/, "") || "/";
+    }
+  }
+
   fetchDataController.abort();
   fetchDataController = new AbortController();
   try {
-    const res = await api.fetch(url, fetchDataController.signal);
+    const scope = currentBucket.value;
+    const res = await api.fetch(url, fetchDataController.signal, scope);
     fileStore.updateRequest(res);
     document.title = `${res.name || t("sidebar.myFiles")} - ${t("files.files")} - ${name}`;
     layoutStore.loading = false;

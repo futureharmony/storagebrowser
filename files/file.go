@@ -494,7 +494,20 @@ func (i *FileInfo) readListing(checker rules.Checker, readHeader bool) error {
 
 // simpleReadListingFromS3 is used for S3-compatible filesystems that implement Readdir
 func (i *FileInfo) simpleReadListingFromS3(checker rules.Checker, readHeader bool) error {
-	// Use the filesystem directly since it's already wrapped with bucket/prefix
+	// Try to use the optimized S3 listing interface if available
+	type S3Lister interface {
+		ListDirectory(path string) ([]os.FileInfo, error)
+	}
+
+	if s3Lister, ok := i.Fs.(S3Lister); ok {
+		dir, err := s3Lister.ListDirectory(i.Path)
+		if err != nil {
+			return err
+		}
+		return i.processDirectoryListing(dir, checker, readHeader)
+	}
+
+	// Fallback to the original Readdir method
 	pathFile, err := i.Fs.Open(i.Path)
 	if err != nil {
 		return err
@@ -505,6 +518,11 @@ func (i *FileInfo) simpleReadListingFromS3(checker rules.Checker, readHeader boo
 		return err
 	}
 
+	return i.processDirectoryListing(dir, checker, readHeader)
+}
+
+// processDirectoryListing processes the directory listing and creates FileInfo objects
+func (i *FileInfo) processDirectoryListing(dir []os.FileInfo, checker rules.Checker, readHeader bool) error {
 	listing := &Listing{
 		Items:    []*FileInfo{},
 		NumDirs:  0,

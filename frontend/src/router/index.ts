@@ -15,7 +15,7 @@ import { useAuthStore } from "@/stores/auth";
 import { baseURL, name } from "@/utils/constants";
 import i18n from "@/i18n";
 import { recaptcha, loginPage } from "@/utils/constants";
-import { login, validateLogin } from "@/utils/auth";
+import { login, validateLogin, getUserWithScopes } from "@/utils/auth";
 
 const titles = {
   Login: "sidebar.login",
@@ -160,6 +160,13 @@ const routes = [
 ];
 
 async function initAuth() {
+  // Try to restore user data from localStorage first
+  const authStore = useAuthStore();
+  const userFromStorage = getUserWithScopes();
+  if (userFromStorage) {
+    authStore.setUser(userFromStorage);
+  }
+
   if (loginPage) {
     await validateLogin();
   } else {

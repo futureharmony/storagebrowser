@@ -93,6 +93,45 @@ func withUser(fn handleFunc) handleFunc {
 		if err != nil {
 			return http.StatusInternalServerError, err
 		}
+
+		// Parse scope parameter from query
+		scopeParam := r.URL.Query().Get("scope")
+		var targetScope *users.Scope
+
+		if scopeParam != "" {
+			// Look for the scope in user's available scopes
+			found := false
+			for _, scope := range d.user.AvailableScopes {
+				if scope.Name == scopeParam {
+					scopeCopy := scope
+					targetScope = &scopeCopy
+					found = true
+					break
+				}
+			}
+			if !found {
+				return http.StatusForbidden, errors.New("scope not available for user")
+			}
+		} else {
+			// Use user's current scope
+			targetScope = &d.user.CurrentScope
+		}
+
+		d.requestScope = targetScope
+
+		// Create filesystem instance for this request
+		if d.server.StorageType == "s3" {
+			// Calculate the full scope path
+			scopePath := d.server.Root
+			if targetScope.RootPrefix != "" {
+				scopePath = targetScope.RootPrefix
+			}
+			d.requestFs = minio.CreateUserFs(targetScope.Name, scopePath)
+		} else {
+			// For local storage, use the user's Fs (which should be already set)
+			d.requestFs = d.user.Fs
+		}
+
 		return fn(w, r, d)
 	}
 }

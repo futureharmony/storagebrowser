@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
+	"github.com/spf13/afero"
 
 	"github.com/futureharmony/storagebrowser/v2/files"
 	"github.com/futureharmony/storagebrowser/v2/minio"
@@ -35,8 +36,21 @@ var withHashFile = func(fn handleFunc) handleFunc {
 
 		d.user = user
 
+		// For public shares, we need to create a filesystem instance
+		var fsInstance afero.Fs
+		if d.server.StorageType == "s3" {
+			// Calculate the full scope path for the shared resource
+			scopePath := d.server.Root
+			if d.user.CurrentScope.RootPrefix != "" {
+				scopePath = d.user.CurrentScope.RootPrefix
+			}
+			fsInstance = minio.CreateUserFs(d.user.CurrentScope.Name, scopePath)
+		} else {
+			fsInstance = d.user.Fs
+		}
+
 		file, err := files.NewFileInfo(&files.FileOptions{
-			Fs:         d.user.Fs,
+			Fs:         fsInstance,
 			Path:       link.Path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,

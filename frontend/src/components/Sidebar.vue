@@ -169,11 +169,9 @@ export default {
       }
     },
     toRoot() {
-      // Navigate to bucket root if using S3 storage
-      const FileBrowser = window.FileBrowser;
-      const isS3 = FileBrowser?.StorageType === "s3";
-      const hasScopes = this.user?.availableScopes?.length;
-      const path = isS3 && hasScopes ? `/files/${this.user.availableScopes[0].name}/` : "/files";
+      // Navigate to bucket root
+      const bucket = this.user?.currentScope?.name || this.user?.availableScopes?.[0]?.name;
+      const path = bucket ? `/buckets/${bucket}/` : "/settings/profile";
       this.$router.push({ path });
       this.closeHovers();
     },
@@ -193,7 +191,7 @@ export default {
   watch: {
     $route: {
       handler(to) {
-        if (to.path.includes("/files")) {
+        if (to.path.includes("/buckets")) {
           this.fetchUsage();
         }
       },
@@ -201,7 +199,7 @@ export default {
     },
     reload: {
       handler(newValue) {
-        if (newValue && this.$route.path.includes("/files")) {
+        if (newValue && this.$route.path.includes("/buckets")) {
           this.fetchUsage();
         }
       },

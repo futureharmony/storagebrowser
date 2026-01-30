@@ -23,8 +23,8 @@
     <!-- 插槽内容 - 允许组件内部定义自定义内容 -->
     <slot />
 
-    <!-- 搜索组件 - 仅在 /files 路由显示且没有插槽内容时 -->
-    <template v-if="route.path.includes('/files') && !hasSlotContent">
+    <!-- 搜索组件 - 仅在 /files 或 /buckets 路由显示且没有插槽内容时 -->
+    <template v-if="(route.path.includes('/files') || route.path.includes('/buckets')) && !hasSlotContent">
       <search />
       <title />
       <action
@@ -39,8 +39,8 @@
       <!-- 插槽操作内容 - 允许组件内部定义自定义操作按钮 -->
       <slot name="actions" />
 
-      <!-- 文件路由的操作按钮 - 仅在 /files 路由显示且没有插槽操作内容时 -->
-      <template v-if="route.path.includes('/files') && !hasActionsSlotContent">
+      <!-- 文件路由的操作按钮 - 仅在 /files 或 /buckets 路由显示且没有插槽操作内容时 -->
+      <template v-if="(route.path.includes('/files') || route.path.includes('/buckets')) && !hasActionsSlotContent">
         <template v-if="!isMobile">
           <action
             v-if="headerButtons.share"
@@ -175,14 +175,20 @@ const hasActionsSlotContent = computed(() => {
 
 // 检查是否有操作按钮（默认操作按钮或插槽操作按钮）
 const hasActions = computed(() => {
-  return route.path.includes('/files') || hasActionsSlotContent.value;
+  return route.path.includes('/buckets') || hasActionsSlotContent.value;
 });
 
 const isSearchActive = computed(
   () => layoutStore.currentPromptName === "search"
 );
 const isPreviewMode = computed(() => fileStore.req && !fileStore.req.isDir);
-const buckets = computed(() => authStore.user?.availableScopes || []);
+const buckets = computed(() => {
+  const scopes = authStore.user?.availableScopes || [];
+  if (scopes.length === 0 && authStore.user?.currentScope) {
+    return [authStore.user.currentScope];
+  }
+  return scopes;
+});
 const hasBuckets = computed(() => buckets.value.length > 0);
 const selectedBucket = ref<string>("");
 const isDropdownOpen = ref(false);
@@ -190,7 +196,7 @@ const selectRef = ref<HTMLElement | null>(null);
 
 // Get current bucket name from URL
 const currentBucketFromUrl = computed(() => {
-  const match = route.path.match(/^\/files\/([^/]+)/);
+  const match = route.path.match(/^\/buckets\/([^/]+)/);
   return match ? match[1] : "";
 });
 
@@ -241,7 +247,7 @@ const selectBucket = async (bucketName: string) => {
 
   // Get current path after the bucket
   const currentPath = route.path;
-  const newPath = `/files/${bucketName}${currentPath.replace(/^\/files\/[^/]+/, '') || '/'}`;
+  const newPath = `/buckets/${bucketName}${currentPath.replace(/^\/buckets\/[^/]+/, '') || '/'}`;
 
   // Navigate to the new bucket URL
   router.push(newPath);

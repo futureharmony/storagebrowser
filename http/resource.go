@@ -24,8 +24,9 @@ import (
 )
 
 var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	log.Printf("[RESOURCE] GET request path: %s, user: %s, currentScope: %s (rootPrefix: %s), storageType: %s", r.URL.Path, d.user.Username, d.user.CurrentScope.Name, d.user.CurrentScope.RootPrefix, d.server.StorageType)
 	file, err := files.NewFileInfo(&files.FileOptions{
-		Fs:         d.user.Fs,
+		Fs:         d.requestFs,
 		Path:       r.URL.Path,
 		Modify:     d.user.Perm.Modify,
 		Expand:     true,
@@ -65,7 +66,7 @@ func resourceDeleteHandler(fileCache FileCache) handleFunc {
 		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
-			Fs:         d.user.Fs,
+			Fs:         d.requestFs,
 			Path:       r.URL.Path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
@@ -88,7 +89,7 @@ func resourceDeleteHandler(fileCache FileCache) handleFunc {
 		}
 
 		err = d.RunHook(func() error {
-			return d.user.Fs.RemoveAll(r.URL.Path)
+			return d.requestFs.RemoveAll(r.URL.Path)
 		}, "delete", r.URL.Path, "", d.user)
 
 		if err != nil {
@@ -108,22 +109,22 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 		// Directories creation on POST.
 		if strings.HasSuffix(r.URL.Path, "/") {
 			// For S3 filesystems, we need to handle the root directory specially since MkdirAll("/") fails
-			if minio.IsS3FileSystem(d.user.Fs) {
+			if minio.IsS3FileSystem(d.requestFs) {
 				if r.URL.Path != "/" {
-					err := d.user.Fs.MkdirAll(r.URL.Path, d.settings.DirMode)
+					err := d.requestFs.MkdirAll(r.URL.Path, d.settings.DirMode)
 					return errToStatus(err), err
 				} else {
 					// The root directory always exists in S3, so just return success
 					return http.StatusOK, nil
 				}
 			} else {
-				err := d.user.Fs.MkdirAll(r.URL.Path, d.settings.DirMode)
+				err := d.requestFs.MkdirAll(r.URL.Path, d.settings.DirMode)
 				return errToStatus(err), err
 			}
 		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
-			Fs:         d.user.Fs,
+			Fs:         d.requestFs,
 			Path:       r.URL.Path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
@@ -147,7 +148,7 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 		}
 
 		err = d.RunHook(func() error {
-			info, writeErr := writeFile(d.user.Fs, r.URL.Path, r.Body, d.settings.FileMode, d.settings.DirMode)
+			info, writeErr := writeFile(d.requestFs, r.URL.Path, r.Body, d.settings.FileMode, d.settings.DirMode)
 			if writeErr != nil {
 				return writeErr
 			}
@@ -158,7 +159,7 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 		}, "upload", r.URL.Path, "", d.user)
 
 		if err != nil {
-			_ = d.user.Fs.RemoveAll(r.URL.Path)
+			_ = d.requestFs.RemoveAll(r.URL.Path)
 		}
 
 		return errToStatus(err), err
@@ -175,7 +176,7 @@ var resourcePutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 		return http.StatusMethodNotAllowed, nil
 	}
 
-	exists, err := afero.Exists(d.user.Fs, r.URL.Path)
+	exists, err := afero.Exists(d.requestFs, r.URL.Path)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -184,7 +185,7 @@ var resourcePutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 	}
 
 	err = d.RunHook(func() error {
-		info, writeErr := writeFile(d.user.Fs, r.URL.Path, r.Body, d.settings.FileMode, d.settings.DirMode)
+		info, writeErr := writeFile(d.requestFs, r.URL.Path, r.Body, d.settings.FileMode, d.settings.DirMode)
 		if writeErr != nil {
 			return writeErr
 		}
@@ -221,12 +222,12 @@ func resourcePatchHandler(fileCache FileCache) handleFunc {
 		override := r.URL.Query().Get("override") == "true"
 		rename := r.URL.Query().Get("rename") == "true"
 		if !override && !rename {
-			if _, err = d.user.Fs.Stat(dst); err == nil {
+			if _, err = d.requestFs.Stat(dst); err == nil {
 				return http.StatusConflict, nil
 			}
 		}
 		if rename {
-			dst = addVersionSuffix(dst, d.user.Fs)
+			dst = addVersionSuffix(dst, d.requestFs)
 		}
 
 		// Permission for overwriting the file
@@ -340,7 +341,7 @@ func patchAction(ctx context.Context, action, src, dst string, d *data, fileCach
 			return fbErrors.ErrPermissionDenied
 		}
 
-		return fileutils.Copy(d.user.Fs, src, dst, d.settings.FileMode, d.settings.DirMode)
+		return fileutils.Copy(d.requestFs, src, dst, d.settings.FileMode, d.settings.DirMode)
 	case "rename":
 		if !d.user.Perm.Rename {
 			return fbErrors.ErrPermissionDenied
@@ -349,7 +350,7 @@ func patchAction(ctx context.Context, action, src, dst string, d *data, fileCach
 		dst = path.Clean("/" + dst)
 
 		file, err := files.NewFileInfo(&files.FileOptions{
-			Fs:         d.user.Fs,
+			Fs:         d.requestFs,
 			Path:       src,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
@@ -366,7 +367,7 @@ func patchAction(ctx context.Context, action, src, dst string, d *data, fileCach
 			return err
 		}
 
-		return fileutils.MoveFile(d.user.Fs, src, dst, d.settings.FileMode, d.settings.DirMode)
+		return fileutils.MoveFile(d.requestFs, src, dst, d.settings.FileMode, d.settings.DirMode)
 	default:
 		return fmt.Errorf("unsupported action %s: %w", action, fbErrors.ErrInvalidRequestParams)
 	}
@@ -379,7 +380,7 @@ type DiskUsageResponse struct {
 
 var diskUsage = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	file, err := files.NewFileInfo(&files.FileOptions{
-		Fs:         d.user.Fs,
+		Fs:         d.requestFs,
 		Path:       r.URL.Path,
 		Modify:     d.user.Perm.Modify,
 		Expand:     false,
@@ -390,7 +391,7 @@ var diskUsage = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (
 	if err != nil {
 		return errToStatus(err), err
 	}
-	if minio.IsS3FileSystem(d.user.Fs) {
+	if minio.IsS3FileSystem(d.requestFs) {
 		return renderJSON(w, r, &DiskUsageResponse{
 			Total: uint64(file.Size),
 			Used:  uint64(file.Size),

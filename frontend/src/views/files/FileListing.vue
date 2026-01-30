@@ -642,7 +642,9 @@ const drop = async (event: DragEvent) => {
     path = (el as any).__vue__.url;
 
     try {
-      items = (await api.fetch(path)).items;
+      // Get current scope from auth store
+      const currentScope = authStore.user?.currentScope?.name;
+      items = (await api.fetch(path, undefined, currentScope)).items;
     } catch (error: any) {
       $showError(error);
     }

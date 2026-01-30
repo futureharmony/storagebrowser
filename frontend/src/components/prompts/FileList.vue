@@ -85,9 +85,9 @@ export default {
       // Determine root path based on bucket
       let rootPath = "/files/";
       const route = useRoute();
-      const match = route.path.match(/^\/files\/([^/]+)/);
+      const match = route.path.match(/^\/buckets\/([^/]+)/);
       if (match) {
-        rootPath = `/files/${match[1]}/`;
+        rootPath = `/buckets/${match[1]}/`;
       }
 
       // If the path isn't at root path,

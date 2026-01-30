@@ -83,10 +83,7 @@ const submit = async (event: Event) => {
   event.stopPropagation();
 
   const appConfig = (window as any).FileBrowser || {};
-  const defaultRedirect = appConfig.StorageType === "s3" && authStore.user?.availableScopes?.length
-    ? `/files/${authStore.user.availableScopes[0].name}/`
-    : "/files/";
-  const redirect = (route.query.redirect || defaultRedirect) as string;
+  const redirect = route.query.redirect as string;
 
   let captcha = "";
   if (recaptcha) {
@@ -111,7 +108,13 @@ const submit = async (event: Event) => {
     }
 
     await auth.login(username.value, password.value, captcha);
-    router.push({ path: redirect });
+
+    // After successful login, compute redirect based on user info
+    const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
+    const defaultRedirect = bucket ? `/buckets/${bucket}/` : "/settings/profile";
+    const finalRedirect = redirect || defaultRedirect;
+
+    router.push({ path: finalRedirect });
   } catch (e: any) {
     // console.error(e);
     if (e instanceof StatusError) {

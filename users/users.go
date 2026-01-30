@@ -1,9 +1,11 @@
 package users
 
 import (
+	"log"
 	"path/filepath"
 
 	"github.com/spf13/afero"
+	aferos3 "github.com/futureharmony/afero-aws-s3"
 
 	"github.com/futureharmony/storagebrowser/v2/errors"
 	"github.com/futureharmony/storagebrowser/v2/files"
@@ -80,6 +82,7 @@ func (u *User) Clean(baseScope string, fields ...string) error {
 		fields = checkableFields
 	}
 
+	currentScopeInFields := false
 	for _, field := range fields {
 		switch field {
 		case "Username":
@@ -114,6 +117,7 @@ func (u *User) Clean(baseScope string, fields ...string) error {
 				u.AvailableScopes = []Scope{}
 			}
 		case "CurrentScope":
+			currentScopeInFields = true
 			// CurrentScope is a struct, ensure it has valid values
 			if u.CurrentScope.RootPrefix == "" {
 				u.CurrentScope.RootPrefix = "/"
@@ -121,10 +125,26 @@ func (u *User) Clean(baseScope string, fields ...string) error {
 		}
 	}
 
+	log.Printf("[USER CLEAN] User: %s, CurrentScope: %s (rootPrefix: %s), Fs is nil: %v", u.Username, u.CurrentScope.Name, u.CurrentScope.RootPrefix, u.Fs == nil)
+
+	// Calculate the new scope path
+	scope := filepath.Join(baseScope, filepath.Join("/", u.CurrentScope.RootPrefix)) //nolint:gocritic
+
+	// Check if we need to create or update the filesystem
 	if u.Fs == nil {
-		scope := filepath.Join(baseScope, filepath.Join("/", u.CurrentScope.RootPrefix)) //nolint:gocritic
 		// Create a user-specific filesystem wrapper if using S3 storage
 		u.Fs = minio.CreateUserFs(u.CurrentScope.Name, scope)
+	} else if currentScopeInFields {
+		// CurrentScope field is being updated, check if filesystem needs update
+		if wrapper, ok := u.Fs.(*aferos3.FsWrapper); ok {
+			// For S3 filesystem, check if bucket or root prefix changed
+			if wrapper.Bucket != u.CurrentScope.Name || wrapper.RootPrefix != scope {
+				// CurrentScope changed, recreate filesystem
+				u.Fs = minio.CreateUserFs(u.CurrentScope.Name, scope)
+				log.Printf("[USER CLEAN] Filesystem recreated for new scope: bucket=%s, rootPrefix=%s", u.CurrentScope.Name, scope)
+			}
+		}
+		// For non-S3 filesystems, no action needed
 	}
 
 	return nil

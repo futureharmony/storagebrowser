@@ -146,11 +146,17 @@ export default {
       // For files (req exists and type is not "dir"), don't add trailing slash
       // For directories, ensure trailing slash
       const isFile = this.req && this.req.type !== "dir";
-      const path = isFile
+      const fullPath = isFile
         ? this.$route.path
         : this.$route.path.endsWith("/")
           ? this.$route.path
           : this.$route.path + "/";
+      
+      // Extract bucket name and the actual path (without bucket)
+      const bucketMatch = this.$route.path.match(/^\/buckets\/([^/]+)(\/.*)?$/);
+      const bucket = bucketMatch ? bucketMatch[1] : undefined;
+      const path = bucketMatch && bucketMatch[2] ? bucketMatch[2] : "/";
+      
       let usageStats = USAGE_DEFAULT;
       if (this.disableUsedPercentage) {
         return Object.assign(this.usage, usageStats);
@@ -158,7 +164,7 @@ export default {
       try {
         this.abortOngoingFetchUsage();
         this.usageAbortController = new AbortController();
-        const usage = await api.usage(path, this.usageAbortController.signal);
+        const usage = await api.usage(path, this.usageAbortController.signal, bucket);
         usageStats = {
           used: prettyBytes(usage.used, { binary: true }),
           total: prettyBytes(usage.total, { binary: true }),

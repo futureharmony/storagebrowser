@@ -260,19 +260,29 @@ export function getSubtitlesURL(file: ResourceItem) {
   return file.subtitles?.map((d) => createURL("api/subtitle" + d, params));
 }
 
-export async function usage(url: string, signal: AbortSignal) {
-  url = removePrefix(url);
-
-  // For S3 storage, also strip the bucket name from the URL
+export async function usage(url: string, signal: AbortSignal, scope?: string) {
   const appConfig = (window as any).FileBrowser || {};
+
+  // Process URL based on scope and storage type
   if (appConfig.StorageType === "s3") {
-    const bucketMatch = url.match(/^\/([^/]+)/);
-    if (bucketMatch) {
-      url = url.slice(bucketMatch[0].length) || '/';
+    if (scope) {
+      // For S3 storage with scope, URL is already processed in Sidebar.vue
+      // URL is already in the correct format (e.g., "/errors/")
+      // No need to call removePrefix
+    } else {
+      url = removePrefix(url);
+      // For S3 storage without scope, strip the bucket name from the URL
+      const bucketMatch = url.match(/^\/([^/]+)/);
+      if (bucketMatch) {
+        url = url.slice(bucketMatch[0].length) || '/';
+      }
     }
+  } else {
+    // For non-S3 storage, always remove prefix
+    url = removePrefix(url);
   }
 
-  const res = await fetchURL(`/api/usage${url}`, { signal });
+  const res = await fetchURL(`/api/usage${url}`, { signal }, true, scope);
 
   try {
     return await res.json();

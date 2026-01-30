@@ -25,14 +25,15 @@
 </template>
 
 <script>
-import { mapState, mapActions } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
+import { mapActions, mapState } from "pinia";
+import { useRoute } from "vue-router";
 
-import url from "@/utils/url";
 import { files } from "@/api";
 import { StatusError } from "@/api/utils.js";
+import url from "@/utils/url";
 
 export default {
   name: "file-list",
@@ -81,10 +82,18 @@ export default {
 
       this.$emit("update:selected", this.current);
 
-      // If the path isn't the root path,
+      // Determine root path based on bucket
+      let rootPath = "/files/";
+      const route = useRoute();
+      const match = route.path.match(/^\/files\/([^/]+)/);
+      if (match) {
+        rootPath = `/files/${match[1]}/`;
+      }
+
+      // If the path isn't at root path,
       // show a button to navigate to the previous
       // directory.
-      if (req.url !== "/files/") {
+      if (req.url !== rootPath) {
         this.items.push({
           name: "..",
           url: url.removeLastDir(req.url) + "/",
@@ -94,8 +103,8 @@ export default {
       // If this folder is empty, finish here.
       if (req.items === null) return;
 
-      // Otherwise we add every directory to the
-      // move options.
+      // Otherwise we add every directory to
+      // the move options.
       for (const item of req.items) {
         if (!item.isDir) continue;
         if (this.exclude?.includes(item.url)) continue;
@@ -108,7 +117,7 @@ export default {
     },
     next: function (event) {
       // Retrieves the URL of the directory the user
-      // just clicked in and fill the options with its
+      // just clicked on and fills the options with its
       // content.
       const uri = event.currentTarget.dataset.url;
       this.abortOngoingNext();

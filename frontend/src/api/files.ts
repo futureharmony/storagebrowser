@@ -6,15 +6,26 @@ import { createURL, fetchURL, removePrefix, StatusError } from "./utils";
 
 export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
   console.log('[API FETCH] original url:', url);
-  url = removePrefix(url);
 
-  // For S3 storage, also strip the bucket name from the URL
   const appConfig = (window as any).FileBrowser || {};
+
+  // Process URL based on scope and storage type
   if (appConfig.StorageType === "s3") {
-    const bucketMatch = url.match(/^\/([^/]+)/);
-    if (bucketMatch) {
-      url = url.slice(bucketMatch[0].length) || '/';
+    if (scope) {
+      // For S3 storage with scope, the URL is already processed in Files.vue
+      // URL is already in the correct format (e.g., "/folder")
+      // No need to call removePrefix
+    } else {
+      url = removePrefix(url);
+      // For S3 storage without scope, strip the bucket name from the URL
+      const bucketMatch = url.match(/^\/([^/]+)/);
+      if (bucketMatch) {
+        url = url.slice(bucketMatch[0].length) || '/';
+      }
     }
+  } else {
+    // For non-S3 storage, always remove prefix
+    url = removePrefix(url);
   }
 
   const res = await fetchURL(`/api/resources${url}`, { signal }, true, scope);
@@ -29,7 +40,14 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
     }
     throw e;
   }
-  data.url = `/files${url}`;
+
+  // Determine the correct base URL for item links
+  // If scope is provided, use S3 bucket path regardless of config (for compatibility)
+  if (scope) {
+    data.url = `/buckets/${scope}${url}`;
+  } else {
+    data.url = `/files${url}`;
+  }
 
   if (data.isDir) {
     if (!data.url.endsWith("/")) data.url += "/";

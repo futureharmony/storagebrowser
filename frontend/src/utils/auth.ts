@@ -5,36 +5,62 @@ import type { JwtPayload } from "jwt-decode";
 import { jwtDecode } from "jwt-decode";
 import { baseURL, noAuth } from "./constants";
 
+const USER_DATA_KEY = "user_data";
 
-export async function parseToken(token: string) {
-  // falsy or malformed jwt will throw InvalidTokenError
-  const data = jwtDecode<JwtPayload & { user: IUser }>(token);
+export async function parseAuthResponse(response: { token: string; user: IUser }) {
+  const { token, user } = response;
 
+  // Decode token to get expiration time
+  const tokenData = jwtDecode<JwtPayload & { user: IUser }>(token);
+
+  // Store token in cookie and localStorage
   document.cookie = `auth=${token}; Path=/; SameSite=Strict;`;
-
   localStorage.setItem("jwt", token);
 
+  // Store full user data (including scopes) in localStorage
+  localStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
+
+  // Update auth store
   const authStore = useAuthStore();
   authStore.jwt = token;
-  authStore.setUser(data.user);
+  authStore.setUser(user);
 
+  // Setup logout timer
   if (authStore.logoutTimer) {
     clearTimeout(authStore.logoutTimer);
   }
 
-  const expiresAt = new Date(data.exp! * 1000);
+  const expiresAt = new Date(tokenData.exp! * 1000);
   authStore.setLogoutTimer(
     window.setTimeout(() => {
       logout("inactivity");
     }, expiresAt.getTime() - Date.now())
   );
+}
 
+// Get user data with scopes from localStorage
+export function getUserWithScopes(): IUser | null {
+  const userData = localStorage.getItem(USER_DATA_KEY);
+  if (userData) {
+    try {
+      return JSON.parse(userData) as IUser;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+// Clear user data from localStorage on logout
+export function clearUserData() {
+  localStorage.removeItem(USER_DATA_KEY);
 }
 
 export async function validateLogin() {
   try {
-    if (localStorage.getItem("jwt")) {
-      await renew(<string>localStorage.getItem("jwt"));
+    const jwt = localStorage.getItem("jwt");
+    if (jwt) {
+      await renew(jwt);
     }
   } catch (error) {
     console.warn("Invalid JWT token in storage");
@@ -57,11 +83,11 @@ export async function login(
     body: JSON.stringify(data),
   });
 
-  const body = await res.text();
-
   if (res.status === 200) {
-    parseToken(body);
+    const response = await res.json();
+    await parseAuthResponse(response);
   } else {
+    const body = await res.text();
     throw new StatusError(
       body || `${res.status} ${res.statusText}`,
       res.status
@@ -77,11 +103,11 @@ export async function renew(jwt: string) {
     },
   });
 
-  const body = await res.text();
-
   if (res.status === 200) {
-    parseToken(body);
+    const response = await res.json();
+    await parseAuthResponse(response);
   } else {
+    const body = await res.text();
     throw new StatusError(
       body || `${res.status} ${res.statusText}`,
       res.status
@@ -112,6 +138,7 @@ export function logout(reason?: string) {
   authStore.clearUser();
 
   localStorage.removeItem("jwt");
+  clearUserData();
 
   if (noAuth) {
     window.location.reload();

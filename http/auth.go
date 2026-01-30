@@ -23,18 +23,16 @@ const (
 )
 
 type userInfo struct {
-	ID              uint              `json:"id"`
-	Locale          string            `json:"locale"`
-	ViewMode        users.ViewMode    `json:"viewMode"`
-	SingleClick     bool              `json:"singleClick"`
-	Perm            users.Permissions `json:"perm"`
-	Commands        []string          `json:"commands"`
-	LockPassword    bool              `json:"lockPassword"`
-	HideDotfiles    bool              `json:"hideDotfiles"`
-	DateFormat      bool              `json:"dateFormat"`
-	Username        string            `json:"username"`
-	AvailableScopes []users.Scope     `json:"availableScopes"`
-	CurrentScope    users.Scope       `json:"currentScope"`
+	ID           uint              `json:"id"`
+	Locale       string            `json:"locale"`
+	ViewMode     users.ViewMode    `json:"viewMode"`
+	SingleClick  bool              `json:"singleClick"`
+	Perm         users.Permissions `json:"perm"`
+	Commands     []string          `json:"commands"`
+	LockPassword bool              `json:"lockPassword"`
+	HideDotfiles bool              `json:"hideDotfiles"`
+	DateFormat   bool              `json:"dateFormat"`
+	Username     string            `json:"username"`
 }
 
 type authToken struct {
@@ -252,18 +250,16 @@ func renewHandler(tokenExpireTime time.Duration) handleFunc {
 func printToken(w http.ResponseWriter, _ *http.Request, d *data, user *users.User, tokenExpirationTime time.Duration) (int, error) {
 	claims := &authToken{
 		User: userInfo{
-			ID:              user.ID,
-			Locale:          user.Locale,
-			ViewMode:        user.ViewMode,
-			SingleClick:     user.SingleClick,
-			Perm:            user.Perm,
-			LockPassword:    user.LockPassword,
-			Commands:        user.Commands,
-			HideDotfiles:    user.HideDotfiles,
-			DateFormat:      user.DateFormat,
-			Username:        user.Username,
-			AvailableScopes: user.AvailableScopes,
-			CurrentScope:    user.CurrentScope,
+			ID:           user.ID,
+			Locale:       user.Locale,
+			ViewMode:     user.ViewMode,
+			SingleClick:  user.SingleClick,
+			Perm:         user.Perm,
+			LockPassword: user.LockPassword,
+			Commands:     user.Commands,
+			HideDotfiles: user.HideDotfiles,
+			DateFormat:   user.DateFormat,
+			Username:     user.Username,
 		},
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -278,8 +274,17 @@ func printToken(w http.ResponseWriter, _ *http.Request, d *data, user *users.Use
 		return http.StatusInternalServerError, err
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
-	if _, err := w.Write([]byte(signed)); err != nil {
+	// Return JSON with token and full user data (including scopes)
+	response := struct {
+		Token string      `json:"token"`
+		User  *users.User `json:"user"`
+	}{
+		Token: signed,
+		User:  user,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		return http.StatusInternalServerError, err
 	}
 	return 0, nil

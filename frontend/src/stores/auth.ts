@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { detectLocale, setLocale } from "@/i18n";
 import { cloneDeep } from "lodash-es";
 import { users } from "@/api";
+import { getUserWithScopes } from "@/utils/auth";
 
 export const useAuthStore = defineStore("auth", {
   // convert to a function
@@ -11,7 +12,7 @@ export const useAuthStore = defineStore("auth", {
     logoutTimer: number | null;
   } => ({
     user: null,
-    jwt: "",
+    jwt: localStorage.getItem("jwt") || "",
     logoutTimer: null,
   }),
   getters: {
@@ -20,7 +21,7 @@ export const useAuthStore = defineStore("auth", {
   },
   actions: {
     // no context as first argument, use `this` instead
-    setUser(user: IUser) {
+    setUser(user: IUser | null) {
       if (user === null) {
         this.user = null;
         return;
@@ -28,6 +29,14 @@ export const useAuthStore = defineStore("auth", {
 
       setLocale(user.locale || detectLocale());
       this.user = user;
+    },
+    // Load user data from localStorage on initialization
+    loadUserFromStorage() {
+      const user = getUserWithScopes();
+      if (user) {
+        this.user = user;
+        setLocale(user.locale || detectLocale());
+      }
     },
     updateUser(user: Partial<IUser>) {
       if (user.locale) {

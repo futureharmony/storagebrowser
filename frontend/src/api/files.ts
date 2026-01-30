@@ -6,6 +6,16 @@ import { createURL, fetchURL, removePrefix, StatusError } from "./utils";
 
 export async function fetch(url: string, signal?: AbortSignal) {
   url = removePrefix(url);
+
+  // For S3 storage, also strip the bucket name from the URL
+  const appConfig = (window as any).FileBrowser || {};
+  if (appConfig.StorageType === "s3") {
+    const bucketMatch = url.match(/^\/([^/]+)/);
+    if (bucketMatch) {
+      url = url.slice(bucketMatch[0].length) || '/';
+    }
+  }
+
   const res = await fetchURL(`/api/resources${url}`, { signal });
 
   let data: Resource;
@@ -40,6 +50,15 @@ export async function fetch(url: string, signal?: AbortSignal) {
 
 async function resourceAction(url: string, method: ApiMethod, content?: any) {
   url = removePrefix(url);
+
+  // For S3 storage, also strip the bucket name from the URL
+  const appConfig = (window as any).FileBrowser || {};
+  if (appConfig.StorageType === "s3") {
+    const bucketMatch = url.match(/^\/([^/]+)/);
+    if (bucketMatch) {
+      url = url.slice(bucketMatch[0].length) || '/';
+    }
+  }
 
   const opts: ApiOpts = {
     method,
@@ -113,6 +132,15 @@ async function postResources(
   onupload: any
 ) {
   url = removePrefix(url);
+
+  // For S3 storage, also strip the bucket name from the URL
+  const appConfig = (window as any).FileBrowser || {};
+  if (appConfig.StorageType === "s3") {
+    const bucketMatch = url.match(/^\/([^/]+)/);
+    if (bucketMatch) {
+      url = url.slice(bucketMatch[0].length) || '/';
+    }
+  }
 
   let bufferContent: ArrayBuffer;
   if (
@@ -215,6 +243,15 @@ export function getSubtitlesURL(file: ResourceItem) {
 
 export async function usage(url: string, signal: AbortSignal) {
   url = removePrefix(url);
+
+  // For S3 storage, also strip the bucket name from the URL
+  const appConfig = (window as any).FileBrowser || {};
+  if (appConfig.StorageType === "s3") {
+    const bucketMatch = url.match(/^\/([^/]+)/);
+    if (bucketMatch) {
+      url = url.slice(bucketMatch[0].length) || '/';
+    }
+  }
 
   const res = await fetchURL(`/api/usage${url}`, { signal });
 

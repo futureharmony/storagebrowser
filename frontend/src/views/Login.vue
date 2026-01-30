@@ -57,6 +57,7 @@ import {
 import { inject, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 
 // Define refs
 const createMode = ref<boolean>(false);
@@ -67,7 +68,9 @@ const passwordConfirm = ref<string>("");
 
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
 const { t } = useI18n({});
+
 // Define functions
 const toggleMode = () => (createMode.value = !createMode.value);
 
@@ -79,7 +82,11 @@ const submit = async (event: Event) => {
   event.preventDefault();
   event.stopPropagation();
 
-  const redirect = (route.query.redirect || "/files/") as string;
+  const appConfig = (window as any).FileBrowser || {};
+  const defaultRedirect = appConfig.StorageType === "s3" && authStore.user?.availableScopes?.length
+    ? `/files/${authStore.user.availableScopes[0].name}/`
+    : "/files/";
+  const redirect = (route.query.redirect || defaultRedirect) as string;
 
   let captcha = "";
   if (recaptcha) {

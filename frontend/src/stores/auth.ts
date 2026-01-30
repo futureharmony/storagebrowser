@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { detectLocale, setLocale } from "@/i18n";
 import { cloneDeep } from "lodash-es";
+import { users } from "@/api";
 
 export const useAuthStore = defineStore("auth", {
   // convert to a function
@@ -41,6 +42,23 @@ export const useAuthStore = defineStore("auth", {
     },
     setLogoutTimer(logoutTimer: number | null) {
       this.logoutTimer = logoutTimer;
+    },
+    async switchBucket(bucketName: string) {
+      if (!this.user) return;
+
+      const scope = this.user.availableScopes.find(s => s.name === bucketName);
+      if (scope) {
+        const data = {
+          id: this.user.id,
+          currentScope: scope,
+        };
+        try {
+          await users.update(data, ["currentScope"]);
+        } catch (error) {
+          console.error("Failed to update current scope:", error);
+        }
+        this.updateUser(data);
+      }
     },
   },
 });

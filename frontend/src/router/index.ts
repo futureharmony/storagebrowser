@@ -21,6 +21,7 @@ const titles = {
   Login: "sidebar.login",
   Share: "buttons.share",
   Files: "files.files",
+  FilesWithPath: "files.files",
   Settings: "sidebar.settings",
   ProfileSettings: "settings.profileSettings",
   Shares: "settings.shareManagement",
@@ -57,8 +58,13 @@ const routes = [
     },
     children: [
       {
-        path: ":path*",
+        path: ":bucket",
         name: "Files",
+        component: Files,
+      },
+      {
+        path: ":bucket/:path*",
+        name: "FilesWithPath",
         component: Files,
       },
     ],
@@ -145,8 +151,15 @@ const routes = [
   },
   {
     path: "/:catchAll(.*)*",
-    redirect: (to: RouteLocation) =>
-      `/files/${[...to.params.catchAll].join("/")}`,
+    redirect: (to: RouteLocation) => {
+      const authStore = useAuthStore();
+      const catchAll = [...to.params.catchAll].join("/");
+      // If user has available scopes, redirect to the first bucket
+      if (authStore.user?.availableScopes && authStore.user.availableScopes.length) {
+        return `/files/${authStore.user.availableScopes[0].name}${catchAll ? '/' + catchAll : ''}`;
+      }
+      return `/files/${catchAll}`;
+    },
   },
 ];
 
@@ -178,7 +191,8 @@ const router = createRouter({
 });
 
 router.beforeResolve(async (to, from, next) => {
-  const title = i18n.global.t(titles[to.name as keyof typeof titles]);
+  const titleKey = to.name && titles[to.name as keyof typeof titles];
+  const title = titleKey ? i18n.global.t(titleKey) : name;
   document.title = title + " - " + name;
 
   const authStore = useAuthStore();
@@ -193,7 +207,11 @@ router.beforeResolve(async (to, from, next) => {
   }
 
   if (to.path.endsWith("/login") && authStore.isLoggedIn) {
-    next({ path: "/files/" });
+    const appConfig = (window as any).FileBrowser || {};
+    const redirectPath = appConfig.StorageType === "s3" && authStore.user?.availableScopes?.length
+      ? `/files/${authStore.user.availableScopes[0].name}/`
+      : "/files/";
+    next({ path: redirectPath });
     return;
   }
 

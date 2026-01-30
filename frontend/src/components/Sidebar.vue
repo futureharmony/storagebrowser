@@ -169,7 +169,12 @@ export default {
       }
     },
     toRoot() {
-      this.$router.push({ path: "/files" });
+      // Navigate to bucket root if using S3 storage
+      const FileBrowser = window.FileBrowser;
+      const isS3 = FileBrowser?.StorageType === "s3";
+      const hasScopes = this.user?.availableScopes?.length;
+      const path = isS3 && hasScopes ? `/files/${this.user.availableScopes[0].name}/` : "/files";
+      this.$router.push({ path });
       this.closeHovers();
     },
     toAccountSettings() {

@@ -111,7 +111,7 @@
         />
         <action
           v-if="authStore.user?.perm.create"
-          icon="description"
+          icon="create"
           :label="t('sidebar.newFile')"
           show="newFile"
         />
@@ -133,25 +133,26 @@
 </template>
 
 <script setup lang="ts">
-import { useFileStore } from "@/stores/file";
-import { useLayoutStore } from "@/stores/layout";
 import { useAuthStore } from "@/stores/auth";
 import { useClipboardStore } from "@/stores/clipboard";
+import { useFileStore } from "@/stores/file";
+import { useLayoutStore } from "@/stores/layout";
 
 import { files as api, users } from "@/api";
 import Action from "@/components/header/Action.vue";
 import Search from "@/components/Search.vue";
-import { logoURL } from "@/utils/constants";
-import { enableExec } from "@/utils/constants";
-import { computed, onMounted, onUnmounted, ref, useSlots } from "vue";
+import { enableExec, logoURL } from "@/utils/constants";
+import { computed, onMounted, onUnmounted, ref, useSlots, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 defineProps<{
   showLogo?: boolean;
   showMenu?: boolean;
   showBucketSelect?: boolean;
 }>();
+
+const router = useRouter();
 
 const layoutStore = useLayoutStore();
 const fileStore = useFileStore();
@@ -186,6 +187,13 @@ const hasBuckets = computed(() => buckets.value.length > 0);
 const selectedBucket = ref<string>("");
 const isDropdownOpen = ref(false);
 const selectRef = ref<HTMLElement | null>(null);
+
+// Get current bucket name from URL
+const currentBucketFromUrl = computed(() => {
+  const match = route.path.match(/^\/files\/([^/]+)/);
+  return match ? match[1] : "";
+});
+
 const isMobile = computed(() => {
   return window.innerWidth <= 736;
 });
@@ -230,6 +238,14 @@ const toggleDropdown = () => {
 const selectBucket = async (bucketName: string) => {
   selectedBucket.value = bucketName;
   isDropdownOpen.value = false;
+
+  // Get current path after the bucket
+  const currentPath = route.path;
+  const newPath = `/files/${bucketName}${currentPath.replace(/^\/files\/[^/]+/, '') || '/'}`;
+
+  // Navigate to the new bucket URL
+  router.push(newPath);
+
   if (bucketName && authStore.user) {
     try {
       // Find the scope with the selected bucket name
@@ -245,13 +261,6 @@ const selectBucket = async (bucketName: string) => {
         await users.update(data, ["currentScope"]);
         // Update local state immediately for better UX
         authStore.updateUser(data);
-        // Reload files to show content from new bucket
-        if (fileStore.reload) {
-          fileStore.reload = false;
-          fileStore.reload = true;
-        } else {
-          fileStore.reload = true;
-        }
       }
     } catch (err) {
       console.error("Failed to switch bucket:", err);
@@ -344,13 +353,19 @@ const uploadFunc = () => {
 };
 
 onMounted(() => {
-  if (authStore.user?.currentScope.name) {
+  document.addEventListener("click", closeDropdown);
+});
+
+// Watch for route changes to update selected bucket
+watch(currentBucketFromUrl, (newBucket) => {
+  if (newBucket) {
+    selectedBucket.value = newBucket;
+  } else if (authStore.user?.currentScope.name) {
     selectedBucket.value = authStore.user.currentScope.name;
   } else if (buckets.value.length > 0) {
     selectedBucket.value = buckets.value[0].name;
   }
-  document.addEventListener("click", closeDropdown);
-});
+}, { immediate: true });
 
 onUnmounted(() => {
   document.removeEventListener("click", closeDropdown);

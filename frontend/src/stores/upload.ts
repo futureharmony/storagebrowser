@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { useFileStore } from "./file";
+import { useAuthStore } from "./auth";
 import { files as api } from "@/api";
 import buttons from "@/utils/buttons";
 import { computed, inject, markRaw, ref } from "vue";
@@ -109,16 +110,18 @@ export const useUploadStore = defineStore("upload", () => {
       }
 
       const upload = nextUpload();
+      const authStore = useAuthStore();
+      const scope = authStore.user?.currentScope?.name;
 
       if (upload.type === "dir") {
-        await api.post(upload.path).catch($showError);
+        await api.post(upload.path, "", false, () => {}, scope).catch($showError);
       } else {
         const onUpload = (event: ProgressEvent) => {
           upload.rawProgress.sentBytes = event.loaded;
         };
 
         await api
-          .post(upload.path, upload.file!, upload.overwrite, onUpload)
+          .post(upload.path, upload.file!, upload.overwrite, onUpload, scope)
           .catch((err) => err.message !== "Upload aborted" && $showError(err));
       }
 

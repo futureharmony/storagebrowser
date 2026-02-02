@@ -19,9 +19,33 @@ export async function upload(
   }
 
   filePath = removePrefix(filePath);
-  const resourcePath = `${tusEndpoint}${filePath}?override=${overwrite}`;
+  
+  // For S3 storage, strip the bucket name from the URL
+  const appConfig = (window as any).FileBrowser || {};
+  if (appConfig.StorageType === "s3") {
+    // Handle both formats: /bucket/path and /buckets/bucket/path
+    const bucketMatch = filePath.match(/^\/buckets\/([^/]+)/);
+    if (bucketMatch) {
+      // Remove /buckets/bucket prefix
+      filePath = filePath.slice(bucketMatch[0].length) || '/';
+    } else {
+      // Also check for /bucket format (without /buckets prefix)
+      const simpleBucketMatch = filePath.match(/^\/([^/]+)/);
+      if (simpleBucketMatch) {
+        filePath = filePath.slice(simpleBucketMatch[0].length) || '/';
+      }
+    }
+  }
 
   const authStore = useAuthStore();
+  
+  // Get current scope/bucket for S3 storage
+  let scopeParam = "";
+  if (appConfig.StorageType === "s3" && authStore.user?.currentScope?.name) {
+    scopeParam = `&scope=${encodeURIComponent(authStore.user.currentScope.name)}`;
+  }
+
+  const resourcePath = `${tusEndpoint}${filePath}?override=${overwrite}${scopeParam}`;
 
   // Exit early because of typescript, tus content can't be a string
   if (content === "") {

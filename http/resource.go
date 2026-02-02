@@ -24,10 +24,15 @@ import (
 )
 
 var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-	log.Printf("[RESOURCE] GET request path: %s, user: %s, currentScope: %s (rootPrefix: %s), storageType: %s", r.URL.Path, d.user.Username, d.user.CurrentScope.Name, d.user.CurrentScope.RootPrefix, d.server.StorageType)
+	// Get path from query parameter
+	path := r.URL.Query().Get("path")
+	if path == "" {
+		path = "/"
+	}
+	log.Printf("[RESOURCE] GET request path: %s, user: %s, currentScope: %s (rootPrefix: %s), storageType: %s", path, d.user.Username, d.user.CurrentScope.Name, d.user.CurrentScope.RootPrefix, d.server.StorageType)
 	file, err := files.NewFileInfo(&files.FileOptions{
 		Fs:         d.requestFs,
-		Path:       r.URL.Path,
+		Path:       path,
 		Modify:     d.user.Perm.Modify,
 		Expand:     true,
 		ReadHeader: d.server.TypeDetectionByHeader,
@@ -61,13 +66,15 @@ var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 
 func resourceDeleteHandler(fileCache FileCache) handleFunc {
 	return withUser(func(_ http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		if r.URL.Path == "/" || !d.user.Perm.Delete {
+		// Get path from query parameter
+		path := r.URL.Query().Get("path")
+		if path == "" || path == "/" || !d.user.Perm.Delete {
 			return http.StatusForbidden, nil
 		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
 			Fs:         d.requestFs,
-			Path:       r.URL.Path,
+			Path:       path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
 			ReadHeader: d.server.TypeDetectionByHeader,
@@ -89,8 +96,8 @@ func resourceDeleteHandler(fileCache FileCache) handleFunc {
 		}
 
 		err = d.RunHook(func() error {
-			return d.requestFs.RemoveAll(r.URL.Path)
-		}, "delete", r.URL.Path, "", d.user)
+			return d.requestFs.RemoveAll(path)
+		}, "delete", path, "", d.user)
 
 		if err != nil {
 			return errToStatus(err), err
@@ -102,30 +109,36 @@ func resourceDeleteHandler(fileCache FileCache) handleFunc {
 
 func resourcePostHandler(fileCache FileCache) handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		if !d.user.Perm.Create || !d.Check(r.URL.Path) {
+		// Get path from query parameter
+		path := r.URL.Query().Get("path")
+		if path == "" {
+			return http.StatusBadRequest, nil
+		}
+
+		if !d.user.Perm.Create || !d.Check(path) {
 			return http.StatusForbidden, nil
 		}
 
 		// Directories creation on POST.
-		if strings.HasSuffix(r.URL.Path, "/") {
+		if strings.HasSuffix(path, "/") {
 			// For S3 filesystems, we need to handle the root directory specially since MkdirAll("/") fails
 			if minio.IsS3FileSystem(d.requestFs) {
-				if r.URL.Path != "/" {
-					err := d.requestFs.MkdirAll(r.URL.Path, d.settings.DirMode)
+				if path != "/" {
+					err := d.requestFs.MkdirAll(path, d.settings.DirMode)
 					return errToStatus(err), err
 				} else {
 					// The root directory always exists in S3, so just return success
 					return http.StatusOK, nil
 				}
 			} else {
-				err := d.requestFs.MkdirAll(r.URL.Path, d.settings.DirMode)
+				err := d.requestFs.MkdirAll(path, d.settings.DirMode)
 				return errToStatus(err), err
 			}
 		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
 			Fs:         d.requestFs,
-			Path:       r.URL.Path,
+			Path:       path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
 			ReadHeader: d.server.TypeDetectionByHeader,
@@ -148,18 +161,19 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 		}
 
 		err = d.RunHook(func() error {
-			info, writeErr := writeFile(d.requestFs, r.URL.Path, r.Body, d.settings.FileMode, d.settings.DirMode)
+			info, writeErr := writeFile(d.requestFs, path, r.Body, d.settings.FileMode, d.settings.DirMode)
 			if writeErr != nil {
 				return writeErr
+
 			}
 
 			etag := fmt.Sprintf(`"%x%x"`, info.ModTime().UnixNano(), info.Size())
 			w.Header().Set("ETag", etag)
 			return nil
-		}, "upload", r.URL.Path, "", d.user)
+		}, "upload", path, "", d.user)
 
 		if err != nil {
-			_ = d.requestFs.RemoveAll(r.URL.Path)
+			_ = d.requestFs.RemoveAll(path)
 		}
 
 		return errToStatus(err), err
@@ -167,16 +181,22 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 }
 
 var resourcePutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-	if !d.user.Perm.Modify || !d.Check(r.URL.Path) {
+	// Get path from query parameter
+	path := r.URL.Query().Get("path")
+	if path == "" {
+		return http.StatusBadRequest, nil
+	}
+
+	if !d.user.Perm.Modify || !d.Check(path) {
 		return http.StatusForbidden, nil
 	}
 
 	// Only allow PUT for files.
-	if strings.HasSuffix(r.URL.Path, "/") {
+	if strings.HasSuffix(path, "/") {
 		return http.StatusMethodNotAllowed, nil
 	}
 
-	exists, err := afero.Exists(d.requestFs, r.URL.Path)
+	exists, err := afero.Exists(d.requestFs, path)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -185,7 +205,7 @@ var resourcePutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 	}
 
 	err = d.RunHook(func() error {
-		info, writeErr := writeFile(d.requestFs, r.URL.Path, r.Body, d.settings.FileMode, d.settings.DirMode)
+		info, writeErr := writeFile(d.requestFs, path, r.Body, d.settings.FileMode, d.settings.DirMode)
 		if writeErr != nil {
 			return writeErr
 		}
@@ -193,16 +213,21 @@ var resourcePutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 		etag := fmt.Sprintf(`"%x%x"`, info.ModTime().UnixNano(), info.Size())
 		w.Header().Set("ETag", etag)
 		return nil
-	}, "save", r.URL.Path, "", d.user)
+	}, "save", path, "", d.user)
 
 	return errToStatus(err), err
 })
 
 func resourcePatchHandler(fileCache FileCache) handleFunc {
 	return withUser(func(_ http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		src := r.URL.Path
+		src := r.URL.Query().Get("path")
 		dst := r.URL.Query().Get("destination")
 		action := r.URL.Query().Get("action")
+
+		if src == "" {
+			return http.StatusBadRequest, nil
+		}
+
 		dst, err := url.QueryUnescape(dst)
 		if !d.Check(src) || !d.Check(dst) {
 			return http.StatusForbidden, nil
@@ -379,9 +404,15 @@ type DiskUsageResponse struct {
 }
 
 var diskUsage = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	// Get path from query parameter
+	path := r.URL.Query().Get("path")
+	if path == "" {
+		path = "/"
+	}
+
 	file, err := files.NewFileInfo(&files.FileOptions{
 		Fs:         d.requestFs,
-		Path:       r.URL.Path,
+		Path:       path,
 		Modify:     d.user.Perm.Modify,
 		Expand:     false,
 		ReadHeader: false,

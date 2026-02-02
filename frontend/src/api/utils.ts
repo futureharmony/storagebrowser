@@ -27,9 +27,22 @@ export async function fetchURL(
 
   // Add scope parameter to URL if provided
   let finalUrl = url;
+  const params = [];
+  
+  // Extract existing query parameters
+  const urlObj = new URL(`${origin}${baseURL}${url}`);
+  const existingParams = new URLSearchParams(urlObj.search);
+  
+  // Add scope parameter if provided
   if (scope) {
-    const separator = url.includes('?') ? '&' : '?';
-    finalUrl = `${url}${separator}scope=${encodeURIComponent(scope)}`;
+    existingParams.set('scope', scope);
+  }
+  
+  // Reconstruct URL with all parameters
+  const queryString = existingParams.toString();
+  finalUrl = url.split('?')[0];
+  if (queryString) {
+    finalUrl += `?${queryString}`;
   }
 
   const { headers, ...rest } = opts;

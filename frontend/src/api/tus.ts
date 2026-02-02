@@ -40,12 +40,17 @@ export async function upload(
   const authStore = useAuthStore();
   
   // Get current scope/bucket for S3 storage
-  let scopeParam = "";
-  if (appConfig.StorageType === "s3" && authStore.user?.currentScope?.name) {
-    scopeParam = `&scope=${encodeURIComponent(authStore.user.currentScope.name)}`;
+  const scope = appConfig.StorageType === "s3" ? authStore.user?.currentScope?.name : undefined;
+
+  // Build URL with path and other parameters as query parameters
+  const urlParams = new URLSearchParams();
+  urlParams.set('path', filePath);
+  urlParams.set('override', overwrite.toString());
+  if (scope) {
+    urlParams.set('scope', scope);
   }
 
-  const resourcePath = `${tusEndpoint}${filePath}?override=${overwrite}${scopeParam}`;
+  const resourcePath = `${tusEndpoint}?${urlParams.toString()}`;
 
   // Exit early because of typescript, tus content can't be a string
   if (content === "") {

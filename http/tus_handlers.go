@@ -111,12 +111,18 @@ func keepUploadActive(filePath string) func() {
 
 func tusPostHandler() handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		if !d.user.Perm.Create || !d.Check(r.URL.Path) {
+		// Get path from query parameter
+		path := r.URL.Query().Get("path")
+		if path == "" {
+			return http.StatusBadRequest, nil
+		}
+
+		if !d.user.Perm.Create || !d.Check(path) {
 			return http.StatusForbidden, nil
 		}
 		file, err := files.NewFileInfo(&files.FileOptions{
 			Fs:         d.requestFs,
-			Path:       r.URL.Path,
+			Path:       path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
 			ReadHeader: d.server.TypeDetectionByHeader,
@@ -160,7 +166,7 @@ func tusPostHandler() handleFunc {
 			fileFlags |= os.O_TRUNC
 		}
 
-		openFile, err := d.requestFs.OpenFile(r.URL.Path, fileFlags, d.settings.FileMode)
+		openFile, err := d.requestFs.OpenFile(path, fileFlags, d.settings.FileMode)
 		if err != nil {
 			return errToStatus(err), err
 		}
@@ -170,7 +176,7 @@ func tusPostHandler() handleFunc {
 		// may not be immediately visible after creation
 		file, err = files.NewFileInfo(&files.FileOptions{
 			Fs:         d.requestFs,
-			Path:       r.URL.Path,
+			Path:       path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
 			ReadHeader: false,
@@ -184,13 +190,13 @@ func tusPostHandler() handleFunc {
 				// Create a basic file info for the new file
 				file = &files.FileInfo{
 					Fs:        d.requestFs,
-					Path:      r.URL.Path,
-					Name:      filepath.Base(r.URL.Path),
+					Path:      path,
+					Name:      filepath.Base(path),
 					IsDir:     false,
 					Mode:      d.settings.FileMode,
 					Size:      0, // New file size is 0
 					ModTime:   time.Now(),
-					Extension: filepath.Ext(r.URL.Path),
+					Extension: filepath.Ext(path),
 				}
 			} else {
 				return errToStatus(err), err
@@ -208,7 +214,7 @@ func tusPostHandler() handleFunc {
 		// Check if it's an S3 filesystem to handle it differently
 		if s3wrapper, ok := d.requestFs.(*aferos3.FsWrapper); ok {
 			// Initiate multipart upload for S3
-			uploadID, initErr := s3wrapper.InitiateMultipartUpload(r.URL.Path)
+			uploadID, initErr := s3wrapper.InitiateMultipartUpload(path)
 			if initErr != nil {
 				return http.StatusInternalServerError, fmt.Errorf("failed to initiate multipart upload: %w", initErr)
 			}
@@ -221,12 +227,12 @@ func tusPostHandler() handleFunc {
 			}
 		}
 
-		path, err := url.JoinPath("/", d.server.BaseURL, "/api/tus", r.URL.Path)
+		locationPath, err := url.JoinPath("/", d.server.BaseURL, "/api/tus", path)
 		if err != nil {
 			return http.StatusBadRequest, fmt.Errorf("invalid path: %w", err)
 		}
 
-		w.Header().Set("Location", path)
+		w.Header().Set("Location", locationPath)
 		return http.StatusCreated, nil
 	})
 }
@@ -234,13 +240,20 @@ func tusPostHandler() handleFunc {
 func tusHeadHandler() handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		w.Header().Set("Cache-Control", "no-store")
-		if !d.user.Perm.Create || !d.Check(r.URL.Path) {
+
+		// Get path from query parameter
+		path := r.URL.Query().Get("path")
+		if path == "" {
+			return http.StatusBadRequest, nil
+		}
+
+		if !d.user.Perm.Create || !d.Check(path) {
 			return http.StatusForbidden, nil
 		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
 			Fs:         d.requestFs,
-			Path:       r.URL.Path,
+			Path:       path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
 			ReadHeader: d.server.TypeDetectionByHeader,
@@ -276,7 +289,13 @@ func tusHeadHandler() handleFunc {
 
 func tusPatchHandler() handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		if !d.user.Perm.Create || !d.Check(r.URL.Path) {
+		// Get path from query parameter
+		path := r.URL.Query().Get("path")
+		if path == "" {
+			return http.StatusBadRequest, nil
+		}
+
+		if !d.user.Perm.Create || !d.Check(path) {
 			return http.StatusForbidden, nil
 		}
 		if r.Header.Get("Content-Type") != "application/offset+octet-stream" {
@@ -290,7 +309,7 @@ func tusPatchHandler() handleFunc {
 
 		file, err := files.NewFileInfo(&files.FileOptions{
 			Fs:         d.requestFs,
-			Path:       r.URL.Path,
+			Path:       path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
 			ReadHeader: d.server.TypeDetectionByHeader,
@@ -349,7 +368,7 @@ func tusPatchHandler() handleFunc {
 
 			// Upload part
 			partNumber := int32(len(state.Parts) + 1) // #nosec G115 -- number of parts is small
-			etag, uploadErr := s3wrapper.UploadPart(r.URL.Path, state.UploadID, partNumber, bodyBytes)
+			etag, uploadErr := s3wrapper.UploadPart(path, state.UploadID, partNumber, bodyBytes)
 			if uploadErr != nil {
 				return http.StatusInternalServerError, fmt.Errorf("could not upload part: %w", uploadErr)
 			}
@@ -368,13 +387,13 @@ func tusPatchHandler() handleFunc {
 
 			if newOffset >= uploadLength {
 				// Complete the multipart upload
-				err = s3wrapper.CompleteMultipartUpload(r.URL.Path, state.UploadID, state.Parts)
+				err = s3wrapper.CompleteMultipartUpload(path, state.UploadID, state.Parts)
 				if err != nil {
 					return http.StatusInternalServerError, fmt.Errorf("could not complete multipart upload: %w", err)
 				}
 
 				completeUpload(file.RealPath())
-				_ = d.RunHook(func() error { return nil }, "upload", r.URL.Path, "", d.user)
+				_ = d.RunHook(func() error { return nil }, "upload", path, "", d.user)
 			}
 
 			return http.StatusNoContent, nil
@@ -389,7 +408,7 @@ func tusPatchHandler() handleFunc {
 			)
 		}
 
-		openFile, err := d.requestFs.OpenFile(r.URL.Path, os.O_WRONLY|os.O_APPEND, d.settings.FileMode)
+		openFile, err := d.requestFs.OpenFile(path, os.O_WRONLY|os.O_APPEND, d.settings.FileMode)
 		if err != nil {
 			return errToStatus(err), err
 		}
@@ -406,7 +425,7 @@ func tusPatchHandler() handleFunc {
 
 		if newOffset >= uploadLength {
 			completeUpload(file.RealPath())
-			_ = d.RunHook(func() error { return nil }, "upload", r.URL.Path, "", d.user)
+			_ = d.RunHook(func() error { return nil }, "upload", path, "", d.user)
 		}
 
 		return http.StatusNoContent, nil
@@ -415,13 +434,15 @@ func tusPatchHandler() handleFunc {
 
 func tusDeleteHandler() handleFunc {
 	return withUser(func(_ http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		if r.URL.Path == "/" || !d.user.Perm.Create {
+		// Get path from query parameter
+		path := r.URL.Query().Get("path")
+		if path == "" || path == "/" || !d.user.Perm.Create {
 			return http.StatusForbidden, nil
 		}
 
 		file, err := files.NewFileInfo(&files.FileOptions{
 			Fs:         d.requestFs,
-			Path:       r.URL.Path,
+			Path:       path,
 			Modify:     d.user.Perm.Modify,
 			Expand:     false,
 			ReadHeader: d.server.TypeDetectionByHeader,
@@ -436,7 +457,7 @@ func tusDeleteHandler() handleFunc {
 			return http.StatusNotFound, err
 		}
 
-		err = d.requestFs.RemoveAll(r.URL.Path)
+		err = d.requestFs.RemoveAll(path)
 		if err != nil {
 			return errToStatus(err), err
 		}

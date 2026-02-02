@@ -369,7 +369,8 @@ const updatePreview = async () => {
   if (!listing.value) {
     try {
       const path = url.removeLastDir(route.path);
-      const res = await api.fetch(path);
+      const scope = authStore.user?.currentScope?.name;
+      const res = await api.fetch(path, undefined, scope);
       listing.value = res.items;
     } catch (e: any) {
       $showError(e);

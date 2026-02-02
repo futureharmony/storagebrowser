@@ -38,6 +38,7 @@ import { files as api } from "@/api";
 import buttons from "@/utils/buttons";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
+import { useAuthStore } from "@/stores/auth";
 
 export default {
   name: "delete",
@@ -58,8 +59,11 @@ export default {
       buttons.loading("delete");
 
       try {
+        const authStore = useAuthStore();
+        const scope = authStore.user?.currentScope?.name;
+        
         if (!this.isListing) {
-          await api.remove(this.$route.path);
+          await api.remove(this.$route.path, scope);
           buttons.success("delete");
 
           this.currentPrompt?.confirm();
@@ -75,7 +79,7 @@ export default {
 
         const promises = [];
         for (const index of this.selected) {
-          promises.push(api.remove(this.req.items[index].url));
+          promises.push(api.remove(this.req.items[index].url, scope));
         }
 
         await Promise.all(promises);

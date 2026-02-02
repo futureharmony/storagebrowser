@@ -8,35 +8,28 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
   console.log('[API FETCH] original url:', url);
 
   const appConfig = (window as any).FileBrowser || {};
+  let path = url;
 
-  // Process URL based on scope and storage type
   if (appConfig.StorageType === "s3") {
     if (scope) {
-      // For S3 storage with scope, the URL is already processed in Files.vue
-      // URL is already in the correct format (e.g., "/folder")
-      // No need to call removePrefix
-    } else {
-      url = removePrefix(url);
-      // For S3 storage without scope, strip the bucket name from the URL
-      // Handle both formats: /bucket/path and /buckets/bucket/path
-      const bucketMatch = url.match(/^\/buckets\/([^/]+)/);
+      // For S3 storage with scope, strip the bucket prefix from the URL
+      // The scope is already known, so we need the path within the bucket
+      const bucketMatch = path.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
-        // Remove /buckets/bucket prefix
-        url = url.slice(bucketMatch[0].length) || '/';
-      } else {
-        // Also check for /bucket format (without /buckets prefix)
-        const simpleBucketMatch = url.match(/^\/([^/]+)/);
-        if (simpleBucketMatch) {
-          url = url.slice(simpleBucketMatch[0].length) || '/';
-        }
+        path = path.slice(bucketMatch[0].length) || '/';
+      }
+    } else {
+      path = removePrefix(path);
+      const bucketMatch = path.match(/^\/buckets\/([^/]+)/);
+      if (bucketMatch) {
+        path = path.slice(bucketMatch[0].length) || '/';
       }
     }
   } else {
-    // For non-S3 storage, always remove prefix
-    url = removePrefix(url);
+    path = removePrefix(path);
   }
 
-  const res = await fetchURL(`/api/resources${url}`, { signal }, true, scope);
+  const res = await fetchURL(`/api/resources?path=${encodeURIComponent(path)}`, { signal }, true, scope);
 
   let data: Resource;
   try {
@@ -117,7 +110,20 @@ async function resourceAction(url: string, method: ApiMethod, content?: any, sco
     opts.body = content;
   }
 
-  const res = await fetchURL(`/api/resources${finalUrl}`, opts, true, scope);
+  // Build URL with path as query parameter
+  const baseUrl = `/api/resources`;
+  const urlParams = new URLSearchParams();
+  urlParams.set('path', processedPath);
+  
+  // Add original query parameters if any
+  if (queryPart) {
+    const originalParams = new URLSearchParams(queryPart);
+    for (const [key, value] of originalParams) {
+      urlParams.set(key, value);
+    }
+  }
+  
+  const res = await fetchURL(`${baseUrl}?${urlParams.toString()}`, opts, true, scope);
 
   return res;
 }
@@ -211,16 +217,22 @@ async function postResources(
   const authStore = useAuthStore();
   
   // Get current scope/bucket for S3 storage
-  let scopeParam = "";
-  if (appConfig.StorageType === "s3" && authStore.user?.currentScope?.name) {
-    scopeParam = `&scope=${encodeURIComponent(authStore.user.currentScope.name)}`;
-  }
+  const scope = appConfig.StorageType === "s3" ? authStore.user?.currentScope?.name : undefined;
 
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
+    
+    // Build URL with path and other parameters as query parameters
+    const urlParams = new URLSearchParams();
+    urlParams.set('path', url);
+    urlParams.set('override', overwrite.toString());
+    if (scope) {
+      urlParams.set('scope', scope);
+    }
+    
     request.open(
       "POST",
-      `${baseURL}/api/resources${url}?override=${overwrite}${scopeParam}`,
+      `${baseURL}/api/resources?${urlParams.toString()}`,
       true
     );
     request.setRequestHeader("X-Auth", authStore.jwt);
@@ -282,10 +294,15 @@ function moveCopy(
       processedTo = removePrefix(to ?? "");
     }
     
-    const url = `${processedFrom}?action=${
-      copy ? "copy" : "rename"
-    }&destination=${encodeURIComponent(processedTo)}&override=${overwrite}&rename=${rename}`;
-    promises.push(resourceAction(url, "PATCH", undefined, scope));
+    // Build query parameters for PATCH request
+    const urlParams = new URLSearchParams();
+    urlParams.set('path', processedFrom);
+    urlParams.set('action', copy ? "copy" : "rename");
+    urlParams.set('destination', processedTo);
+    urlParams.set('override', overwrite.toString());
+    urlParams.set('rename', rename.toString());
+    
+    promises.push(resourceAction(`?${urlParams.toString()}`, "PATCH", undefined, scope));
   }
   layoutStore.closeHovers();
   return Promise.all(promises);
@@ -300,7 +317,13 @@ export function copy(items: any[], overwrite = false, rename = false) {
 }
 
 export async function checksum(url: string, algo: ChecksumAlg, scope?: string) {
-  const data = await resourceAction(`${url}?checksum=${algo}`, "GET", undefined, scope);
+  // Extract path and query parameters
+  const [path, query] = url.split('?');
+  const urlParams = new URLSearchParams(query || '');
+  urlParams.set('path', path);
+  urlParams.set('checksum', algo);
+  
+  const data = await resourceAction(`?${urlParams.toString()}`, "GET", undefined, scope);
   return (await data.json()).checksums[algo];
 }
 
@@ -359,7 +382,7 @@ export async function usage(url: string, signal: AbortSignal, scope?: string) {
     url = removePrefix(url);
   }
 
-  const res = await fetchURL(`/api/usage${url}`, { signal }, true, scope);
+  const res = await fetchURL(`/api/usage?path=${encodeURIComponent(url)}`, { signal }, true, scope);
 
   try {
     return await res.json();

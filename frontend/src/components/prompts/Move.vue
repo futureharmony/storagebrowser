@@ -87,9 +87,11 @@ export default {
   },
   methods: {
     ...mapActions(useLayoutStore, ["showHover", "closeHovers"]),
-    move: async function (event) {
-      event.preventDefault();
-      const items = [];
+     move: async function (event) {
+       event.preventDefault();
+       const authStore = useAuthStore();
+       const scope = authStore.user?.currentScope?.name;
+       const items = [];
 
       for (const item of this.selected) {
         items.push({
@@ -115,7 +117,7 @@ export default {
           });
       };
 
-      const dstItems = (await api.fetch(this.dest)).items;
+       const dstItems = (await api.fetch(this.dest, undefined, scope)).items;
       const conflict = upload.checkConflict(items, dstItems);
 
       let overwrite = false;

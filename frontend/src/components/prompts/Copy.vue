@@ -81,9 +81,11 @@ export default {
   },
   methods: {
     ...mapActions(useLayoutStore, ["showHover", "closeHovers"]),
-    copy: async function (event) {
-      event.preventDefault();
-      const items = [];
+     copy: async function (event) {
+       event.preventDefault();
+       const authStore = useAuthStore();
+       const scope = authStore.user?.currentScope?.name;
+       const items = [];
 
       // Create a new promise for each file.
       for (const item of this.selected) {
@@ -124,7 +126,7 @@ export default {
         return;
       }
 
-      const dstItems = (await api.fetch(this.dest)).items;
+       const dstItems = (await api.fetch(this.dest, undefined, scope)).items;
       const conflict = upload.checkConflict(items, dstItems);
 
       let overwrite = false;

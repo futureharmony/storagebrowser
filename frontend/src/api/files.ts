@@ -69,38 +69,26 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
 }
 
 async function resourceAction(url: string, method: ApiMethod, content?: any, scope?: string) {
-  // Extract query parameters before processing the path
   const [pathWithoutQuery, queryPart] = url.split('?');
   let processedPath = pathWithoutQuery;
 
-  // For S3 storage with scope, the path is already processed (doesn't include bucket)
-  // For non-S3 storage or without scope, apply removePrefix
   const appConfig = (window as any).FileBrowser || {};
   if (appConfig.StorageType === "s3" && scope) {
-    // Path is already processed in moveCopy, no need to remove bucket/prefix
-    processedPath = pathWithoutQuery;
+    // For S3 storage with scope, strip the bucket prefix from the URL
+    const bucketMatch = processedPath.match(/^\/buckets\/([^/]+)/);
+    if (bucketMatch) {
+      processedPath = processedPath.slice(bucketMatch[0].length) || '/';
+    }
   } else {
-    processedPath = removePrefix(pathWithoutQuery);
+    processedPath = removePrefix(processedPath);
     
-    // For S3 storage without scope, strip the bucket name from the URL
     if (appConfig.StorageType === "s3") {
-      // Handle both formats: /bucket/path and /buckets/bucket/path
       const bucketMatch = processedPath.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
-        // Remove /buckets/bucket prefix
         processedPath = processedPath.slice(bucketMatch[0].length) || '/';
-      } else {
-        // Also check for /bucket format (without /buckets prefix)
-        const simpleBucketMatch = processedPath.match(/^\/([^/]+)/);
-        if (simpleBucketMatch) {
-          processedPath = processedPath.slice(simpleBucketMatch[0].length) || '/';
-        }
       }
     }
   }
-
-  // Reconstruct URL with processed path and original query parameters
-  const finalUrl = queryPart ? `${processedPath}?${queryPart}` : processedPath;
 
   const opts: ApiOpts = {
     method,
@@ -110,12 +98,10 @@ async function resourceAction(url: string, method: ApiMethod, content?: any, sco
     opts.body = content;
   }
 
-  // Build URL with path as query parameter
   const baseUrl = `/api/resources`;
   const urlParams = new URLSearchParams();
   urlParams.set('path', processedPath);
   
-  // Add original query parameters if any
   if (queryPart) {
     const originalParams = new URLSearchParams(queryPart);
     for (const [key, value] of originalParams) {

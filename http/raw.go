@@ -11,6 +11,7 @@ import (
 	"os"
 	gopath "path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -90,9 +91,40 @@ var rawHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) 
 		return http.StatusAccepted, nil
 	}
 
+	// Check for scope and path query parameters (for S3 storage)
+	path := r.URL.Path
+	scopeParam := r.URL.Query().Get("scope")
+	if scopeParam != "" && d.server.StorageType == "s3" {
+		// Use scope parameter to get the path within the bucket
+		pathParam := r.URL.Query().Get("path")
+		if pathParam != "" {
+			path = pathParam
+		} else {
+			// If no path param, strip bucket prefix from URL path
+			bucketMatch := regexp.MustCompile(`^/buckets/[^/]+(.*)$`).FindStringSubmatch(path)
+			if bucketMatch != nil {
+				path = bucketMatch[1]
+				if path == "" {
+					path = "/"
+				}
+			}
+		}
+	} else {
+		// For non-S3 or no scope param, strip bucket prefix if present
+		if d.server.StorageType == "s3" {
+			bucketMatch := regexp.MustCompile(`^/buckets/[^/]+(.*)$`).FindStringSubmatch(path)
+			if bucketMatch != nil {
+				path = bucketMatch[1]
+				if path == "" {
+					path = "/"
+				}
+			}
+		}
+	}
+
 	file, err := files.NewFileInfo(&files.FileOptions{
 		Fs:         d.requestFs,
-		Path:       r.URL.Path,
+		Path:       path,
 		Modify:     d.user.Perm.Modify,
 		Expand:     false,
 		ReadHeader: d.server.TypeDetectionByHeader,

@@ -123,10 +123,33 @@ export async function put(url: string, content = "", scope?: string) {
 }
 
 export function download(format: any, ...files: string[]) {
+  const appConfig = (window as any).FileBrowser || {};
   let url = `${baseURL}/api/raw`;
+  const params = new URLSearchParams();
 
   if (files.length === 1) {
-    url += removePrefix(files[0]) + "?";
+    let path = files[0];
+    if (appConfig.StorageType === "s3") {
+      const authStore = useAuthStore();
+      const scope = authStore.user?.currentScope?.name;
+      if (scope) {
+        params.set('scope', scope);
+        // Path should be relative to the bucket, strip bucket prefix if present
+        if (path.startsWith('/buckets/' + scope)) {
+          path = path.slice(('/buckets/' + scope).length) || '/';
+        } else if (path.startsWith('/')) {
+          path = path.slice(1);
+        }
+        params.set('path', path);
+        url += '?' + params.toString();
+        if (format) {
+          params.set('algo', format);
+        }
+        window.open(url);
+        return;
+      }
+    }
+    url += removePrefix(path) + "?";
   } else {
     let arg = "";
 
@@ -314,11 +337,31 @@ export async function checksum(url: string, algo: ChecksumAlg, scope?: string) {
 }
 
 export function getDownloadURL(file: ResourceItem, inline: any) {
-  const params = {
+  const params: Record<string, string> = {
     ...(inline && { inline: "true" }),
   };
 
-  return createURL("api/raw" + file.path, params);
+  const appConfig = (window as any).FileBrowser || {};
+  let path = file.path;
+
+  // For S3 storage, use scope and path query parameters
+  if (appConfig.StorageType === "s3") {
+    const authStore = useAuthStore();
+    const scope = authStore.user?.currentScope?.name;
+    if (scope) {
+      params.scope = scope;
+      // Path should be relative to the bucket, strip bucket prefix if present
+      if (path.startsWith('/buckets/' + scope)) {
+        path = path.slice(('/buckets/' + scope).length) || '/';
+      } else if (path.startsWith('/')) {
+        path = path.slice(1); // Remove leading slash
+      }
+      params.path = path;
+      return createURL("api/raw", params);
+    }
+  }
+
+  return createURL("api/raw" + path, params);
 }
 
 export function getPreviewURL(file: ResourceItem, size: string) {

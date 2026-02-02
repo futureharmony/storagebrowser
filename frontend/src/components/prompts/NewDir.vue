@@ -43,6 +43,7 @@
 import { inject, ref } from "vue";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
+import { useAuthStore } from "@/stores/auth";
 
 import { files as api } from "@/api";
 import url from "@/utils/url";
@@ -85,8 +86,11 @@ const submit = async (event: Event) => {
   uri += encodeURIComponent(name.value) + "/";
   uri = uri.replace("//", "/");
 
+  const authStore = useAuthStore();
+  const scope = authStore.user?.currentScope?.name;
+
   try {
-    await api.post(uri);
+    await api.post(uri, "", false, () => {}, scope);
     if (props.redirect) {
       router.push({ path: uri });
     } else if (!props.base) {

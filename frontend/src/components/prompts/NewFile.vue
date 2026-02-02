@@ -42,6 +42,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
+import { useAuthStore } from "@/stores/auth";
 
 import { files as api } from "@/api";
 import url from "@/utils/url";
@@ -71,8 +72,11 @@ const submit = async (event: Event) => {
   uri += encodeURIComponent(name.value);
   uri = uri.replace("//", "/");
 
+  const authStore = useAuthStore();
+  const scope = authStore.user?.currentScope?.name;
+
   try {
-    await api.post(uri);
+    await api.post(uri, "", false, () => {}, scope);
     router.push({ path: uri });
   } catch (e) {
     if (e instanceof Error) {

@@ -18,9 +18,17 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
     } else {
       url = removePrefix(url);
       // For S3 storage without scope, strip the bucket name from the URL
-      const bucketMatch = url.match(/^\/([^/]+)/);
+      // Handle both formats: /bucket/path and /buckets/bucket/path
+      const bucketMatch = url.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
+        // Remove /buckets/bucket prefix
         url = url.slice(bucketMatch[0].length) || '/';
+      } else {
+        // Also check for /bucket format (without /buckets prefix)
+        const simpleBucketMatch = url.match(/^\/([^/]+)/);
+        if (simpleBucketMatch) {
+          url = url.slice(simpleBucketMatch[0].length) || '/';
+        }
       }
     }
   } else {
@@ -83,9 +91,17 @@ async function resourceAction(url: string, method: ApiMethod, content?: any, sco
     
     // For S3 storage without scope, strip the bucket name from the URL
     if (appConfig.StorageType === "s3") {
-      const bucketMatch = processedPath.match(/^\/([^/]+)/);
+      // Handle both formats: /bucket/path and /buckets/bucket/path
+      const bucketMatch = processedPath.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
+        // Remove /buckets/bucket prefix
         processedPath = processedPath.slice(bucketMatch[0].length) || '/';
+      } else {
+        // Also check for /bucket format (without /buckets prefix)
+        const simpleBucketMatch = processedPath.match(/^\/([^/]+)/);
+        if (simpleBucketMatch) {
+          processedPath = processedPath.slice(simpleBucketMatch[0].length) || '/';
+        }
       }
     }
   }
@@ -142,7 +158,8 @@ export async function post(
   url: string,
   content: ApiContent = "",
   overwrite = false,
-  onupload: any = () => {}
+  onupload: any = () => {},
+  scope?: string
 ) {
   // Use the pre-existing API if:
   const useResourcesApi =
@@ -169,9 +186,17 @@ async function postResources(
   // For S3 storage, also strip the bucket name from the URL
   const appConfig = (window as any).FileBrowser || {};
   if (appConfig.StorageType === "s3") {
-    const bucketMatch = url.match(/^\/([^/]+)/);
+    // Handle both formats: /bucket/path and /buckets/bucket/path
+    const bucketMatch = url.match(/^\/buckets\/([^/]+)/);
     if (bucketMatch) {
+      // Remove /buckets/bucket prefix
       url = url.slice(bucketMatch[0].length) || '/';
+    } else {
+      // Also check for /bucket format (without /buckets prefix)
+      const simpleBucketMatch = url.match(/^\/([^/]+)/);
+      if (simpleBucketMatch) {
+        url = url.slice(simpleBucketMatch[0].length) || '/';
+      }
     }
   }
 
@@ -184,11 +209,18 @@ async function postResources(
   }
 
   const authStore = useAuthStore();
+  
+  // Get current scope/bucket for S3 storage
+  let scopeParam = "";
+  if (appConfig.StorageType === "s3" && authStore.user?.currentScope?.name) {
+    scopeParam = `&scope=${encodeURIComponent(authStore.user.currentScope.name)}`;
+  }
+
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open(
       "POST",
-      `${baseURL}/api/resources${url}?override=${overwrite}`,
+      `${baseURL}/api/resources${url}?override=${overwrite}${scopeParam}`,
       true
     );
     request.setRequestHeader("X-Auth", authStore.jwt);
@@ -267,8 +299,8 @@ export function copy(items: any[], overwrite = false, rename = false) {
   return moveCopy(items, true, overwrite, rename);
 }
 
-export async function checksum(url: string, algo: ChecksumAlg) {
-  const data = await resourceAction(`${url}?checksum=${algo}`, "GET");
+export async function checksum(url: string, algo: ChecksumAlg, scope?: string) {
+  const data = await resourceAction(`${url}?checksum=${algo}`, "GET", undefined, scope);
   return (await data.json()).checksums[algo];
 }
 
@@ -309,9 +341,17 @@ export async function usage(url: string, signal: AbortSignal, scope?: string) {
     } else {
       url = removePrefix(url);
       // For S3 storage without scope, strip the bucket name from the URL
-      const bucketMatch = url.match(/^\/([^/]+)/);
+      // Handle both formats: /bucket/path and /buckets/bucket/path
+      const bucketMatch = url.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
+        // Remove /buckets/bucket prefix
         url = url.slice(bucketMatch[0].length) || '/';
+      } else {
+        // Also check for /bucket format (without /buckets prefix)
+        const simpleBucketMatch = url.match(/^\/([^/]+)/);
+        if (simpleBucketMatch) {
+          url = url.slice(simpleBucketMatch[0].length) || '/';
+        }
       }
     }
   } else {

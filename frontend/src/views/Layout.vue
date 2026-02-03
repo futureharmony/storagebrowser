@@ -8,7 +8,7 @@
       ></div>
     </div>
     <header-bar showMenu showLogo :showBucketSelect="route.path.includes('/files') || route.path.includes('/buckets')"></header-bar>
-    <sidebar></sidebar>
+    <sidebar v-if="!isEditor"></sidebar>
     <main>
       <router-view></router-view>
       <shell
@@ -43,8 +43,13 @@ const uploadStore = useUploadStore();
 const route = useRoute();
 
 const sentPercent = computed(() =>
-  ((uploadStore.sentBytes / uploadStore.totalBytes) * 100).toFixed(2)
+  ((uploadStore.sentBytes / uploadStore.totalBytes).toFixed(2))
 );
+
+const isEditor = computed(() => {
+  return fileStore.req && !fileStore.req.isDir && 
+    (fileStore.req.type === "text" || fileStore.req.type === "textImmutable");
+});
 
 watch(route, () => {
   fileStore.selected = [];

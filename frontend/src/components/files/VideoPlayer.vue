@@ -109,7 +109,7 @@ const getOptions = (...srcOpt: any[]) => {
 //  Attempting to fix the issue of being unable to play .MKV format video files
 const getSourceType = (source: string) => {
   const fileExtension = source ? source.split("?")[0].split(".").pop() : "";
-  const ext = fileExtension?.toLowerCase();
+  const ext = fileExtension?.toLowerCase() ?? "";
 
   const mimeTypes: { [key: string]: string } = {
     "mp4": "video/mp4",

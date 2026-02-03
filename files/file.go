@@ -65,6 +65,7 @@ type FileOptions struct {
 	Token      string
 	Checker    rules.Checker
 	Content    bool
+	Limit      int
 }
 
 type ImageResolution struct {
@@ -92,8 +93,7 @@ func NewFileInfo(opts *FileOptions) (*FileInfo, error) {
 
 	if opts.Expand {
 		if file.IsDir {
-			// TODO this step take so many time， maybe we can optimize it
-			if err := file.simpleReadListingFromS3(opts.Checker, opts.ReadHeader); err != nil { //nolint:govet
+			if err := file.simpleReadListingFromS3(opts.Checker, opts.ReadHeader, opts.Limit); err != nil { //nolint:govet
 				return nil, err
 			}
 			return file, nil
@@ -492,14 +492,15 @@ func (i *FileInfo) readListing(checker rules.Checker, readHeader bool) error {
 }
 
 // simpleReadListingFromS3 is used for S3-compatible filesystems that implement Readdir
-func (i *FileInfo) simpleReadListingFromS3(checker rules.Checker, readHeader bool) error {
+func (i *FileInfo) simpleReadListingFromS3(checker rules.Checker, readHeader bool, limit int) error {
 	// Try to use the optimized S3 listing interface if available
 	type S3Lister interface {
-		ListDirectory(path string) ([]os.FileInfo, error)
+		ListDirectory(path string, limit int) ([]os.FileInfo, error)
 	}
 
 	if s3Lister, ok := i.Fs.(S3Lister); ok {
-		dir, err := s3Lister.ListDirectory(i.Path)
+		// Use the limit from the request to optimize S3 query
+		dir, err := s3Lister.ListDirectory(i.Path, limit)
 		if err != nil {
 			return err
 		}

@@ -13,6 +13,7 @@ type Listing struct {
 	NumDirs  int         `json:"numDirs"`
 	NumFiles int         `json:"numFiles"`
 	Sorting  Sorting     `json:"sorting"`
+	HasMore  bool        `json:"hasMore,omitempty"`
 }
 
 // ApplySort applies the sort order using .Order and .Sort

@@ -29,7 +29,9 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
     path = removePrefix(path);
   }
 
-  const res = await fetchURL(`/api/resources?path=${encodeURIComponent(path)}`, { signal }, true, scope);
+  const urlParams = new URLSearchParams();
+  urlParams.set('path', path);
+  const res = await fetchURL(`/api/resources?${urlParams.toString()}`, { signal }, true, scope);
 
   let data: Resource;
   try {
@@ -141,15 +143,16 @@ export function download(format: any, ...files: string[]) {
           path = path.slice(1);
         }
         params.set('path', path);
-        url += '?' + params.toString();
         if (format) {
           params.set('algo', format);
         }
+        url += '?' + params.toString();
         window.open(url);
         return;
       }
     }
-    url += removePrefix(path) + "?";
+    params.set('path', removePrefix(path));
+    url += '?' + params.toString();
   } else {
     let arg = "";
 
@@ -158,12 +161,15 @@ export function download(format: any, ...files: string[]) {
     }
 
     arg = arg.substring(0, arg.length - 1);
-    arg = encodeURIComponent(arg);
-    url += `/?files=${arg}&`;
+    params.set('files', arg);
+    url += '?' + params.toString();
   }
 
   if (format) {
-    url += `algo=${format}&`;
+    params.set('algo', format);
+    // Reconstruct URL with updated params
+    const newParams = new URLSearchParams(params.toString());
+    url = `${baseURL}/api/raw?${newParams.toString()}`;
   }
 
   window.open(url);
@@ -411,7 +417,9 @@ export async function usage(url: string, signal: AbortSignal, scope?: string) {
     url = removePrefix(url);
   }
 
-  const res = await fetchURL(`/api/usage?path=${encodeURIComponent(url)}`, { signal }, true, scope);
+  const urlParams = new URLSearchParams();
+  urlParams.set('path', url);
+  const res = await fetchURL(`/api/usage?${urlParams.toString()}`, { signal }, true, scope);
 
   try {
     return await res.json();

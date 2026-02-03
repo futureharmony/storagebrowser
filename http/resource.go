@@ -21,6 +21,8 @@ import (
 	"github.com/futureharmony/storagebrowser/v2/files"
 	"github.com/futureharmony/storagebrowser/v2/fileutils"
 	"github.com/futureharmony/storagebrowser/v2/minio"
+
+	aferos3 "github.com/futureharmony/afero-aws-s3"
 )
 
 var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
@@ -451,11 +453,20 @@ var diskUsage = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (
 		return errToStatus(err), err
 	}
 	if minio.IsS3FileSystem(d.requestFs) {
+		// For S3, calculate actual disk usage by listing all objects
+		s3Fs := d.requestFs.(*aferos3.FsWrapper)
+		prefix := strings.TrimPrefix(path, "/")
+		if prefix != "" && !strings.HasSuffix(prefix, "/") {
+			prefix += "/"
+		}
+		size, err := s3Fs.Fs.GetDiskUsage(s3Fs.Bucket, prefix)
+		if err != nil {
+			return errToStatus(err), err
+		}
 		return renderJSON(w, r, &DiskUsageResponse{
-			Total: uint64(file.Size),
-			Used:  uint64(file.Size),
+			Total: uint64(size),
+			Used:  uint64(size),
 		})
-
 	}
 	fPath := file.RealPath()
 	if !file.IsDir {

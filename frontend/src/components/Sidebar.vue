@@ -75,21 +75,7 @@
         </ul>
       </div>
 
-      <!-- Storage Usage -->
-      <div v-if="authStore.isLoggedIn && fileStore.isFiles && !disableUsedPercentage" class="storage-usage"
-        :class="{ 'storage-usage-collapsed': isCollapsed }">
-        <div v-if="!isCollapsed" class="storage-full">
-          <div class="usage-header">
-            <h4 class="nav-section-title">Storage</h4>
-            <span class="usage-percentage">{{ usage.usedPercentage }}%</span>
-          </div>
-          <progress-bar :val="usage.usedPercentage" size="small" class="usage-progress"></progress-bar>
-          <p class="usage-text">{{ usage.used }} of {{ usage.total }}</p>
-        </div>
-        <div v-else class="storage-collapsed">
-          <span class="storage-used">{{ usage.used }}</span>
-        </div>
-      </div>
+
 
       <!-- Logout Button -->
       <div v-if="authStore.isLoggedIn && canLogout" class="nav-section">
@@ -130,29 +116,20 @@
 import { useAuthStore } from "@/stores/auth";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
-import { computed, onUnmounted, reactive, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import { files as api } from "@/api";
-import ProgressBar from "@/components/ProgressBar.vue";
 import * as auth from "@/utils/auth";
 import {
   disableExternal,
-  disableUsedPercentage,
   loginPage,
   noAuth,
   signup,
   version,
 } from "@/utils/constants";
-import prettyBytes from "pretty-bytes";
-
-const USAGE_DEFAULT = { used: "0 B", total: "0 B", usedPercentage: 0 };
 
 export default {
   name: "Sidebar",
-  components: {
-    ProgressBar,
-  },
   inject: ["$showError"],
   setup() {
     const route = useRoute();
@@ -161,8 +138,6 @@ export default {
     const fileStore = useFileStore();
     const layoutStore = useLayoutStore();
 
-    const usage = reactive(USAGE_DEFAULT);
-    const usageAbortController = ref(new AbortController());
     const isCollapsed = ref(false);
 
     // 计算属性
@@ -183,33 +158,6 @@ export default {
     );
 
     // 方法
-    const abortOngoingFetchUsage = () => {
-      usageAbortController.value.abort();
-    };
-
-    const fetchUsage = async () => {
-      const bucketMatch = route.path.match(/^\/buckets\/([^/]+)(\/.*)?$/);
-      const bucket = bucketMatch ? bucketMatch[1] : undefined;
-      const path = bucketMatch && bucketMatch[2] ? bucketMatch[2] : "/";
-
-      let usageStats = USAGE_DEFAULT;
-      if (disableUsedPercentage) {
-        return Object.assign(usage, usageStats);
-      }
-      try {
-        abortOngoingFetchUsage();
-        usageAbortController.value = new AbortController();
-        const usageData = await api.usage(path, usageAbortController.value.signal, bucket);
-        usageStats = {
-          used: prettyBytes(usageData.used, { binary: true }),
-          total: prettyBytes(usageData.total, { binary: true }),
-          usedPercentage: Math.round((usageData.used / usageData.total) * 100),
-        };
-      } finally {
-        return Object.assign(usage, usageStats);
-      }
-    };
-
     const toRoot = () => {
       const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
       const path = bucket ? `/buckets/${bucket}/` : "/settings/profile";
@@ -235,30 +183,8 @@ export default {
       isCollapsed.value = !isCollapsed.value;
     };
 
-    // 监听路由变化
-    watch(() => route.path, (newPath) => {
-      if (newPath.includes("/buckets")) {
-        fetchUsage();
-      }
-    }, { immediate: true });
-
-    // 监听reload变化
-
-    watch(() => fileStore.reload, (newValue) => {
-      if (newValue && route.path.includes("/buckets")) {
-        fetchUsage();
-      }
-    });
-
-    // 组件卸载时取消请求
-
-    onUnmounted(() => {
-      abortOngoingFetchUsage();
-    });
-
     return {
       // 状态
-      usage,
       isCollapsed,
 
       // stores
@@ -286,7 +212,6 @@ export default {
       signup,
       version,
       disableExternal,
-      disableUsedPercentage,
       canLogout: !noAuth && loginPage,
     };
   },
@@ -618,68 +543,11 @@ nav.sidebar.sidebar-collapsed .nav-item .indicator {
   background-color: rgba(var(--red-rgb, 244, 67, 54), 0.08);
 }
 
-.nav-item-logout i.material-icons {
+  .nav-item-logout i.material-icons {
   color: var(--red);
 }
 
-/* Storage Usage - Clean Design */
-.storage-usage {
-  padding: 1.5rem 1.5rem 1rem;
-  background-color: var(--background);
-  transition: padding 0.3s ease;
-}
-
-.storage-usage.storage-usage-collapsed {
-  padding: 0.75rem;
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  transition: padding 0.3s ease;
-}
-
-.storage-collapsed {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  width: 100%;
-}
-
-.storage-collapsed .storage-used {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--textPrimary);
-  text-align: center;
-}
-
-.usage-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-
-.usage-percentage {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--textSecondary);
-}
-
-.usage-progress {
-  margin-bottom: 0.75rem;
-}
-
-.usage-text {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: var(--textPrimary);
-  text-align: center;
-  opacity: 0.8;
-  white-space: nowrap;
-}
-
-/* Footer - Clean and Spacious */
+  /* Footer - Clean and Spacious */
 .sidebar-footer {
   padding: 1.25rem 1.5rem 1rem;
   background-color: transparent;

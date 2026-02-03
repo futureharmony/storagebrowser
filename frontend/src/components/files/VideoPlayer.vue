@@ -1,14 +1,8 @@
 <template>
   <video ref="videoPlayer" class="video-max video-js" controls preload="auto">
     <source />
-    <track
-      kind="subtitles"
-      v-for="(sub, index) in subtitles"
-      :key="index"
-      :src="sub"
-      :label="subLabel(sub)"
-      :default="index === 0"
-    />
+    <track kind="subtitles" v-for="(sub, index) in subtitles" :key="index" :src="sub" :label="subLabel(sub)"
+      :default="index === 0" />
     <p class="vjs-no-js">
       Sorry, your browser doesn't support embedded videos, but don't worry, you
       can <a :href="source">download it</a>
@@ -18,13 +12,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from "vue";
 import videojs from "video.js";
 import type Player from "video.js/dist/types/player";
-import "videojs-mobile-ui";
-import "videojs-hotkeys";
 import "video.js/dist/video-js.min.css";
+import "videojs-hotkeys";
+import "videojs-mobile-ui";
 import "videojs-mobile-ui/dist/videojs-mobile-ui.css";
+import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 
 const videoPlayer = ref<HTMLElement | null>(null);
 const player = ref<Player | null>(null);
@@ -43,11 +37,9 @@ const props = withDefaults(
 const source = ref(props.source);
 const sourceType = ref("");
 
-nextTick(() => {
+onMounted(() => {
   initVideoPlayer();
 });
-
-onMounted(() => {});
 
 onBeforeUnmount(() => {
   if (player.value) {
@@ -69,7 +61,8 @@ const initVideoPlayer = async () => {
     //
     sourceType.value = getSourceType(source.value);
 
-    const srcOpt = { sources: { src: props.source, type: sourceType.value } };
+    console.log("source url", props.source)
+    const srcOpt = { sources: [{ src: props.source, type: sourceType.value }] };
     //Supporting localized language display.
     const langOpt = { language: code };
     // support for playback at different speeds.
@@ -80,7 +73,7 @@ const initVideoPlayer = async () => {
       srcOpt,
       playbackRatesOpt
     );
-    player.value = videojs(videoPlayer.value!, options, () => {});
+    player.value = videojs(videoPlayer.value!, options, () => { });
 
     // TODO: need to test on mobile
     // @ts-expect-error no ts definition for mobileUi
@@ -116,10 +109,32 @@ const getOptions = (...srcOpt: any[]) => {
 //  Attempting to fix the issue of being unable to play .MKV format video files
 const getSourceType = (source: string) => {
   const fileExtension = source ? source.split("?")[0].split(".").pop() : "";
-  if (fileExtension?.toLowerCase() === "mkv") {
-    return "video/mp4";
-  }
-  return "";
+  const ext = fileExtension?.toLowerCase();
+
+  const mimeTypes: { [key: string]: string } = {
+    "mp4": "video/mp4",
+    "m4v": "video/mp4",
+    "webm": "video/webm",
+    "ogg": "video/ogg",
+    "ogv": "video/ogg",
+    "avi": "video/x-msvideo",
+    "mov": "video/quicktime",
+    "qt": "video/quicktime",
+    "flv": "video/x-flv",
+    "wmv": "video/x-ms-wmv",
+    "mkv": "video/mp4",
+    "mpeg": "video/mpeg",
+    "mpg": "video/mpeg",
+    "mpe": "video/mpeg",
+    "m2v": "video/mpeg",
+    "m1v": "video/mpeg",
+    "3gp": "video/3gpp",
+    "3g2": "video/3gpp2",
+    "asf": "video/x-ms-asf",
+    "swf": "application/x-shockwave-flash"
+  };
+
+  return mimeTypes[ext] || "video/mp4"; // 默认返回mp4
 };
 
 const subLabel = (subUrl: string) => {

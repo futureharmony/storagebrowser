@@ -86,6 +86,63 @@ func setContentDisposition(w http.ResponseWriter, r *http.Request, file *files.F
 	}
 }
 
+// getContentTypeForExtension returns the appropriate Content-Type for a file extension
+func getContentTypeForExtension(extension string) string {
+	if extension == "" {
+		return "application/octet-stream"
+	}
+
+	// First try Go's built-in MIME type detection
+	if mimeType := mime.TypeByExtension(extension); mimeType != "" {
+		return mimeType
+	}
+
+	// Custom MIME type mappings for common video/audio formats
+	// that might not be in Go's default database
+	customMimeTypes := map[string]string{
+		".mkv":  "video/mp4",      // Matroska video, treat as MP4
+		".webm": "video/webm",     // WebM video
+		".mp4":  "video/mp4",      // MPEG-4 video
+		".m4v":  "video/mp4",      // MPEG-4 video (Apple variant)
+		".avi":  "video/x-msvideo", // AVI video
+		".mov":  "video/quicktime", // QuickTime video
+		".qt":   "video/quicktime", // QuickTime video
+		".flv":  "video/x-flv",     // Flash video
+		".wmv":  "video/x-ms-wmv",  // Windows Media Video
+		".ogg":  "video/ogg",       // Ogg video
+		".ogv":  "video/ogg",       // Ogg video
+		".mpeg": "video/mpeg",      // MPEG video
+		".mpg":  "video/mpeg",      // MPEG video
+		".mpe":  "video/mpeg",      // MPEG video
+		".m2v":  "video/mpeg",      // MPEG-2 video
+		".m1v":  "video/mpeg",      // MPEG-1 video
+		".3gp":  "video/3gpp",      // 3GPP video
+		".3g2":  "video/3gpp2",     // 3GPP2 video
+		".asf":  "video/x-ms-asf",  // Advanced Systems Format
+		".swf":  "application/x-shockwave-flash", // Shockwave Flash
+	}
+
+	// Ensure extension starts with dot
+	normalizedExt := strings.ToLower(extension)
+	if !strings.HasPrefix(normalizedExt, ".") {
+		normalizedExt = "." + normalizedExt
+	}
+
+	if mimeType, exists := customMimeTypes[normalizedExt]; exists {
+		return mimeType
+	}
+
+	// Default for unknown types
+	if strings.HasPrefix(normalizedExt, ".") {
+		// Check if it might be a video/audio file based on common patterns
+		if strings.Contains("mp4,m4v,avi,mov,flv,wmv,ogg,ogv,mkv,mpeg,mpg,mpe,3gp,3g2,asf,swf", normalizedExt[1:]) {
+			return "video/mp4"
+		}
+	}
+
+	return "application/octet-stream"
+}
+
 var rawHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	if !d.user.Perm.Download {
 		return http.StatusAccepted, nil
@@ -303,6 +360,12 @@ func rawFileHandler(w http.ResponseWriter, r *http.Request, file *files.FileInfo
 	w.Header().Add("Content-Security-Policy", `script-src 'none';`)
 	w.Header().Set("Cache-Control", "private")
 
+	// Always set Content-Type based on file extension for all files
+	if file.Extension != "" {
+		mimeType := getContentTypeForExtension(file.Extension)
+		w.Header().Set("Content-Type", mimeType)
+	}
+
 	// Check if filesystem is S3 to handle differently since S3 files are not seekable
 	// We need to get the actual filesystem from the data object in the rawHandler function
 	// Since we cannot import aferos3 in files package, we check by name or type
@@ -310,12 +373,6 @@ func rawFileHandler(w http.ResponseWriter, r *http.Request, file *files.FileInfo
 	if minio.IsS3FileSystem(file.Fs) {
 		// For S3 files, we can't use http.ServeContent because it requires seeking
 		// Instead, we'll set headers manually and copy the content
-		w.Header().Set("Content-Type", "application/octet-stream") // Default to binary
-		if file.Extension != "" {
-			if mimeType := mime.TypeByExtension(file.Extension); mimeType != "" {
-				w.Header().Set("Content-Type", mimeType)
-			}
-		}
 
 		// Set content length if available
 		if file.Size > 0 {

@@ -28,39 +28,24 @@
         <h4 v-if="!isCollapsed" class="nav-section-title">Navigation</h4>
         <ul class="nav-list">
           <li>
-            <button
-              @click="toRoot"
-              class="nav-item"
-              :class="{ active: isFilesRoute }"
-              :aria-label="$t('sidebar.myFiles')"
-              :title="$t('sidebar.myFiles')"
-            >
+            <button @click="toRoot" class="nav-item" :class="{ active: isFilesRoute }"
+              :aria-label="$t('sidebar.myFiles')" :title="$t('sidebar.myFiles')">
               <i class="material-icons">folder</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.myFiles") }}</span>
               <i v-if="!isCollapsed && isFilesRoute" class="material-icons indicator">chevron_right</i>
             </button>
           </li>
           <li>
-            <button
-              @click="toAccountSettings"
-              class="nav-item"
-              :class="{ active: isProfileRoute }"
-              :aria-label="$t('sidebar.profile')"
-              :title="$t('sidebar.profile')"
-            >
+            <button @click="toAccountSettings" class="nav-item" :class="{ active: isProfileRoute }"
+              :aria-label="$t('sidebar.profile')" :title="$t('sidebar.profile')">
               <i class="material-icons">person</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.profile") }}</span>
               <i v-if="!isCollapsed && isProfileRoute" class="material-icons indicator">chevron_right</i>
             </button>
           </li>
           <li v-if="authStore.user.perm.admin">
-            <button
-              @click="toGlobalSettings"
-              class="nav-item"
-              :class="{ active: isGlobalSettingsRoute }"
-              :aria-label="$t('sidebar.globalSettings')"
-              :title="$t('sidebar.globalSettings')"
-            >
+            <button @click="toGlobalSettings" class="nav-item" :class="{ active: isGlobalSettingsRoute }"
+              :aria-label="$t('sidebar.globalSettings')" :title="$t('sidebar.globalSettings')">
               <i class="material-icons">settings_applications</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.globalSettings") }}</span>
               <i v-if="!isCollapsed && isGlobalSettingsRoute" class="material-icons indicator">chevron_right</i>
@@ -74,24 +59,14 @@
         <h4 v-if="!isCollapsed" class="nav-section-title">Account</h4>
         <ul class="nav-list">
           <li>
-            <router-link
-              to="/login"
-              class="nav-item"
-              :aria-label="$t('sidebar.login')"
-              :title="$t('sidebar.login')"
-            >
+            <router-link to="/login" class="nav-item" :aria-label="$t('sidebar.login')" :title="$t('sidebar.login')">
               <i class="material-icons">login</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.login") }}</span>
               <i v-if="!isCollapsed" class="material-icons indicator">chevron_right</i>
             </router-link>
           </li>
           <li v-if="signup">
-            <router-link
-              to="/login"
-              class="nav-item"
-              :aria-label="$t('sidebar.signup')"
-              :title="$t('sidebar.signup')"
-            >
+            <router-link to="/login" class="nav-item" :aria-label="$t('sidebar.signup')" :title="$t('sidebar.signup')">
               <i class="material-icons">person_add</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.signup") }}</span>
               <i v-if="!isCollapsed" class="material-icons indicator">chevron_right</i>
@@ -101,11 +76,8 @@
       </div>
 
       <!-- Storage Usage -->
-      <div
-        v-if="authStore.isLoggedIn && fileStore.isFiles && !disableUsedPercentage"
-        class="storage-usage"
-        :class="{ 'storage-usage-collapsed': isCollapsed }"
-      >
+      <div v-if="authStore.isLoggedIn && fileStore.isFiles && !disableUsedPercentage" class="storage-usage"
+        :class="{ 'storage-usage-collapsed': isCollapsed }">
         <div v-if="!isCollapsed" class="storage-full">
           <div class="usage-header">
             <h4 class="nav-section-title">Storage</h4>
@@ -115,8 +87,7 @@
           <p class="usage-text">{{ usage.used }} of {{ usage.total }}</p>
         </div>
         <div v-else class="storage-collapsed">
-          <progress-bar :val="usage.usedPercentage" size="small" class="usage-progress"></progress-bar>
-          <span class="usage-percentage">{{ usage.usedPercentage }}%</span>
+          <span class="storage-used">{{ usage.used }}</span>
         </div>
       </div>
 
@@ -124,12 +95,8 @@
       <div v-if="authStore.isLoggedIn && canLogout" class="nav-section">
         <ul class="nav-list">
           <li>
-            <button
-              @click="logout"
-              class="nav-item nav-item-logout"
-              :aria-label="$t('sidebar.logout')"
-              :title="$t('sidebar.logout')"
-            >
+            <button @click="logout" class="nav-item nav-item-logout" :aria-label="$t('sidebar.logout')"
+              :title="$t('sidebar.logout')">
               <i class="material-icons">logout</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.logout") }}</span>
             </button>
@@ -141,13 +108,8 @@
     <!-- Footer (Only show when expanded) -->
     <footer v-if="!isCollapsed" class="sidebar-footer">
       <div class="footer-links">
-        <a
-          v-if="!disableExternal"
-          rel="noopener noreferrer"
-          target="_blank"
-          href="https://github.com/futureharmony/storagebrowser"
-          class="footer-link"
-        >
+        <a v-if="!disableExternal" rel="noopener noreferrer" target="_blank"
+          href="https://github.com/futureharmony/storagebrowser" class="footer-link">
           <i class="material-icons">code</i>
           <span>GitHub</span>
         </a>
@@ -165,23 +127,23 @@
 </template>
 
 <script>
-import { reactive, computed, ref, watch, onUnmounted, onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
+import { computed, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import * as auth from "@/utils/auth";
-import {
-  version,
-  signup,
-  disableExternal,
-  disableUsedPercentage,
-  noAuth,
-  loginPage,
-} from "@/utils/constants";
 import { files as api } from "@/api";
 import ProgressBar from "@/components/ProgressBar.vue";
+import * as auth from "@/utils/auth";
+import {
+  disableExternal,
+  disableUsedPercentage,
+  loginPage,
+  noAuth,
+  signup,
+  version,
+} from "@/utils/constants";
 import prettyBytes from "pretty-bytes";
 
 const USAGE_DEFAULT = { used: "0 B", total: "0 B", usedPercentage: 0 };
@@ -198,38 +160,38 @@ export default {
     const authStore = useAuthStore();
     const fileStore = useFileStore();
     const layoutStore = useLayoutStore();
-    
+
     const usage = reactive(USAGE_DEFAULT);
     const usageAbortController = ref(new AbortController());
     const isCollapsed = ref(false);
-    
+
     // 计算属性
-    const active = computed(() => 
+    const active = computed(() =>
       layoutStore.currentPromptName === "sidebar"
     );
-    
-    const isFilesRoute = computed(() => 
+
+    const isFilesRoute = computed(() =>
       route.path.includes("/files") || route.path.includes("/buckets")
     );
-    
-    const isProfileRoute = computed(() => 
+
+    const isProfileRoute = computed(() =>
       route.path === "/settings/profile"
     );
-    
-    const isGlobalSettingsRoute = computed(() => 
+
+    const isGlobalSettingsRoute = computed(() =>
       route.path === "/settings/global"
     );
-    
+
     // 方法
     const abortOngoingFetchUsage = () => {
       usageAbortController.value.abort();
     };
-    
+
     const fetchUsage = async () => {
       const bucketMatch = route.path.match(/^\/buckets\/([^/]+)(\/.*)?$/);
       const bucket = bucketMatch ? bucketMatch[1] : undefined;
       const path = bucketMatch && bucketMatch[2] ? bucketMatch[2] : "/";
-      
+
       let usageStats = USAGE_DEFAULT;
       if (disableUsedPercentage) {
         return Object.assign(usage, usageStats);
@@ -247,39 +209,39 @@ export default {
         return Object.assign(usage, usageStats);
       }
     };
-    
+
     const toRoot = () => {
       const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
       const path = bucket ? `/buckets/${bucket}/` : "/settings/profile";
       router.push({ path });
       layoutStore.closeHovers();
     };
-    
+
     const toAccountSettings = () => {
       router.push({ path: "/settings/profile" });
       layoutStore.closeHovers();
     };
-    
+
     const toGlobalSettings = () => {
       router.push({ path: "/settings/global" });
       layoutStore.closeHovers();
     };
-    
+
     const help = () => {
       layoutStore.showHover("help");
     };
-    
+
     const toggleCollapse = () => {
       isCollapsed.value = !isCollapsed.value;
     };
-    
+
     // 监听路由变化
     watch(() => route.path, (newPath) => {
       if (newPath.includes("/buckets")) {
         fetchUsage();
       }
     }, { immediate: true });
-    
+
     // 监听reload变化
 
     watch(() => fileStore.reload, (newValue) => {
@@ -287,29 +249,29 @@ export default {
         fetchUsage();
       }
     });
-    
+
     // 组件卸载时取消请求
 
     onUnmounted(() => {
       abortOngoingFetchUsage();
     });
-    
+
     return {
       // 状态
       usage,
       isCollapsed,
-      
+
       // stores
       authStore,
       fileStore,
       layoutStore,
-      
+
       // 计算属性
       active,
       isFilesRoute,
       isProfileRoute,
       isGlobalSettingsRoute,
-      
+
       // 方法
 
       toRoot,
@@ -318,7 +280,7 @@ export default {
       help,
       toggleCollapse,
       logout: auth.logout,
-      
+
       // 常量
 
       signup,
@@ -418,12 +380,12 @@ nav.sidebar.sidebar-collapsed .collapse-toggle {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border-bottom: 1px solid var(--divider);
 }
 
 nav.sidebar.sidebar-collapsed .sidebar-profile {
   padding: 3.5rem 1rem 1rem;
   justify-content: center;
+  width: 100%;
 }
 
 .profile-avatar {
@@ -500,7 +462,7 @@ nav.sidebar.sidebar-collapsed .profile-info {
 /* Navigation */
 .sidebar-nav {
   flex: 1;
-  padding: 1rem 0;
+  padding: 0.75rem 0;
   overflow-y: auto;
   width: 100% !important;
   position: static !important;
@@ -513,6 +475,8 @@ nav.sidebar.sidebar-collapsed .sidebar-nav {
 }
 
 .nav-section {
+  border-top: none;
+  margin-top: 0.75rem;
   margin-bottom: 1rem;
 }
 
@@ -566,6 +530,7 @@ nav.sidebar.sidebar-collapsed .nav-section-title {
 nav.sidebar.sidebar-collapsed .nav-item {
   padding: 0.75rem !important;
   justify-content: center;
+  width: 100%;
 }
 
 .nav-item:hover {
@@ -642,109 +607,9 @@ nav.sidebar.sidebar-collapsed .nav-item .indicator {
   display: none;
 }
 
-.nav-section {
-  margin-bottom: 1.5rem;
-}
-
-.nav-section:last-child {
-  margin-bottom: 0;
-}
-
-.nav-section-title {
-  margin: 0 1.5rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--textPrimary);
-  opacity: 0.6;
-}
-
-.nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.nav-item {
-  display: flex !important;
-  align-items: center;
-  width: 100%;
-  padding: 0.875rem 1.5rem !important;
-  margin: 0.25rem 0;
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: var(--textSecondary) !important;
-  font-size: 0.9375rem !important;
-  font-weight: 400;
-  text-align: left !important;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  gap: 0.875rem;
-  position: relative;
-  text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.nav-item:hover {
-  background-color: var(--hover);
-}
-
-.nav-item.active {
-  color: var(--blue);
-  font-weight: 500;
-  background-color: rgba(var(--blue-rgb, 33, 150, 243), 0.08);
-  position: relative;
-}
-
-.nav-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 60%;
-  background-color: var(--blue);
-  border-radius: 0 2px 2px 0;
-}
-
-.nav-item i.material-icons:not(.indicator) {
-  font-size: 1.25rem;
-  width: 1.25rem;
-  height: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  opacity: 0.7;
-  transition: all 0.2s ease;
-}
-
-.nav-item:hover i.material-icons:not(.indicator),
-.nav-item.active i.material-icons:not(.indicator) {
-  opacity: 0.9;
-}
-
-.nav-item .indicator {
-  margin-left: auto;
-  font-size: 1.125rem;
-  opacity: 0.5;
-  transition: opacity 0.2s ease;
-}
-
+/* Logout Button */
 .nav-item-logout {
   color: var(--red);
-  border-top: 1px solid var(--divider);
   margin-top: 1rem;
   padding-top: 0.875rem;
 }
@@ -760,7 +625,6 @@ nav.sidebar.sidebar-collapsed .nav-item .indicator {
 /* Storage Usage - Clean Design */
 .storage-usage {
   padding: 1.5rem 1.5rem 1rem;
-  border-top: 1px solid var(--divider);
   background-color: var(--background);
   transition: padding 0.3s ease;
 }
@@ -769,6 +633,7 @@ nav.sidebar.sidebar-collapsed .nav-item .indicator {
   padding: 0.75rem;
   display: flex;
   justify-content: center;
+  width: 100%;
   transition: padding 0.3s ease;
 }
 
@@ -776,19 +641,16 @@ nav.sidebar.sidebar-collapsed .nav-item .indicator {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.375rem;
+  justify-content: center;
+  gap: 0.25rem;
   width: 100%;
 }
 
-.storage-collapsed .usage-progress {
-  width: 100%;
-  max-width: 40px;
-}
-
-.storage-collapsed .usage-percentage {
+.storage-collapsed .storage-used {
   font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--textSecondary);
+  font-weight: 500;
+  color: var(--textPrimary);
+  text-align: center;
 }
 
 .usage-header {
@@ -881,7 +743,7 @@ nav.sidebar.sidebar-collapsed .nav-item .indicator {
   nav.sidebar {
     transform: none !important;
   }
-  
+
   .sidebar-overlay {
     display: none;
   }

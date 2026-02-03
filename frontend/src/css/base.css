@@ -89,7 +89,12 @@ nav .action > * {
 main {
   min-height: 1em;
   margin: 0 1em 1em auto;
-  width: calc(100% - 19em);
+  width: calc(100% - 16em);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body:has(.sidebar-collapsed) main {
+  width: calc(100% - 7em);
 }
 
 .breadcrumbs {

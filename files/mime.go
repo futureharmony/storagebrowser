@@ -593,6 +593,7 @@ var types = map[string]string{
 	".opus":      "video/ogg",
 	".m4v":       "video/mp4",
 	".mkv":       "video/x-matroska",
+	".webm":      "video/webm",
 	".caf":       "audio/x-caf",
 	".m3u8":      "application/x-mpegURL",
 	".mpd":       "application/dash+xml",

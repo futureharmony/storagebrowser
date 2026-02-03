@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/shirou/gopsutil/v3/disk"
@@ -29,21 +30,52 @@ var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 	if path == "" {
 		path = "/"
 	}
-	log.Printf("[RESOURCE] GET request path: %s, user: %s, currentScope: %s (rootPrefix: %s), storageType: %s", path, d.user.Username, d.user.CurrentScope.Name, d.user.CurrentScope.RootPrefix, d.server.StorageType)
+
+	// Get limit parameter to control listing size
+	limitStr := r.URL.Query().Get("limit")
+
+	// Parse limit (-1 for no limit, default 1000 for performance)
+	limit := 1000
+	if limitStr != "" {
+		if parsed, err := strconv.Atoi(limitStr); err == nil {
+			limit = parsed
+		}
+	}
+
+	log.Printf("[RESOURCE] GET request path: %s, user: %s, currentScope: %s (rootPrefix: %s), storageType: %s, limit: %d",
+		path, d.user.Username, d.user.CurrentScope.Name, d.user.CurrentScope.RootPrefix, d.server.StorageType, limit)
+
 	file, err := files.NewFileInfo(&files.FileOptions{
 		Fs:         d.requestFs,
 		Path:       path,
 		Modify:     d.user.Perm.Modify,
-		Expand:     true,
+		Expand:     true, // Always expand for now, but limit controls size
 		ReadHeader: d.server.TypeDetectionByHeader,
 		Checker:    d,
 		Content:    true,
+		Limit:      limit,
 	})
 	if err != nil {
 		return errToStatus(err), err
 	}
 
-	if file.IsDir {
+	if file.IsDir && file.Listing != nil {
+		// Apply limit to listing if specified
+		if limit > 0 && len(file.Listing.Items) > limit {
+			file.Listing.Items = file.Listing.Items[:limit]
+			file.Listing.HasMore = true
+			// Recalculate counts
+			file.Listing.NumDirs = 0
+			file.Listing.NumFiles = 0
+			for _, item := range file.Listing.Items {
+				if item.IsDir {
+					file.Listing.NumDirs++
+				} else {
+					file.Listing.NumFiles++
+				}
+			}
+		}
+
 		file.Listing.Sorting = d.user.Sorting
 		file.Listing.ApplySort()
 		return renderJSON(w, r, file)

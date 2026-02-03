@@ -30,7 +30,9 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
   }
 
   const urlParams = new URLSearchParams();
-  urlParams.set('path', path);
+  // Decode first to avoid double encoding when path contains encoded characters
+  const decodedPath = decodeURIComponent(path);
+  urlParams.set('path', decodedPath);
   const res = await fetchURL(`/api/resources?${urlParams.toString()}`, { signal }, true, scope);
 
   let data: Resource;
@@ -418,7 +420,9 @@ export async function usage(url: string, signal: AbortSignal, scope?: string) {
   }
 
   const urlParams = new URLSearchParams();
-  urlParams.set('path', url);
+  // Decode first to avoid double encoding when path contains encoded characters
+  const decodedUrl = decodeURIComponent(url);
+  urlParams.set('path', decodedUrl);
   const res = await fetchURL(`/api/usage?${urlParams.toString()}`, { signal }, true, scope);
 
   try {

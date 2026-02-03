@@ -14,6 +14,7 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 
@@ -118,16 +119,23 @@ func stat(opts *FileOptions) (*FileInfo, error) {
 		if err != nil {
 			return nil, err
 		}
+		name := info.Name()
+		// Decode URL-encoded characters in filename for S3 (handles spaces and special chars)
+		if strings.Contains(name, "%") {
+			if decodedName, decodeErr := url.QueryUnescape(name); decodeErr == nil {
+				name = decodedName
+			}
+		}
 		file = &FileInfo{
 			Fs:        opts.Fs,
 			Path:      opts.Path,
-			Name:      info.Name(),
+			Name:      name,
 			ModTime:   info.ModTime(),
 			Mode:      info.Mode(),
 			IsDir:     info.IsDir(),
 			IsSymlink: IsSymlink(info.Mode()), // For S3, we'll assume it's not a symlink since S3 doesn't have symlinks
 			Size:      info.Size(),
-			Extension: filepath.Ext(info.Name()),
+			Extension: filepath.Ext(name),
 			Token:     opts.Token,
 		}
 		return file, nil

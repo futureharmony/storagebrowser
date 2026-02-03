@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -98,8 +97,8 @@ var resourceGetHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 
 func resourceDeleteHandler(fileCache FileCache) handleFunc {
 	return withUser(func(_ http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		// Get path from query parameter
-		path := r.URL.Query().Get("path")
+		// Get path from query parameter and decode any URL-encoded characters
+		path := decodePath(r.URL.Query().Get("path"))
 		if path == "" || path == "/" || !d.user.Perm.Delete {
 			return http.StatusForbidden, nil
 		}
@@ -141,8 +140,8 @@ func resourceDeleteHandler(fileCache FileCache) handleFunc {
 
 func resourcePostHandler(fileCache FileCache) handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		// Get path from query parameter
-		path := r.URL.Query().Get("path")
+		// Get path from query parameter and decode any URL-encoded characters
+		path := decodePath(r.URL.Query().Get("path"))
 		if path == "" {
 			return http.StatusBadRequest, nil
 		}
@@ -213,8 +212,8 @@ func resourcePostHandler(fileCache FileCache) handleFunc {
 }
 
 var resourcePutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-	// Get path from query parameter
-	path := r.URL.Query().Get("path")
+	// Get path from query parameter and decode any URL-encoded characters
+	path := decodePath(r.URL.Query().Get("path"))
 	if path == "" {
 		return http.StatusBadRequest, nil
 	}
@@ -252,26 +251,23 @@ var resourcePutHandler = withUser(func(w http.ResponseWriter, r *http.Request, d
 
 func resourcePatchHandler(fileCache FileCache) handleFunc {
 	return withUser(func(_ http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		src := r.URL.Query().Get("path")
-		dst := r.URL.Query().Get("destination")
+		// Get path from query parameter and decode any URL-encoded characters
+		src := decodePath(r.URL.Query().Get("path"))
+		dst := decodePath(r.URL.Query().Get("destination"))
 		action := r.URL.Query().Get("action")
 
 		if src == "" {
 			return http.StatusBadRequest, nil
 		}
 
-		dst, err := url.QueryUnescape(dst)
 		if !d.Check(src) || !d.Check(dst) {
 			return http.StatusForbidden, nil
-		}
-		if err != nil {
-			return errToStatus(err), err
 		}
 		if dst == "/" || src == "/" {
 			return http.StatusForbidden, nil
 		}
 
-		err = checkParent(src, dst)
+		err := checkParent(src, dst)
 		if err != nil {
 			return http.StatusBadRequest, err
 		}

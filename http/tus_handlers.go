@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	aferos3 "github.com/futureharmony/afero-aws-s3"
@@ -111,8 +112,8 @@ func keepUploadActive(filePath string) func() {
 
 func tusPostHandler() handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		// Get path from query parameter
-		path := r.URL.Query().Get("path")
+		// Get path from query parameter and decode any URL-encoded characters
+		path := decodePath(r.URL.Query().Get("path"))
 		if path == "" {
 			return http.StatusBadRequest, nil
 		}
@@ -198,6 +199,12 @@ func tusPostHandler() handleFunc {
 					ModTime:   time.Now(),
 					Extension: filepath.Ext(path),
 				}
+				// Decode the name to get the original filename with spaces
+				if strings.Contains(file.Name, "%") {
+					if decodedName, err := url.QueryUnescape(file.Name); err == nil {
+						file.Name = decodedName
+					}
+				}
 			} else {
 				return errToStatus(err), err
 			}
@@ -250,8 +257,8 @@ func tusHeadHandler() handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		w.Header().Set("Cache-Control", "no-store")
 
-		// Get path from query parameter
-		path := r.URL.Query().Get("path")
+		// Get path from query parameter and decode any URL-encoded characters
+		path := decodePath(r.URL.Query().Get("path"))
 		if path == "" {
 			return http.StatusBadRequest, nil
 		}
@@ -298,8 +305,8 @@ func tusHeadHandler() handleFunc {
 
 func tusPatchHandler() handleFunc {
 	return withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		// Get path from query parameter
-		path := r.URL.Query().Get("path")
+		// Get path from query parameter and decode any URL-encoded characters
+		path := decodePath(r.URL.Query().Get("path"))
 		if path == "" {
 			return http.StatusBadRequest, nil
 		}
@@ -443,8 +450,8 @@ func tusPatchHandler() handleFunc {
 
 func tusDeleteHandler() handleFunc {
 	return withUser(func(_ http.ResponseWriter, r *http.Request, d *data) (int, error) {
-		// Get path from query parameter
-		path := r.URL.Query().Get("path")
+		// Get path from query parameter and decode any URL-encoded characters
+		path := decodePath(r.URL.Query().Get("path"))
 		if path == "" || path == "/" || !d.user.Perm.Create {
 			return http.StatusForbidden, nil
 		}
@@ -491,4 +498,18 @@ func getUploadOffset(r *http.Request) (int64, error) {
 		return 0, fmt.Errorf("invalid upload offset: %w", err)
 	}
 	return uploadOffset, nil
+}
+
+// decodePath safely decodes URL-encoded path components, handling already-decoded paths
+func decodePath(encodedPath string) string {
+	if encodedPath == "" {
+		return ""
+	}
+	// Try to decode - if already decoded (no % chars), this is a no-op
+	decoded, err := url.QueryUnescape(encodedPath)
+	if err != nil {
+		// If decode fails, return original
+		return encodedPath
+	}
+	return decoded
 }

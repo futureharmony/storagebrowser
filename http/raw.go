@@ -98,7 +98,7 @@ var rawHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *data) 
 		// Use scope parameter to get the path within the bucket
 		pathParam := r.URL.Query().Get("path")
 		if pathParam != "" {
-			path = pathParam
+			path = decodePath(pathParam)
 		} else {
 			// If no path param, strip bucket prefix from URL path
 			bucketMatch := regexp.MustCompile(`^/buckets/[^/]+(.*)$`).FindStringSubmatch(path)

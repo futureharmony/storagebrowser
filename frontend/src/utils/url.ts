@@ -29,6 +29,14 @@ export function encodeRFC5987ValueChars(str: string) {
 }
 
 export function encodePath(str: string) {
+  // First decode to handle already encoded strings (avoid double encoding)
+  // Then encode to ensure proper URL encoding
+  try {
+    str = decodeURIComponent(str);
+  } catch {
+    // If decode fails, string is not encoded, continue with original
+  }
+  
   return str
     .split("/")
     .map((v) => encodeURIComponent(v))

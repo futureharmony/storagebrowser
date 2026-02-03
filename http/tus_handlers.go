@@ -227,10 +227,19 @@ func tusPostHandler() handleFunc {
 			}
 		}
 
-		locationPath, err := url.JoinPath("/", d.server.BaseURL, "/api/tus", path)
+		// Set Location header with path and scope as query parameters for tus protocol
+		locationPath, err := url.JoinPath("/", d.server.BaseURL, "/api/tus")
 		if err != nil {
 			return http.StatusBadRequest, fmt.Errorf("invalid path: %w", err)
 		}
+
+		// Add path and scope as query parameters
+		locationQuery := url.Values{}
+		locationQuery.Set("path", path)
+		if scopeParam := r.URL.Query().Get("scope"); scopeParam != "" {
+			locationQuery.Set("scope", scopeParam)
+		}
+		locationPath = locationPath + "?" + locationQuery.Encode()
 
 		w.Header().Set("Location", locationPath)
 		return http.StatusCreated, nil

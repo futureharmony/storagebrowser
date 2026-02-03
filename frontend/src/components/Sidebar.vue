@@ -64,9 +64,8 @@
     </template>
 
     <div
-      class="credits"
+      class="credits usage"
       v-if="isFiles && !disableUsedPercentage"
-      style="width: 90%; margin: 2em 2.5em 3em 2.5em"
     >
       <progress-bar :val="usage.usedPercentage" size="small"></progress-bar>
       <br />
@@ -216,3 +215,94 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--divider);
+  z-index: 9998;
+  transition: opacity 0.3s ease;
+}
+
+/* Visual enhancements for nav - base.css handles positioning */
+nav {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  height: calc(100vh - 4em);
+  overflow-y: auto;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: var(--textSecondary);
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  gap: 1rem;
+}
+
+.action:hover {
+  background-color: var(--hover);
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.action i.material-icons {
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.credits {
+  margin-top: auto;
+  padding: 0 1.5rem;
+  font-size: 0.875rem;
+  color: var(--textPrimary);
+  line-height: 1.5;
+}
+
+.credits:first-of-type {
+  margin-top: 2rem;
+}
+
+.credits a {
+  color: var(--textPrimary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.credits a:hover {
+  color: var(--textSecondary);
+}
+
+/* Responsive Design - only for mobile behavior */
+@media (max-width: 738px) {
+  nav {
+    transform: translateX(-100%);
+  }
+
+  nav.active {
+    transform: translateX(0);
+  }
+}
+</style>

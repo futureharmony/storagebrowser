@@ -188,22 +188,83 @@ export default {
        if (!isMobile.value) {
          isCollapsed.value = !isCollapsed.value;
        }
+      };
+
+       // 监听窗口大小变化
+       const handleResize = () => {
+         isMobile.value = window.innerWidth <= 736;
+         // 移动端始终collapsed，桌面端始终展开
+         isCollapsed.value = isMobile.value;
+       };
+
+      onMounted(() => {
+       window.addEventListener('resize', handleResize);
+       
+       // 添加全局触摸事件监听器，用于边缘滑动检测
+       document.addEventListener('touchstart', handleGlobalTouchStart, { passive: true });
+       document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+       document.addEventListener('touchend', handleGlobalTouchEnd, { passive: true });
+     });
+
+     onUnmounted(() => {
+       window.removeEventListener('resize', handleResize);
+       
+       // 移除全局触摸事件监听器
+       document.removeEventListener('touchstart', handleGlobalTouchStart);
+       document.removeEventListener('touchmove', handleGlobalTouchMove);
+       document.removeEventListener('touchend', handleGlobalTouchEnd);
+     });
+     
+     // 全局触摸事件处理 - 用于边缘滑动检测
+     let globalTouchStartX = 0;
+     let globalTouchStartY = 0;
+     let globalTouchStartTime = 0;
+     let globalIsSwiping = false;
+     
+     const handleGlobalTouchStart = (event) => {
+       if (!isMobile.value || active.value) return;
+       
+       const touch = event.touches[0];
+       globalTouchStartX = touch.clientX;
+       globalTouchStartY = touch.clientY;
+       globalTouchStartTime = Date.now();
+       globalIsSwiping = false;
      };
-
-     // 监听窗口大小变化
-     const handleResize = () => {
-       isMobile.value = window.innerWidth <= 736;
-       // 移动端始终collapsed，桌面端始终展开
-       isCollapsed.value = isMobile.value;
+     
+     const handleGlobalTouchMove = (event) => {
+       if (!isMobile.value || active.value || globalTouchStartX > 30) return;
+       
+       if (event.touches.length !== 1) return;
+       
+       const touch = event.touches[0];
+       const deltaX = touch.clientX - globalTouchStartX;
+       const deltaY = Math.abs(touch.clientY - globalTouchStartY);
+       
+       // 如果是垂直滑动或反向滑动，不处理
+       if (deltaY > 20 || deltaX < 0) return;
+       
+       // 滑动距离足够大时才阻止默认行为
+       if (deltaX > 10) {
+         event.preventDefault();
+         globalIsSwiping = true;
+       }
      };
-
-    onMounted(() => {
-      window.addEventListener('resize', handleResize);
-    });
-
-    onUnmounted(() => {
-      window.removeEventListener('resize', handleResize);
-    });
+     
+     const handleGlobalTouchEnd = (event) => {
+       if (!isMobile.value || active.value || !globalIsSwiping) return;
+       
+       const touch = event.changedTouches[0];
+       const deltaX = touch.clientX - globalTouchStartX;
+       const deltaTime = Date.now() - globalTouchStartTime;
+       
+       // 简单的滑动检测：从左向右滑动超过50px，并且速度合理
+       if (deltaX > 50 && deltaTime < 500) {
+         layoutStore.showHover("sidebar");
+       }
+       
+       // 重置状态
+       globalIsSwiping = false;
+     };
 
     return {
       // 状态
@@ -221,14 +282,14 @@ export default {
       isProfileRoute,
       isGlobalSettingsRoute,
 
-      // 方法
+       // 方法
 
-      toRoot,
-      toAccountSettings,
-      toGlobalSettings,
-      help,
-      toggleCollapse,
-      logout: auth.logout,
+       toRoot,
+       toAccountSettings,
+       toGlobalSettings,
+       help,
+       toggleCollapse,
+       logout: auth.logout,
 
       // 常量
 

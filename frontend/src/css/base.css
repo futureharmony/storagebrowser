@@ -1,3 +1,9 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: "Roboto", sans-serif;
   padding-top: 4em;
@@ -44,22 +50,57 @@ i.spin {
 }
 
 #app {
+  display: grid;
+  grid-template-areas:
+    "header header"
+    "sidebar main";
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 4em 1fr;
+  height: 100vh;
   transition: 0.2s ease padding;
+  position: relative;
 }
 
 #app.multiple {
   padding-bottom: 4em;
 }
 
-nav {
-  width: 16em;
+/* 确保header定位正确 */
+header {
+  grid-area: header;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+}
+
+/* 确保sidebar样式正确 */
+#app nav.sidebar {
+  grid-area: sidebar;
+  width: 200px !important;
+  height: calc(100vh - 4em);
   position: fixed;
   top: 4em;
   left: 0;
+  overflow-y: auto;
+  z-index: 999;
 }
 
-html[dir="rtl"] nav {
-  left: initial;
+/* 确保main区域正确 */
+main {
+  grid-area: main;
+  min-height: calc(100vh - 8em);
+  margin: 0 1em 1em auto;
+  width: calc(100% - 200px); /* Match sidebar width (200px) */
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  padding: 1em;
+}
+
+
+
+/* RTL support for sidebar */
+html[dir="rtl"] #app nav.sidebar {
+  left: auto;
   right: 0;
 }
 
@@ -86,15 +127,15 @@ nav .action > * {
   vertical-align: middle;
 }
 
-main {
-  min-height: 1em;
-  margin: 0 1em 1em auto;
-  width: calc(100% - 16em);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+
+/* Sidebar collapsed state */
+body:has(.sidebar-collapsed) main {
+  width: calc(100% - 60px); /* Match collapsed sidebar width (60px) */
 }
 
-body:has(.sidebar-collapsed) main {
-  width: calc(100% - 7em);
+body:has(.sidebar-collapsed) nav.sidebar {
+  width: 60px !important;
 }
 
 .breadcrumbs {

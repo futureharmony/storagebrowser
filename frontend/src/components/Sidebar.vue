@@ -1,10 +1,10 @@
 <template>
   <div v-show="active" @click="layoutStore.closeHovers" class="sidebar-overlay"></div>
-  <nav :class="['sidebar', { active, 'sidebar-collapsed': isCollapsed }]">
-    <!-- Collapse Toggle Button -->
-    <div class="collapse-toggle" @click="toggleCollapse">
-      <i class="material-icons">{{ isCollapsed ? 'chevron_right' : 'chevron_left' }}</i>
-    </div>
+   <nav :class="['sidebar', { active, 'sidebar-collapsed': isCollapsed }]">
+     <!-- Collapse Toggle Button - 只在桌面端显示 -->
+     <div v-if="!isMobile" class="collapse-toggle" @click="toggleCollapse">
+       <i class="material-icons">{{ isCollapsed ? 'chevron_right' : 'chevron_left' }}</i>
+     </div>
 
     <!-- User Profile Section - Compact -->
     <div v-if="authStore.isLoggedIn" class="sidebar-profile">
@@ -141,7 +141,7 @@ export default {
     // 检测是否为小设备（移动设备）
     const isMobile = ref(window.innerWidth <= 736);
     
-    // 在小设备上默认收起，在大设备上默认展开
+    // 移动端始终处于collapsed状态，桌面端始终处于展开状态
     const isCollapsed = ref(isMobile.value);
 
     // 计算属性
@@ -183,23 +183,19 @@ export default {
       layoutStore.showHover("help");
     };
 
-    const toggleCollapse = () => {
-      isCollapsed.value = !isCollapsed.value;
-    };
+     const toggleCollapse = () => {
+       // 移动端不能切换collapsed状态
+       if (!isMobile.value) {
+         isCollapsed.value = !isCollapsed.value;
+       }
+     };
 
-    // 监听窗口大小变化
-    const handleResize = () => {
-      isMobile.value = window.innerWidth <= 736;
-      // 当切换到移动设备模式时，自动收起侧边栏
-      if (isMobile.value && !isCollapsed.value) {
-        isCollapsed.value = true;
-      }
-      // 当切换到桌面模式时，如果当前是移动设备的收起状态，可以保持或展开
-      else if (!isMobile.value && isCollapsed.value) {
-        // 可以根据需要决定是否在切换到桌面时自动展开
-        // isCollapsed.value = false;
-      }
-    };
+     // 监听窗口大小变化
+     const handleResize = () => {
+       isMobile.value = window.innerWidth <= 736;
+       // 移动端始终collapsed，桌面端始终展开
+       isCollapsed.value = isMobile.value;
+     };
 
     onMounted(() => {
       window.addEventListener('resize', handleResize);
@@ -270,29 +266,16 @@ export default {
 
 /* Main Sidebar Container */
 nav.sidebar {
-  width: 200px !important;
-  position: fixed !important;
-  top: 4em !important;
-  left: 0 !important;
-  height: calc(100vh - 4em);
+  width: 100% !important;
+  height: 100% !important;
   background-color: var(--surfacePrimary);
-  z-index: 9999;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateX(-100%);
-  border-right: 1px solid var(--divider);
   overflow: hidden;
+  position: relative;
 }
 
-nav.sidebar.active {
-  transform: translateX(0);
-}
-
-/* Collapsed State */
-nav.sidebar.sidebar-collapsed {
-  width: 60px !important;
-}
+/* Collapsed State - width is controlled by parent container */
 
 /* Collapse Toggle Button */
 .collapse-toggle {
@@ -650,7 +633,7 @@ nav.sidebar.sidebar-collapsed .nav-item .indicator {
     z-index: 99999 !important;
     background: var(--surfacePrimary) !important;
     height: 100vh !important;
-    width: 300px !important;
+    width: 100% !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 

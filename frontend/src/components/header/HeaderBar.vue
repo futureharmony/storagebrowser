@@ -1,8 +1,6 @@
 <template>
   <header>
     <img v-if="showLogo" :src="logoURL" />
-    <Action v-if="showMenu" class="menu-button" icon="menu" :label="t('buttons.toggleSidebar')"
-      @action="layoutStore.showHover('sidebar')" />
 
     <div v-if="!isSearchActive && !isPreviewMode && hasBuckets && showBucketSelect" id="bucket-select">
       <div id="input" @click="toggleDropdown" ref="selectRef">
@@ -148,7 +146,6 @@ import { useRoute, useRouter } from "vue-router";
 
 defineProps<{
   showLogo?: boolean;
-  showMenu?: boolean;
   showBucketSelect?: boolean;
 }>();
 

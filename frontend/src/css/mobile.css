@@ -1,12 +1,4 @@
-@media (max-width: 1024px) {
-  nav.sidebar {
-    width: 160px !important; /* 10em ≈ 160px */
-  }
-  
-  main {
-    width: calc(100% - 160px - 1em) !important; /* sidebar width + margin */
-  }
-}
+/* Responsive styles are now handled by Layout component */
 
 @media (max-width: 736px) {
   body {
@@ -151,19 +143,11 @@
   }
 
   /* Mobile main content */
-  #app {
-    grid-template-areas:
-      "header"
-      "main";
-    grid-template-columns: 1fr;
-    grid-template-rows: 4em 1fr;
-  }
+  /* Note: main element styling moved to Layout.vue for better scoped control */
   
-  main {
-    margin: 0;
-    width: 100% !important;
-    min-height: calc(100vh - 4em) !important;
-    padding: 1em;
+  /* RTL mobile support */
+  html[dir="rtl"] main {
+    margin-right: 0;
   }
   #search {
     display: none;

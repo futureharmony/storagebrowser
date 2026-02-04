@@ -272,12 +272,24 @@ const element = computed(() => {
 
 @media (max-width: 640px) {
   .breadcrumbs-wrapper {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-height: auto;
+    margin-top: 0.75rem;
+  }
+  
+  .breadcrumbs-container {
+    width: 100%;
   }
   
   .storage-usage {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: space-between;
+    order: -1;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
   }
 }
 </style>

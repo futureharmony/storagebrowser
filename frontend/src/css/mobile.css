@@ -67,9 +67,11 @@
     box-shadow:
       rgba(0, 0, 0, 0.06) 0px 1px 3px,
       rgba(0, 0, 0, 0.12) 0px 1px 2px;
-    width: 95%;
+    width: 90%;
     max-width: 20em;
     z-index: 1;
+    padding: 0.2em 0.5em;
+    border-radius: 16px;
   }
   #file-selection .action {
     border-radius: 50%;

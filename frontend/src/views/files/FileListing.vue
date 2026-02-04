@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="isMobile" id="file-selection">
+    <div v-if="isMobile && fileStore.selectedCount > 0" id="file-selection">
       <span v-if="fileStore.selectedCount > 0">
         {{ t("prompts.filesSelected", fileStore.selectedCount) }}
       </span>

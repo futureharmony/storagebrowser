@@ -116,7 +116,7 @@
 import { useAuthStore } from "@/stores/auth";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import * as auth from "@/utils/auth";
@@ -138,7 +138,11 @@ export default {
     const fileStore = useFileStore();
     const layoutStore = useLayoutStore();
 
-    const isCollapsed = ref(false);
+    // 检测是否为小设备（移动设备）
+    const isMobile = ref(window.innerWidth <= 736);
+    
+    // 在小设备上默认收起，在大设备上默认展开
+    const isCollapsed = ref(isMobile.value);
 
     // 计算属性
     const active = computed(() =>
@@ -183,9 +187,32 @@ export default {
       isCollapsed.value = !isCollapsed.value;
     };
 
+    // 监听窗口大小变化
+    const handleResize = () => {
+      isMobile.value = window.innerWidth <= 736;
+      // 当切换到移动设备模式时，自动收起侧边栏
+      if (isMobile.value && !isCollapsed.value) {
+        isCollapsed.value = true;
+      }
+      // 当切换到桌面模式时，如果当前是移动设备的收起状态，可以保持或展开
+      else if (!isMobile.value && isCollapsed.value) {
+        // 可以根据需要决定是否在切换到桌面时自动展开
+        // isCollapsed.value = false;
+      }
+    };
+
+    onMounted(() => {
+      window.addEventListener('resize', handleResize);
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', handleResize);
+    });
+
     return {
       // 状态
       isCollapsed,
+      isMobile,
 
       // stores
       authStore,

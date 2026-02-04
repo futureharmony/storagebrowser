@@ -1,25 +1,23 @@
 <template>
-  <div v-show="active" @click="layoutStore.closeHovers" class="sidebar-overlay"></div>
-   <nav :class="['sidebar', { active, 'sidebar-collapsed': isCollapsed }]">
+    <nav :class="['sidebar', { active, 'sidebar-collapsed': isCollapsed }]">
      <!-- Collapse Toggle Button - 只在桌面端显示 -->
      <div v-if="!isMobile" class="collapse-toggle" @click="toggleCollapse">
        <i class="material-icons">{{ isCollapsed ? 'chevron_right' : 'chevron_left' }}</i>
      </div>
 
-    <!-- User Profile Section - Compact -->
-    <div v-if="authStore.isLoggedIn" class="sidebar-profile">
-      <div class="profile-avatar">
-        <i class="material-icons">account_circle</i>
-      </div>
-      <div v-if="!isCollapsed" class="profile-info">
-        <h3 class="profile-name">{{ authStore.user.username }}</h3>
-        <p v-if="authStore.user.email" class="profile-email">{{ authStore.user.email }}</p>
-        <div v-if="authStore.user.perm.admin" class="profile-badge">
-          <i class="material-icons">verified</i>
-          <span>Admin</span>
-        </div>
-      </div>
-    </div>
+     <!-- User Profile Section - Compact -->
+     <div v-if="authStore.isLoggedIn && authStore.user" class="sidebar-profile">
+       <div class="profile-avatar">
+         <i class="material-icons">account_circle</i>
+       </div>
+       <div v-if="!isCollapsed" class="profile-info">
+         <h3 class="profile-name">{{ authStore.user.username }}</h3>
+         <div v-if="authStore.user.perm.admin" class="profile-badge">
+           <i class="material-icons">verified</i>
+           <span>Admin</span>
+         </div>
+       </div>
+     </div>
 
     <!-- Navigation Menu -->
     <nav class="sidebar-nav">
@@ -43,14 +41,14 @@
               <i v-if="!isCollapsed && isProfileRoute" class="material-icons indicator">chevron_right</i>
             </button>
           </li>
-          <li v-if="authStore.user.perm.admin">
-            <button @click="toGlobalSettings" class="nav-item" :class="{ active: isGlobalSettingsRoute }"
-              :aria-label="$t('sidebar.globalSettings')" :title="$t('sidebar.globalSettings')">
-              <i class="material-icons">settings_applications</i>
-              <span v-if="!isCollapsed">{{ $t("sidebar.globalSettings") }}</span>
-              <i v-if="!isCollapsed && isGlobalSettingsRoute" class="material-icons indicator">chevron_right</i>
-            </button>
-          </li>
+           <li v-if="authStore.user?.perm.admin">
+             <button @click="toGlobalSettings" class="nav-item" :class="{ active: isGlobalSettingsRoute }"
+               :aria-label="$t('sidebar.globalSettings')" :title="$t('sidebar.globalSettings')">
+               <i class="material-icons">settings_applications</i>
+               <span v-if="!isCollapsed">{{ $t("sidebar.globalSettings") }}</span>
+               <i v-if="!isCollapsed && isGlobalSettingsRoute" class="material-icons indicator">chevron_right</i>
+             </button>
+           </li>
         </ul>
       </div>
 
@@ -103,6 +101,7 @@
           <i class="material-icons">help</i>
           <span>{{ $t("sidebar.help") }}</span>
         </button>
+
       </div>
       <div class="footer-info">
         <span class="app-name">StorageBrowser</span>
@@ -112,7 +111,7 @@
   </nav>
 </template>
 
-<script>
+<script setup lang="ts">
 import { useAuthStore } from "@/stores/auth";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
@@ -120,6 +119,7 @@ import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import * as auth from "@/utils/auth";
+import gestureDetector, { type GestureEvent } from "@/utils/gesture";
 import {
   disableExternal,
   loginPage,
@@ -128,178 +128,121 @@ import {
   version,
 } from "@/utils/constants";
 
-export default {
-  name: "Sidebar",
-  inject: ["$showError"],
-  setup() {
-    const route = useRoute();
-    const router = useRouter();
-    const authStore = useAuthStore();
-    const fileStore = useFileStore();
-    const layoutStore = useLayoutStore();
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+const layoutStore = useLayoutStore();
 
-    // 检测是否为小设备（移动设备）
-    const isMobile = ref(window.innerWidth <= 736);
-    
-    // 移动端始终处于collapsed状态，桌面端始终处于展开状态
-    const isCollapsed = ref(isMobile.value);
+// 检测是否为小设备（移动设备）
+const isMobile = ref(window.innerWidth <= 736);
 
-    // 计算属性
-    const active = computed(() =>
-      layoutStore.currentPromptName === "sidebar"
-    );
+// 移动端始终处于collapsed状态，桌面端始终处于展开状态
+const isCollapsed = ref(isMobile.value);
 
-    const isFilesRoute = computed(() =>
-      route.path.includes("/files") || route.path.includes("/buckets")
-    );
+// 计算属性
+const active = computed(() => {
+  const isActive = layoutStore.currentPromptName === "sidebar";
+  console.log('Sidebar active state:', { 
+    isActive, 
+    currentPromptName: layoutStore.currentPromptName,
+    prompts: layoutStore.prompts 
+  });
+  return isActive;
+});
 
-    const isProfileRoute = computed(() =>
-      route.path === "/settings/profile"
-    );
+const isFilesRoute = computed(() =>
+  route.path.includes("/files") || route.path.includes("/buckets")
+);
 
-    const isGlobalSettingsRoute = computed(() =>
-      route.path === "/settings/global"
-    );
+const isProfileRoute = computed(() =>
+  route.path === "/settings/profile"
+);
 
-    // 方法
-    const toRoot = () => {
-      const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
-      const path = bucket ? `/buckets/${bucket}/` : "/settings/profile";
-      router.push({ path });
-      layoutStore.closeHovers();
-    };
+const isGlobalSettingsRoute = computed(() =>
+  route.path === "/settings/global"
+);
 
-    const toAccountSettings = () => {
-      router.push({ path: "/settings/profile" });
-      layoutStore.closeHovers();
-    };
-
-    const toGlobalSettings = () => {
-      router.push({ path: "/settings/global" });
-      layoutStore.closeHovers();
-    };
-
-    const help = () => {
-      layoutStore.showHover("help");
-    };
-
-     const toggleCollapse = () => {
-       // 移动端不能切换collapsed状态
-       if (!isMobile.value) {
-         isCollapsed.value = !isCollapsed.value;
-       }
-      };
-
-       // 监听窗口大小变化
-       const handleResize = () => {
-         isMobile.value = window.innerWidth <= 736;
-         // 移动端始终collapsed，桌面端始终展开
-         isCollapsed.value = isMobile.value;
-       };
-
-      onMounted(() => {
-       window.addEventListener('resize', handleResize);
-       
-       // 添加全局触摸事件监听器，用于边缘滑动检测
-       document.addEventListener('touchstart', handleGlobalTouchStart, { passive: true });
-       document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
-       document.addEventListener('touchend', handleGlobalTouchEnd, { passive: true });
-     });
-
-     onUnmounted(() => {
-       window.removeEventListener('resize', handleResize);
-       
-       // 移除全局触摸事件监听器
-       document.removeEventListener('touchstart', handleGlobalTouchStart);
-       document.removeEventListener('touchmove', handleGlobalTouchMove);
-       document.removeEventListener('touchend', handleGlobalTouchEnd);
-     });
-     
-     // 全局触摸事件处理 - 用于边缘滑动检测
-     let globalTouchStartX = 0;
-     let globalTouchStartY = 0;
-     let globalTouchStartTime = 0;
-     let globalIsSwiping = false;
-     
-     const handleGlobalTouchStart = (event) => {
-       if (!isMobile.value || active.value) return;
-       
-       const touch = event.touches[0];
-       globalTouchStartX = touch.clientX;
-       globalTouchStartY = touch.clientY;
-       globalTouchStartTime = Date.now();
-       globalIsSwiping = false;
-     };
-     
-     const handleGlobalTouchMove = (event) => {
-       if (!isMobile.value || active.value || globalTouchStartX > 30) return;
-       
-       if (event.touches.length !== 1) return;
-       
-       const touch = event.touches[0];
-       const deltaX = touch.clientX - globalTouchStartX;
-       const deltaY = Math.abs(touch.clientY - globalTouchStartY);
-       
-       // 如果是垂直滑动或反向滑动，不处理
-       if (deltaY > 20 || deltaX < 0) return;
-       
-       // 滑动距离足够大时才阻止默认行为
-       if (deltaX > 10) {
-         event.preventDefault();
-         globalIsSwiping = true;
-       }
-     };
-     
-     const handleGlobalTouchEnd = (event) => {
-       if (!isMobile.value || active.value || !globalIsSwiping) return;
-       
-       const touch = event.changedTouches[0];
-       const deltaX = touch.clientX - globalTouchStartX;
-       const deltaTime = Date.now() - globalTouchStartTime;
-       
-       // 简单的滑动检测：从左向右滑动超过50px，并且速度合理
-       if (deltaX > 50 && deltaTime < 500) {
-         layoutStore.showHover("sidebar");
-       }
-       
-       // 重置状态
-       globalIsSwiping = false;
-     };
-
-    return {
-      // 状态
-      isCollapsed,
-      isMobile,
-
-      // stores
-      authStore,
-      fileStore,
-      layoutStore,
-
-      // 计算属性
-      active,
-      isFilesRoute,
-      isProfileRoute,
-      isGlobalSettingsRoute,
-
-       // 方法
-
-       toRoot,
-       toAccountSettings,
-       toGlobalSettings,
-       help,
-       toggleCollapse,
-       logout: auth.logout,
-
-      // 常量
-
-      signup,
-      version,
-      disableExternal,
-      canLogout: !noAuth && loginPage,
-    };
-  },
+// 方法
+const toRoot = () => {
+  const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
+  const path = bucket ? `/buckets/${bucket}/` : "/settings/profile";
+  router.push({ path });
+  layoutStore.closeHovers();
 };
+
+const toAccountSettings = () => {
+  router.push({ path: "/settings/profile" });
+  layoutStore.closeHovers();
+};
+
+const toGlobalSettings = () => {
+  router.push({ path: "/settings/global" });
+  layoutStore.closeHovers();
+};
+
+const help = () => {
+  layoutStore.showHover("help");
+};
+
+const logout = () => {
+  auth.logout();
+};
+
+
+
+const toggleCollapse = () => {
+  // 移动端不能切换collapsed状态
+  if (!isMobile.value) {
+    isCollapsed.value = !isCollapsed.value;
+  }
+};
+
+// 监听窗口大小变化
+const handleResize = () => {
+  isMobile.value = window.innerWidth <= 736;
+  // 移动端始终collapsed，桌面端始终展开
+  isCollapsed.value = isMobile.value;
+};
+
+// 手势事件处理
+let unsubscribeGesture: (() => void) | null = null;
+
+const handleLeftEdgeSwipeRight = (gestureEvent: GestureEvent) => {
+  console.log('[Sidebar] Received left-edge-swipe-right gesture', {
+    deltaX: gestureEvent.deltaX,
+    duration: gestureEvent.duration
+  });
+  
+  // 只在移动端且侧边栏未激活时响应
+  if (!isMobile.value || active.value) {
+    console.log('[Sidebar] Ignoring gesture: not mobile or sidebar already active');
+    return;
+  }
+  
+  console.log('[Sidebar] Showing sidebar from gesture');
+  layoutStore.showHover("sidebar");
+};
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+  
+  // 订阅全局手势检测
+  unsubscribeGesture = gestureDetector.subscribe('left-edge-swipe-right', handleLeftEdgeSwipeRight);
+  console.log('[Sidebar] Subscribed to global gesture detection');
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+  
+  // 取消订阅全局手势检测
+  if (unsubscribeGesture) {
+    unsubscribeGesture();
+    console.log('[Sidebar] Unsubscribed from global gesture detection');
+  }
+});
+
+// 常量
+const canLogout = !noAuth && loginPage;
 </script>
 
 <style scoped>
@@ -313,17 +256,7 @@ export default {
   --red-rgb: 244, 67, 54;
 }
 
-.sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.3);
-  z-index: 9998;
-  transition: opacity 0.2s ease;
-  cursor: pointer;
-}
+
 
 /* Main Sidebar Container */
 nav.sidebar {
@@ -690,22 +623,74 @@ nav.sidebar.sidebar-collapsed .nav-item .indicator {
 
 @media (max-width: 736px) {
   nav.sidebar {
-    top: 0 !important;
-    z-index: 99999 !important;
-    background: var(--surfacePrimary) !important;
     height: 100vh !important;
-    width: 100% !important;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    width: 80px !important;
+    padding-top: env(safe-area-inset-top, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  
+  nav.sidebar .profile-info {
+    display: none !important;
+  }
+  
+  nav.sidebar .nav-item span {
+    display: none !important;
+  }
+  
+  nav.sidebar .nav-item .indicator {
+    display: none !important;
+  }
+  
+  nav.sidebar .nav-section-title {
+    display: none !important;
+  }
+  
+  nav.sidebar .sidebar-footer {
+    display: none !important;
   }
 
-  html[dir="rtl"] nav.sidebar {
-    left: unset !important;
-    right: 0 !important;
-    transform: translateX(100%) !important;
+  /* Larger touch targets for mobile */
+  .nav-item {
+    padding: 1rem !important;
+    min-height: 56px;
+    justify-content: center;
   }
 
-  html[dir="rtl"] nav.sidebar.active {
-    transform: translateX(0) !important;
+  .nav-item i.material-icons:not(.indicator) {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  /* Profile section adjustments for mobile */
+  .sidebar-profile {
+    padding: 2rem 1rem 1rem;
+    justify-content: center;
+    border-bottom: 1px solid var(--divider);
+  }
+
+  .profile-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .profile-avatar i.material-icons {
+    font-size: 24px;
+  }
+
+  /* Enhanced active state for better visibility */
+  .nav-item.active {
+    background-color: rgba(var(--blue-rgb, 33, 150, 243), 0.15);
+  }
+
+  .nav-item.active::before {
+    width: 3px;
+    height: 60%;
+  }
+
+  /* Smooth scrolling */
+  .sidebar-nav {
+    -webkit-overflow-scrolling: touch;
   }
 }
 </style>

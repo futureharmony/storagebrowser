@@ -8,11 +8,16 @@
        />
     </header>
 
-    <div class="app-main">
+    <div class="app-main" :class="{ 'has-sidebar-active': sidebarActive }">
       <!-- Sidebar -->
-      <div class="app-sidebar" v-if="!isEditor">
+      <div class="app-sidebar" :class="{ active: sidebarActive }" v-if="!isEditor">
         <Sidebar />
       </div>
+      
+      <!-- Mobile backdrop overlay (outside sidebar container) -->
+      <transition name="backdrop-fade">
+        <div v-if="sidebarActive && !isEditor" class="sidebar-backdrop" @click="layoutStore.closeHovers()"></div>
+      </transition>
 
       <!-- Content -->
       <main class="app-content">
@@ -46,16 +51,15 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from "@/stores/auth";
-import { useLayoutStore } from "@/stores/layout";
-import { useFileStore } from "@/stores/file";
-import { useUploadStore } from "@/stores/upload";
-import Sidebar from "@/components/Sidebar.vue";
-import Prompts from "@/components/prompts/Prompts.vue";
 import Shell from "@/components/Shell.vue";
-import UploadFiles from "@/components/prompts/UploadFiles.vue";
+import Sidebar from "@/components/Sidebar.vue";
 import HeaderBar from "@/components/header/HeaderBar.vue";
-import Layout from "@/components/layout/Layout.vue";
+import Prompts from "@/components/prompts/Prompts.vue";
+import UploadFiles from "@/components/prompts/UploadFiles.vue";
+import { useAuthStore } from "@/stores/auth";
+import { useFileStore } from "@/stores/file";
+import { useLayoutStore } from "@/stores/layout";
+import { useUploadStore } from "@/stores/upload";
 import { enableExec } from "@/utils/constants";
 import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -73,6 +77,16 @@ const sentPercent = computed(() =>
 const isEditor = computed(() => {
   return fileStore.req && !fileStore.req.isDir && 
     (fileStore.req.type === "text" || fileStore.req.type === "textImmutable");
+});
+
+const sidebarActive = computed(() => {
+  const isActive = layoutStore.currentPromptName === "sidebar";
+  console.log('Layout sidebarActive state:', { 
+    isActive, 
+    currentPromptName: layoutStore.currentPromptName,
+    prompts: layoutStore.prompts 
+  });
+  return isActive;
 });
 
 watch(route, () => {
@@ -96,15 +110,16 @@ watch(route, () => {
 }
 
 /* Header */
-.app-header {
-  flex: 0 0 auto;
-  height: 4em;
-  background: var(--surfacePrimary);
-  border-bottom: 1px solid var(--divider);
-  z-index: 1000;
-  position: relative;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
+  .app-header {
+    flex: 0 0 auto;
+    height: 4em;
+    background: var(--surfacePrimary);
+    border-bottom: 1px solid var(--divider);
+    z-index: 1000;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding-top: env(safe-area-inset-top, 0);
+  }
 
 /* Main area (sidebar + content) */
 .app-main {
@@ -179,35 +194,102 @@ html[dir="rtl"] .app-sidebar {
   }
 }
 
-  /* Responsive - Mobile */
-  @media (max-width: 736px) {
-    .app-sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      width: 300px !important;
-      transform: translateX(-100%);
-      z-index: 1001;
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .app-main:has(.sidebar-collapsed) .app-sidebar {
-      width: 300px !important;
-    }
-    
-    .app-sidebar.active {
-      transform: translateX(0);
-    }
-    
-    html[dir="rtl"] .app-sidebar {
-      left: auto;
-      right: 0;
-      transform: translateX(100%);
-    }
-    
-    html[dir="rtl"] .app-sidebar.active {
-      transform: translateX(0);
-    }
+/* Responsive - Mobile */
+@media (max-width: 736px) {
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    z-index: 1000;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+    border-right: none;
+    padding-top: env(safe-area-inset-top, 0);
   }
+  
+  .app-sidebar.active {
+    transform: translateX(0);
+  }
+
+  /* Mobile backdrop overlay - covers only the right side */
+  .sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 60px; /* 1px overlap to avoid gap */
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1002; /* Higher than header (1000) and sidebar (1000) */
+    cursor: pointer;
+    backdrop-filter: blur(1px);
+    animation: backdrop-shimmer 0.5s ease-out;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    user-select: none;
+  }
+
+  /* Remove any active state visual feedback */
+  .sidebar-backdrop:active {
+    background: rgba(0, 0, 0, 0.4);
+    transform: none;
+  }
+
+
+  /* Backdrop fade animation */
+  .backdrop-fade-enter-active,
+  .backdrop-fade-leave-active {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .backdrop-fade-enter-from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  
+  .backdrop-fade-leave-to {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  
+  .backdrop-fade-enter-to,
+  .backdrop-fade-leave-from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  html[dir="rtl"] .sidebar-backdrop {
+    left: 0;
+    right: 60px; /* 1px overlap to avoid gap */
+  }
+
+  html[dir="rtl"] .sidebar-backdrop {
+    /* clip-path: polygon(0 0, calc(100% - 80px) 0, calc(100% - 80px) 100%, 0 100%); */
+  }
+  
+
+  
+  .app-content {
+    padding: 1em;
+    width: 100%;
+  }
+  
+  html[dir="rtl"] .app-sidebar {
+    left: auto;
+    right: 0;
+    transform: translateX(100%);
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
+    border-left: none;
+  }
+  
+  html[dir="rtl"] .app-sidebar.active {
+    transform: translateX(0);
+  }
+  
+  html[dir="rtl"] .sidebar-backdrop {
+    left: 0;
+    right: 80px;
+  }
+}
 </style>

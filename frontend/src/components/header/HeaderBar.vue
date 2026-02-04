@@ -2,6 +2,15 @@
   <header>
     <img v-if="showLogo" :src="logoURL" />
 
+    <!-- Mobile menu button -->
+    <action
+      v-if="isMobile"
+      class="menu-button"
+      icon="menu"
+      :label="t('buttons.menu')"
+      @action="openSidebar"
+    />
+
     <div v-if="!isSearchActive && !isPreviewMode && hasBuckets && showBucketSelect" id="bucket-select">
       <div id="input" @click="toggleDropdown" ref="selectRef">
         <i class="material-icons">folder</i>
@@ -282,6 +291,11 @@ const openSearch = () => {
   layoutStore.showHover("search");
 };
 
+// 打开侧边栏函数
+const openSidebar = () => {
+  layoutStore.showHover("sidebar");
+};
+
 // 多选切换
 const toggleMultipleSelection = () => {
   fileStore.toggleMultiple();
@@ -382,6 +396,10 @@ onUnmounted(() => {
   margin-right: 10px;
   display: flex;
   align-items: center;
+}
+
+.menu-button {
+  margin-left: 0.5rem;
 }
 
 #bucket-select #input {

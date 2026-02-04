@@ -1,12 +1,10 @@
 @media (max-width: 1024px) {
-  nav {
-    width: 10em;
+  nav.sidebar {
+    width: 160px !important; /* 10em ≈ 160px */
   }
-}
-
-@media (max-width: 1024px) {
+  
   main {
-    width: calc(100% - 13em);
+    width: calc(100% - 160px - 1em) !important; /* sidebar width + margin */
   }
 }
 
@@ -94,28 +92,31 @@
   #file-selection .action span {
     display: none;
   }
-  nav {
-    top: 0;
-    z-index: 99999;
-    background: var(--surfaceSecondary);
-    height: 100%;
-    width: 16em;
+  /* Mobile sidebar */
+  nav.sidebar {
+    top: 0 !important;
+    z-index: 99999 !important;
+    background: var(--surfaceSecondary) !important;
+    height: 100vh !important;
+    width: 16em !important;
     box-shadow: 0 0 5px var(--borderPrimary);
-    transition: 0.1s ease left;
-    left: -17em;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transform: translateX(-100%);
+    left: 0 !important;
   }
 
-  html[dir="rtl"] nav {
-    left: unset;
-    right: -17em;
+  html[dir="rtl"] nav.sidebar {
+    left: auto !important;
+    right: 0 !important;
+    transform: translateX(100%);
   }
-  nav.active {
-    left: 0;
+  
+  nav.sidebar.active {
+    transform: translateX(0) !important;
   }
 
-  html[dir="rtl"] nav.active {
-    left: unset;
-    right: 0;
+  html[dir="rtl"] nav.sidebar.active {
+    transform: translateX(0) !important;
   }
 
   .shell__divider {
@@ -149,9 +150,20 @@
     margin-right: unset;
   }
 
+  /* Mobile main content */
+  #app {
+    grid-template-areas:
+      "header"
+      "main";
+    grid-template-columns: 1fr;
+    grid-template-rows: 4em 1fr;
+  }
+  
   main {
-    margin: 0 1em;
-    width: calc(100% - 2em);
+    margin: 0;
+    width: 100% !important;
+    min-height: calc(100vh - 4em) !important;
+    padding: 1em;
   }
   #search {
     display: none;

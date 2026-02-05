@@ -51,7 +51,7 @@
         />
 
         <!-- Prompts Component -->
-        <Prompts />
+        <Prompts ref="promptsRef" />
 
         <!-- Upload Files Component -->
         <UploadFiles />
@@ -71,7 +71,7 @@ import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 import { useUploadStore } from "@/stores/upload";
 import { enableExec } from "@/utils/constants";
-import { computed, watch } from "vue";
+import { computed, ref, watch, provide } from "vue";
 import { useRoute } from "vue-router";
 
 const layoutStore = useLayoutStore();
@@ -79,6 +79,11 @@ const authStore = useAuthStore();
 const fileStore = useFileStore();
 const uploadStore = useUploadStore();
 const route = useRoute();
+
+const promptsRef = ref<InstanceType<typeof Prompts> | null>(null);
+
+// 提供promptsRef给子组件使用
+provide("promptsRef", promptsRef);
 
 const sentPercent = computed(() =>
   (uploadStore.sentBytes / uploadStore.totalBytes).toFixed(2)

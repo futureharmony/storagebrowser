@@ -20,7 +20,7 @@
 
     <div
       class="card-action"
-      style="display: flex; align-items: center; justify-content: space-between"
+      style="display: flex; align-items: center; gap: 8px"
     >
       <template v-if="user?.perm.create">
         <button
@@ -28,13 +28,22 @@
           @click="fileList?.createDir()"
           :aria-label="$t('sidebar.newFolder')"
           :title="$t('sidebar.newFolder')"
-          style="justify-self: left"
+          style="margin-right: auto; min-width: 0"
           tabindex="4"
         >
-          <span>{{ $t("sidebar.newFolder") }}</span>
+          <span
+            style="
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              display: block;
+            "
+          >
+            {{ $t("sidebar.newFolder") }}
+          </span>
         </button>
       </template>
-      <div>
+      <div style="display: flex; gap: 8px; flex-shrink: 0">
         <button
           class="button button--flat button--grey"
           @click="closeHovers"

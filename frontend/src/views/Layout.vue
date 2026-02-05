@@ -71,7 +71,7 @@ import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 import { useUploadStore } from "@/stores/upload";
 import { enableExec } from "@/utils/constants";
-import { computed, ref, watch, provide } from "vue";
+import { computed, provide, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 const layoutStore = useLayoutStore();
@@ -112,6 +112,18 @@ watch(route, () => {
   fileStore.multiple = false;
   if (layoutStore.currentPromptName !== "success") {
     layoutStore.closeHovers();
+  }
+});
+
+// 监听sidebar状态变化，当sidebar关闭时重置modal-overlay的z-index
+watch(sidebarActive, (newValue, oldValue) => {
+  if (!newValue && oldValue && promptsRef.value) {
+    // sidebar从激活状态变为非激活状态，重置z-index
+    setTimeout(() => {
+      if (promptsRef.value) {
+        promptsRef.value.resetZIndex();
+      }
+    }, 0);
   }
 });
 </script>

@@ -342,6 +342,16 @@ const openSearch = () => {
 // 打开侧边栏函数
 const openSidebar = () => {
   layoutStore.showHover("sidebar");
+
+  // 如果是移动设备，修改modal-overlay的z-index为999
+  if (isMobile.value && promptsRef?.value) {
+    // 使用nextTick确保DOM已更新
+    setTimeout(() => {
+      if (promptsRef.value) {
+        promptsRef.value.setZIndex("999");
+      }
+    }, 0);
+  }
 };
 
 // 多选切换

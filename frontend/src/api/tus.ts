@@ -19,7 +19,7 @@ export async function upload(
   }
 
   filePath = removePrefix(filePath);
-  
+
   // For S3 storage, strip the bucket name from the URL
   const appConfig = (window as any).FileBrowser || {};
   if (appConfig.StorageType === "s3") {
@@ -27,27 +27,30 @@ export async function upload(
     const bucketMatch = filePath.match(/^\/buckets\/([^/]+)/);
     if (bucketMatch) {
       // Remove /buckets/bucket prefix
-      filePath = filePath.slice(bucketMatch[0].length) || '/';
+      filePath = filePath.slice(bucketMatch[0].length) || "/";
     } else {
       // Also check for /bucket format (without /buckets prefix)
       const simpleBucketMatch = filePath.match(/^\/([^/]+)/);
       if (simpleBucketMatch) {
-        filePath = filePath.slice(simpleBucketMatch[0].length) || '/';
+        filePath = filePath.slice(simpleBucketMatch[0].length) || "/";
       }
     }
   }
 
   const authStore = useAuthStore();
-  
+
   // Get current scope/bucket for S3 storage
-  const scope = appConfig.StorageType === "s3" ? authStore.user?.currentScope?.name : undefined;
+  const scope =
+    appConfig.StorageType === "s3"
+      ? authStore.user?.currentScope?.name
+      : undefined;
 
   // Build URL with path and other parameters as query parameters
   const urlParams = new URLSearchParams();
-  urlParams.set('path', filePath);
-  urlParams.set('override', overwrite.toString());
+  urlParams.set("path", filePath);
+  urlParams.set("override", overwrite.toString());
   if (scope) {
-    urlParams.set('scope', scope);
+    urlParams.set("scope", scope);
   }
 
   const resourcePath = `${tusEndpoint}?${urlParams.toString()}`;

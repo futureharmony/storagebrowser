@@ -1,14 +1,27 @@
 <template>
-  <ModalsContainer />
+  <div>
+    <Teleport to="body">
+      <div
+        v-if="currentPrompt"
+        class="modal-overlay"
+        @click.self="handleClickOutside"
+      >
+        <div class="modal-content">
+          <component
+            :is="getModalComponent(currentPrompt.prompt)"
+            v-bind="getModalProps(currentPrompt)"
+          />
+        </div>
+      </div>
+    </Teleport>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { watch, h } from "vue";
-import { ModalsContainer, useModal } from "vue-final-modal";
+import { Teleport } from "vue";
 import { storeToRefs } from "pinia";
 import { useLayoutStore } from "@/stores/layout";
 
-import BaseModal from "./BaseModal.vue";
 import Help from "./Help.vue";
 import Info from "./Info.vue";
 import Delete from "./Delete.vue";
@@ -16,8 +29,6 @@ import DeleteUser from "./DeleteUser.vue";
 import Download from "./Download.vue";
 import Rename from "./Rename.vue";
 import MoveCopyModal from "./MoveCopyModal.vue";
-import Move from "./Move.vue"; // 保持向后兼容
-import Copy from "./Copy.vue"; // 保持向后兼容
 import NewFile from "./NewFile.vue";
 import NewDir from "./NewDir.vue";
 import Replace from "./Replace.vue";
@@ -28,8 +39,7 @@ import Upload from "./Upload.vue";
 import DiscardEditorChanges from "./DiscardEditorChanges.vue";
 
 const layoutStore = useLayoutStore();
-
-const { currentPromptName } = storeToRefs(layoutStore);
+const { currentPrompt } = storeToRefs(layoutStore);
 
 const components = new Map<string, any>([
   ["info", Info],
@@ -50,36 +60,62 @@ const components = new Map<string, any>([
   ["discardEditorChanges", DiscardEditorChanges],
 ]);
 
-watch(currentPromptName, (newValue) => {
-  const modal = components.get(newValue!);
-  if (!modal) return;
+const getModalComponent = (name: string) => {
+  return components.get(name);
+};
 
-  const layout = useLayoutStore();
-  const currentPrompt = layout.currentPrompt;
+const getModalProps = (prompt: PopupProps) => {
+  const props = prompt.props || {};
+  const component = getModalComponent(prompt.prompt);
 
-  // 为 MoveCopyModal 组件传递 mode 属性
-  const props = currentPrompt?.props || {};
-  if (modal === MoveCopyModal) {
-    props.mode = newValue; // 使用 prompt 名称作为 mode
+  // For MoveCopyModal, pass mode as prompt name
+  if (component === MoveCopyModal) {
+    return {
+      ...props,
+      mode: prompt.prompt,
+    };
   }
 
-  const { open, close } = useModal({
-    component: BaseModal,
-    slots: {
-      default: () => h(modal, props),
-    },
-  });
+  return props;
+};
 
-  layoutStore.setCloseOnPrompt(close, newValue!);
-  open();
-});
+const handleClickOutside = () => {
+  if (currentPrompt.value) {
+    layoutStore.closeCurrentHover();
+  }
+};
 
+// Handle Escape key for modal closure
 window.addEventListener("keydown", (event) => {
-  if (!layoutStore.currentPrompt) return;
+  if (!currentPrompt.value) return;
 
-   if (event.key === "Escape") {
-     event.stopImmediatePropagation();
-     layoutStore.closeCurrentHover();
-   }
+  if (event.key === "Escape") {
+    event.stopImmediatePropagation();
+    layoutStore.closeCurrentHover();
+  }
 });
 </script>
+
+<style scoped>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 90%;
+  margin: 20px;
+}
+</style>

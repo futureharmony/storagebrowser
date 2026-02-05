@@ -29,7 +29,7 @@ export const useLayoutStore = defineStore("layout", {
     toggleShell() {
       this.showShell = !this.showShell;
     },
-    setCloseOnPrompt(closeFunction: () => Promise<string>, onPrompt: string) {
+    setCloseOnPrompt(closeFunction: () => Promise<string | void> | void, onPrompt: string) {
       const prompt = this.prompts.find((prompt) => prompt.prompt === onPrompt);
       if (prompt) {
         prompt.close = closeFunction;
@@ -76,24 +76,25 @@ export const useLayoutStore = defineStore("layout", {
       });
     },
     closeHovers() {
-      console.log('closeHovers called, current prompts:', this.prompts.length);
+      console.log("closeHovers called, current prompts:", this.prompts.length);
       // 只关闭最后一个模态框
       if (this.prompts.length > 0) {
         const popped = this.prompts.pop();
-        console.log('Popped prompt:', popped?.prompt);
-        popped?.close?.();
+        console.log("Popped prompt:", popped?.prompt);
       }
-      console.log('After closeHovers, prompts:', this.prompts.length);
+      console.log("After closeHovers, prompts:", this.prompts.length);
     },
     closeCurrentHover() {
-      console.log('closeCurrentHover called, current prompts:', this.prompts.length);
+      console.log(
+        "closeCurrentHover called, current prompts:",
+        this.prompts.length
+      );
       // 只关闭当前活动的模态框（最后一个）
       if (this.prompts.length > 0) {
         const popped = this.prompts.pop();
-        console.log('Popped current prompt:', popped?.prompt);
-        popped?.close?.();
+        console.log("Popped current prompt:", popped?.prompt);
       }
-      console.log('After closeCurrentHover, prompts:', this.prompts.length);
+      console.log("After closeCurrentHover, prompts:", this.prompts.length);
     },
     // easily reset state using `$reset`
     clearLayout() {

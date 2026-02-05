@@ -36,7 +36,7 @@ export function encodePath(str: string) {
   } catch {
     // If decode fails, string is not encoded, continue with original
   }
-  
+
   return str
     .split("/")
     .map((v) => encodeURIComponent(v))

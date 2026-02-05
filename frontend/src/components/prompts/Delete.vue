@@ -61,7 +61,7 @@ export default {
       try {
         const authStore = useAuthStore();
         const scope = authStore.user?.currentScope?.name;
-        
+
         if (!this.isListing) {
           await api.remove(this.$route.path, scope);
           buttons.success("delete");

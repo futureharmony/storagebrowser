@@ -18,11 +18,18 @@
       </span>
     </div>
 
-    <div v-if="authStore.isLoggedIn && fileStore.isFiles && !disableUsedPercentage" class="storage-usage">
+    <div
+      v-if="authStore.isLoggedIn && fileStore.isFiles && !disableUsedPercentage"
+      class="storage-usage"
+    >
       <div class="usage-header">
         <span class="usage-percentage">{{ usage.usedPercentage }}%</span>
       </div>
-      <progress-bar :val="usage.usedPercentage" size="small" class="usage-progress"></progress-bar>
+      <progress-bar
+        :val="usage.usedPercentage"
+        size="small"
+        class="usage-progress"
+      ></progress-bar>
       <span class="usage-text">{{ usage.used }} of {{ usage.total }}</span>
     </div>
   </div>
@@ -70,7 +77,11 @@ const fetchUsage = async () => {
   try {
     abortOngoingFetchUsage();
     usageAbortController.value = new AbortController();
-    const usageData = await api.usage(path, usageAbortController.value.signal, bucket);
+    const usageData = await api.usage(
+      path,
+      usageAbortController.value.signal,
+      bucket
+    );
     usageStats = {
       used: prettyBytes(usageData.used, { binary: true }),
       total: prettyBytes(usageData.total, { binary: true }),
@@ -81,17 +92,24 @@ const fetchUsage = async () => {
   }
 };
 
-watch(() => route.path, (newPath) => {
-  if (newPath.includes("/buckets")) {
-    fetchUsage();
-  }
-}, { immediate: true });
+watch(
+  () => route.path,
+  (newPath) => {
+    if (newPath.includes("/buckets")) {
+      fetchUsage();
+    }
+  },
+  { immediate: true }
+);
 
-watch(() => fileStore.reload, (newValue) => {
-  if (newValue && route.path.includes("/buckets")) {
-    fetchUsage();
+watch(
+  () => fileStore.reload,
+  (newValue) => {
+    if (newValue && route.path.includes("/buckets")) {
+      fetchUsage();
+    }
   }
-});
+);
 
 onUnmounted(() => {
   abortOngoingFetchUsage();
@@ -278,11 +296,11 @@ const element = computed(() => {
     min-height: auto;
     margin-top: 0.75rem;
   }
-  
+
   .breadcrumbs-container {
     width: 100%;
   }
-  
+
   .storage-usage {
     width: 100%;
     justify-content: space-between;

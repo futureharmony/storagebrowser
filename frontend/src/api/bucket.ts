@@ -13,4 +13,3 @@ export async function list(): Promise<Bucket[]> {
   const response = await fetchJSON<Bucket[]>(`/api/buckets`, {});
   return response;
 }
-

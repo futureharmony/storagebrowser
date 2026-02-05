@@ -25,7 +25,11 @@
     <div v-if="isS3Storage">
       <label>{{ t("settings.bucketsAndScopes") }}</label>
       <div class="buckets-container">
-        <div v-for="(scope, index) in user.availableScopes" :key="index" class="bucket-scope-row">
+        <div
+          v-for="(scope, index) in user.availableScopes"
+          :key="index"
+          class="bucket-scope-row"
+        >
           <div class="bucket-input">
             <select
               class="input input--block"
@@ -33,7 +37,13 @@
               :id="`bucket-${index}`"
               :disabled="!buckets.length"
             >
-              <option value="">{{ !buckets.length ? t("settings.loading") : t("settings.selectBucket") }}</option>
+              <option value="">
+                {{
+                  !buckets.length
+                    ? t("settings.loading")
+                    : t("settings.selectBucket")
+                }}
+              </option>
               <option
                 v-for="bucket in getAvailableBuckets(index)"
                 :key="bucket.name"
@@ -52,11 +62,21 @@
               :id="`scope-${index}`"
             />
           </div>
-          <button type="button" class="button button--icon button--flat button--red" @click="removeBucket(index)" :title="t('buttons.remove')">
+          <button
+            type="button"
+            class="button button--icon button--flat button--red"
+            @click="removeBucket(index)"
+            :title="t('buttons.remove')"
+          >
             <i class="material-icons">delete</i>
           </button>
         </div>
-        <button type="button" class="button button--icon button--secondary" @click="addBucket" :title="t('settings.addBucket')">
+        <button
+          type="button"
+          class="button button--icon button--secondary"
+          @click="addBucket"
+          :title="t('settings.addBucket')"
+        >
           <i class="material-icons">add</i>
         </button>
       </div>
@@ -129,7 +149,7 @@ const buckets = ref<{ name: string }[]>([]);
 const config = ref<any>(null);
 
 const isS3Storage = computed(() => {
-  return (config.value?.StorageType || 'local') === 's3';
+  return (config.value?.StorageType || "local") === "s3";
 });
 
 const props = defineProps<{
@@ -151,9 +171,9 @@ onMounted(async () => {
       // Update global config for consistency
       (window as any).FileBrowser = config.value;
     } catch (error) {
-      console.error('Failed to load config:', error);
+      console.error("Failed to load config:", error);
       // Fallback to default config
-      config.value = { StorageType: 'local' };
+      config.value = { StorageType: "local" };
     }
   }
 
@@ -177,7 +197,7 @@ onMounted(async () => {
     try {
       buckets.value = await listBuckets();
     } catch (error) {
-      console.error('Failed to load buckets:', error);
+      console.error("Failed to load buckets:", error);
     }
   }
 });
@@ -188,14 +208,18 @@ const addBucket = () => {
     props.user.availableScopes = [];
   }
   props.user.availableScopes.push({
-    name: '',
-    rootPrefix: '/'
+    name: "",
+    rootPrefix: "/",
   });
 };
 
 // Method to remove a bucket/scope entry
 const removeBucket = (index: number) => {
-  if (props.user.availableScopes && index >= 0 && index < props.user.availableScopes.length) {
+  if (
+    props.user.availableScopes &&
+    index >= 0 &&
+    index < props.user.availableScopes.length
+  ) {
     props.user.availableScopes.splice(index, 1);
   }
 };
@@ -206,27 +230,32 @@ const getAvailableBuckets = (currentIndex: number) => {
 
   // Get all bucket names that are already selected (excluding the current index)
   const selectedBuckets = props.user.availableScopes
-    .map(s => s.name)
+    .map((s) => s.name)
     .filter((name, index) => index !== currentIndex)
-    .filter(name => name !== ''); // Exclude empty selections
+    .filter((name) => name !== ""); // Exclude empty selections
 
   // Get the currently selected bucket for this specific index
-  const currentSelection = props.user.availableScopes[currentIndex]?.name || '';
+  const currentSelection = props.user.availableScopes[currentIndex]?.name || "";
 
   // Return buckets that are not already selected by other rows
   // BUT include the current selection to preserve it in the dropdown
-  return buckets.value.filter(bucket =>
-    !selectedBuckets.includes(bucket.name) || bucket.name === currentSelection
+  return buckets.value.filter(
+    (bucket) =>
+      !selectedBuckets.includes(bucket.name) || bucket.name === currentSelection
   );
 };
 
 // Watch for changes in availableScopes to update the currentScope if needed
-watch(() => props.user?.availableScopes, (newScopes) => {
-  if (newScopes && newScopes.length > 0 && !props.user.currentScope) {
-    // Set the first scope as the current scope if none is set
-    props.user.currentScope = newScopes[0];
-  }
-}, { deep: true });
+watch(
+  () => props.user?.availableScopes,
+  (newScopes) => {
+    if (newScopes && newScopes.length > 0 && !props.user.currentScope) {
+      // Set the first scope as the current scope if none is set
+      props.user.currentScope = newScopes[0];
+    }
+  },
+  { deep: true }
+);
 
 const passwordPlaceholder = computed(() =>
   props.isNew ? "" : t("settings.avoidChanges")

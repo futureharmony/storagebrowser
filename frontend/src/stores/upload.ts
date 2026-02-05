@@ -114,7 +114,9 @@ export const useUploadStore = defineStore("upload", () => {
       const scope = authStore.user?.currentScope?.name;
 
       if (upload.type === "dir") {
-        await api.post(upload.path, "", false, () => {}, scope).catch($showError);
+        await api
+          .post(upload.path, "", false, () => {}, scope)
+          .catch($showError);
       } else {
         const onUpload = (event: ProgressEvent) => {
           upload.rawProgress.sentBytes = event.loaded;

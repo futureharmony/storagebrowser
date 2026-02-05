@@ -6,7 +6,6 @@ import createPinia from "@/stores";
 import { disableExternal } from "@/utils/constants";
 import VueNumberInput from "@chenfengyuan/vue-number-input";
 import { createApp } from "vue";
-import { createVfm } from "vue-final-modal";
 import VueLazyload from "vue-lazyload";
 import Toast, { POSITION, useToast } from "vue-toastification";
 import type {
@@ -27,7 +26,6 @@ dayjs.extend(relativeTime);
 dayjs.extend(duration);
 
 const pinia = createPinia(router);
-const vfm = createVfm();
 
 const app = createApp(App);
 
@@ -38,8 +36,6 @@ app.use(Toast, {
   maxToasts: 10,
   newestOnTop: true,
 } satisfies PluginOptions);
-
-app.use(vfm);
 app.use(i18n);
 app.use(pinia);
 app.use(router);

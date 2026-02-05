@@ -16,7 +16,9 @@
         >
           <div class="conflict-info">
             <span class="conflict-icon">
-              <i class="material-icons">{{ file.isDir ? "folder" : "description" }}</i>
+              <i class="material-icons">{{
+                file.isDir ? "folder" : "description"
+              }}</i>
             </span>
             <div class="conflict-details">
               <div class="conflict-name">{{ file.name }}</div>
@@ -32,7 +34,9 @@
               @change="onResolutionChange(file, index)"
             >
               <option value="skip">{{ $t("prompts.conflictSkip") }}</option>
-              <option value="overwrite">{{ $t("prompts.conflictOverwrite") }}</option>
+              <option value="overwrite">
+                {{ $t("prompts.conflictOverwrite") }}
+              </option>
               <option value="rename">{{ $t("prompts.conflictRename") }}</option>
             </select>
 
@@ -51,7 +55,7 @@
     </div>
 
     <div class="card-action">
-      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+      <div style="display: flex; gap: 8px; justify-content: flex-end">
         <button
           class="button button--flat button--grey"
           @click="handleCancel"
@@ -112,7 +116,9 @@ const conflictFiles = ref<any[]>([]);
 onMounted(() => {
   // Create conflict file objects with resolution options
   props.conflicts.forEach((fileName, index) => {
-    const existingItem = props.existingItems?.find((item) => item.name === fileName);
+    const existingItem = props.existingItems?.find(
+      (item) => item.name === fileName
+    );
     const sourcePath = props.sourcePaths[index];
 
     conflictFiles.value.push({

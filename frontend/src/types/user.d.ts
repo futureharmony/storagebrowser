@@ -8,8 +8,8 @@ interface IUser {
   username: string;
   password: string;
   scope: string;
-  availableScopes: IScope[];  // Available scopes for user
-  currentScope: IScope;       // Current selected scope
+  availableScopes: IScope[]; // Available scopes for user
+  currentScope: IScope; // Current selected scope
   locale: string;
   perm: Permissions;
   commands: string[];

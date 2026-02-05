@@ -9,13 +9,13 @@
  * - 确保路径以斜杠开头
  */
 export function normalizePath(path: string): string {
-  if (!path) return '/';
+  if (!path) return "/";
 
   // 确保路径以斜杠开头
-  let normalized = path.startsWith('/') ? path : `/${path}`;
+  let normalized = path.startsWith("/") ? path : `/${path}`;
 
   // 去除末尾斜杠，但保留根路径 "/"
-  if (normalized.length > 1 && normalized.endsWith('/')) {
+  if (normalized.length > 1 && normalized.endsWith("/")) {
     normalized = normalized.slice(0, -1);
   }
 
@@ -56,7 +56,7 @@ export function convertToS3Path(scope: string, path: string): string {
   const normalizedPath = normalizePath(path);
 
   // 构建S3路径
-  return `/buckets/${scope}${normalizedPath === '/' ? '' : normalizedPath}`;
+  return `/buckets/${scope}${normalizedPath === "/" ? "" : normalizedPath}`;
 }
 
 /**
@@ -64,12 +64,15 @@ export function convertToS3Path(scope: string, path: string): string {
  * @param s3Path S3路径，格式为 /buckets/{bucketName}/...
  * @returns 包含scope和本地路径的对象
  */
-export function convertFromS3Path(s3Path: string): { scope: string | null; path: string } {
+export function convertFromS3Path(s3Path: string): {
+  scope: string | null;
+  path: string;
+} {
   const bucketMatch = s3Path.match(/^\/buckets\/([^/]+)/);
 
   if (bucketMatch) {
     const scope = bucketMatch[1];
-    const path = s3Path.slice(bucketMatch[0].length) || '/';
+    const path = s3Path.slice(bucketMatch[0].length) || "/";
     return { scope, path };
   }
 
@@ -82,17 +85,17 @@ export function convertFromS3Path(s3Path: string): { scope: string | null; path:
  * @returns 父路径或null（如果已经是根路径）
  */
 export function getParentPath(path: string): string | null {
-  if (!path || path === '/' || path === '/buckets') return null;
+  if (!path || path === "/" || path === "/buckets") return null;
 
   // 处理S3存储桶根路径的情况
   if (path.match(/^\/buckets\/[^/]+(\/)?$/)) {
-    return '/buckets';
+    return "/buckets";
   }
 
   const normalizedPath = normalizePath(path);
-  const lastSlashIndex = normalizedPath.lastIndexOf('/');
+  const lastSlashIndex = normalizedPath.lastIndexOf("/");
 
-  if (lastSlashIndex === 0) return '/';
+  if (lastSlashIndex === 0) return "/";
 
   return normalizedPath.slice(0, lastSlashIndex);
 }
@@ -109,23 +112,23 @@ export function getRelativePath(base: string, target: string): string {
 
   // 如果路径相同，返回空字符串
   if (normalizedBase === normalizedTarget) {
-    return '';
+    return "";
   }
 
   // 如果基准路径是根路径
-  if (normalizedBase === '/') {
+  if (normalizedBase === "/") {
     return normalizedTarget.slice(1);
   }
 
   // 检查目标路径是否以基准路径开头
   if (normalizedTarget.startsWith(normalizedBase)) {
     const relative = normalizedTarget.slice(normalizedBase.length);
-    return relative.startsWith('/') ? relative.slice(1) : relative;
+    return relative.startsWith("/") ? relative.slice(1) : relative;
   }
 
   // 复杂情况：计算相对路径（处理不同的目录层级）
-  const baseParts = normalizedBase.split('/').filter(Boolean);
-  const targetParts = normalizedTarget.split('/').filter(Boolean);
+  const baseParts = normalizedBase.split("/").filter(Boolean);
+  const targetParts = normalizedTarget.split("/").filter(Boolean);
 
   let commonLength = 0;
   while (
@@ -141,11 +144,11 @@ export function getRelativePath(base: string, target: string): string {
 
   const relativeParts = [];
   for (let i = 0; i < upLevels; i++) {
-    relativeParts.push('..');
+    relativeParts.push("..");
   }
   relativeParts.push(...downParts);
 
-  return relativeParts.join('/');
+  return relativeParts.join("/");
 }
 
 /**
@@ -155,17 +158,17 @@ export function getRelativePath(base: string, target: string): string {
  * @returns 处理后的路径（去除存储桶前缀）
  */
 export function stripS3BucketPrefix(path: string, scope?: string): string {
-  if (!path) return '/';
+  if (!path) return "/";
 
   // 如果有scope，并且路径是该存储桶的路径，则去除前缀
   if (scope && path.startsWith(`/buckets/${scope}`)) {
-    return path.slice(`/buckets/${scope}`.length) || '/';
+    return path.slice(`/buckets/${scope}`.length) || "/";
   }
 
   // 如果是S3路径但没有指定scope，或者scope不匹配，则检查是否有其他存储桶前缀
   const bucketMatch = path.match(/^\/buckets\/([^/]+)/);
   if (bucketMatch) {
-    return path.slice(bucketMatch[0].length) || '/';
+    return path.slice(bucketMatch[0].length) || "/";
   }
 
   return path;

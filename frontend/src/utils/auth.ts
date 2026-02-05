@@ -7,7 +7,10 @@ import { baseURL, noAuth } from "./constants";
 
 const USER_DATA_KEY = "user_data";
 
-export async function parseAuthResponse(response: { token: string; user: IUser }) {
+export async function parseAuthResponse(response: {
+  token: string;
+  user: IUser;
+}) {
   const { token, user } = response;
 
   // Decode token to get expiration time

@@ -72,7 +72,7 @@ const name = ref<string>("");
 const submit = async (event: Event) => {
   event.preventDefault();
   if (name.value === "") return;
-  
+
   // Build the path of the new directory.
   let uri: string;
   if (props.base) uri = props.base;

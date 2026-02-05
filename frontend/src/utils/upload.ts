@@ -4,7 +4,12 @@ import url from "@/utils/url";
 
 // 保持向后兼容性的函数
 export function checkConflict(
-  files: Array<{ name: string; fullPath?: string; size?: number; isDir?: boolean }>,
+  files: Array<{
+    name: string;
+    fullPath?: string;
+    size?: number;
+    isDir?: boolean;
+  }>,
   dest: ResourceItem[]
 ): boolean {
   if (typeof dest === "undefined" || dest === null) {

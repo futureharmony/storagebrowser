@@ -1,10 +1,13 @@
 <template>
-  <div>
+  <div @keydown.esc="$emit('close')">
     <ul class="file-list">
       <li
         @click="itemClick"
         @touchstart="touchstart"
+        @touchend="touchend"
         @dblclick="next"
+        @keydown.enter="handleEnter"
+        @keydown.space="handleSpace"
         role="button"
         tabindex="0"
         :aria-label="item.name"
@@ -12,6 +15,7 @@
         :key="item.name"
         v-for="item in items"
         :data-url="item.url"
+        class="file-list__item"
       >
         {{ item.name }}
       </li>
@@ -49,6 +53,9 @@ export default {
       touches: {
         id: "",
         count: 0,
+        startTime: 0,
+        startX: 0,
+        startY: 0,
       },
       selected: null,
       current: window.location.pathname,
@@ -88,21 +95,26 @@ export default {
     abortOngoingNext() {
       this.nextAbortController.abort();
     },
-     fillOptions(req) {
-       // Sets up current path and resets
-       // current items.
-       this.current = req.url;
-       this.items = [];
-       
-       console.log('FileList fillOptions called, current:', this.current, 'selected:', this.selected);
-       
-       // 只有在没有用户选择时才将dest重置为当前路径
-       if (!this.selected) {
-         this.$emit("update:selected", this.current);
-       } else {
-         // 保持用户的选择
-         this.$emit("update:selected", this.selected);
-       }
+    fillOptions(req) {
+      // Sets up current path and resets
+      // current items.
+      this.current = req.url;
+      this.items = [];
+
+      console.log(
+        "FileList fillOptions called, current:",
+        this.current,
+        "selected:",
+        this.selected
+      );
+
+      // 只有在没有用户选择时才将dest重置为当前路径
+      if (!this.selected) {
+        this.$emit("update:selected", this.current);
+      } else {
+        // 保持用户的选择
+        this.$emit("update:selected", this.selected);
+      }
 
       // Determine root path based on bucket
       let rootPath = "/files/";
@@ -120,7 +132,7 @@ export default {
           // For S3 bucket paths, calculate parent relative to bucket
           const relativePath = req.url.slice(rootPath.length);
           const parentRelative = url.removeLastDir(relativePath);
-          
+
           if (parentRelative === "" || parentRelative === "/") {
             // We're at bucket root, parent is bucket root
             parentUrl = rootPath;
@@ -171,7 +183,7 @@ export default {
 
       // For S3 bucket paths, remove bucket prefix before calling fetch
       uri = stripS3BucketPrefix(uri, scope);
-      
+
       this.abortOngoingNext();
       this.nextAbortController = new AbortController();
       files
@@ -185,7 +197,15 @@ export default {
         });
     },
     touchstart(event) {
+      // 防止触摸事件与点击事件冲突
+      event.preventDefault();
+
       const url = event.currentTarget.dataset.url;
+
+      // 记录触摸开始时间和位置
+      this.touches.startTime = Date.now();
+      this.touches.startX = event.touches[0].clientX;
+      this.touches.startY = event.touches[0].clientY;
 
       // In 300 milliseconds, we shall reset the count.
       setTimeout(() => {
@@ -209,6 +229,55 @@ export default {
         this.next(event);
       }
     },
+    touchend(event) {
+      // 防止触摸事件与点击事件冲突
+      event.preventDefault();
+
+      // 计算触摸持续时间和移动距离
+      const duration = Date.now() - (this.touches.startTime || 0);
+      const distanceX = Math.abs(
+        event.changedTouches[0].clientX - (this.touches.startX || 0)
+      );
+      const distanceY = Math.abs(
+        event.changedTouches[0].clientY - (this.touches.startY || 0)
+      );
+
+      // 如果触摸时间太短或移动太远，可能是滑动手势，不处理
+      if (duration < 50 || distanceX > 10 || distanceY > 10) {
+        return;
+      }
+
+      // 处理触摸结束事件
+      const url = event.currentTarget.dataset.url;
+
+      // 如果是双击，已经在 touchstart 中处理了
+      if (this.touches.count > 1) {
+        return;
+      }
+
+      // 处理单击
+      this.itemClick(event);
+    },
+    handleEnter(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (this.user.singleClick) {
+        this.next(event);
+      } else {
+        this.select(event);
+      }
+    },
+    handleSpace(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (this.user.singleClick) {
+        this.next(event);
+      } else {
+        this.select(event);
+      }
+    },
     itemClick: function (event) {
       if (this.user.singleClick) this.next(event);
       else this.select(event);
@@ -228,14 +297,14 @@ export default {
     createDir: async function () {
       // 规范化路径进行比较，确保末尾斜杠一致
       const normalizePath = (path) => {
-        if (!path) return '/';
-        if (!path.endsWith('/')) return path + '/';
+        if (!path) return "/";
+        if (!path.endsWith("/")) return path + "/";
         return path;
       };
-      
+
       const normalizedCurrent = normalizePath(this.current);
       const normalizedRoutePath = normalizePath(this.$route.path);
-      
+
       this.showHover({
         prompt: "newDir",
         action: null,

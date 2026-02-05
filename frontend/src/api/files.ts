@@ -6,7 +6,7 @@ import { createURL, fetchURL, removePrefix, StatusError } from "./utils";
 import { stripS3BucketPrefix } from "@/utils/path";
 
 export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
-  console.log('[API FETCH] original url:', url);
+  console.log("[API FETCH] original url:", url);
 
   const appConfig = (window as any).FileBrowser || {};
   let path = url;
@@ -19,7 +19,7 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
       path = removePrefix(path);
       const bucketMatch = path.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
-        path = path.slice(bucketMatch[0].length) || '/';
+        path = path.slice(bucketMatch[0].length) || "/";
       }
     }
   } else {
@@ -29,8 +29,13 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
   const urlParams = new URLSearchParams();
   // Decode first to avoid double encoding when path contains encoded characters
   const decodedPath = decodeURIComponent(path);
-  urlParams.set('path', decodedPath);
-  const res = await fetchURL(`/api/resources?${urlParams.toString()}`, { signal }, true, scope);
+  urlParams.set("path", decodedPath);
+  const res = await fetchURL(
+    `/api/resources?${urlParams.toString()}`,
+    { signal },
+    true,
+    scope
+  );
 
   let data: Resource;
   try {
@@ -70,8 +75,13 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
   return data;
 }
 
-async function resourceAction(url: string, method: ApiMethod, content?: any, scope?: string) {
-  const [pathWithoutQuery, queryPart] = url.split('?');
+async function resourceAction(
+  url: string,
+  method: ApiMethod,
+  content?: any,
+  scope?: string
+) {
+  const [pathWithoutQuery, queryPart] = url.split("?");
   let processedPath = pathWithoutQuery;
 
   const appConfig = (window as any).FileBrowser || {};
@@ -84,7 +94,7 @@ async function resourceAction(url: string, method: ApiMethod, content?: any, sco
     if (appConfig.StorageType === "s3") {
       const bucketMatch = processedPath.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
-        processedPath = processedPath.slice(bucketMatch[0].length) || '/';
+        processedPath = processedPath.slice(bucketMatch[0].length) || "/";
       }
     }
   }
@@ -99,16 +109,21 @@ async function resourceAction(url: string, method: ApiMethod, content?: any, sco
 
   const baseUrl = `/api/resources`;
   const urlParams = new URLSearchParams();
-  urlParams.set('path', processedPath);
-  
+  urlParams.set("path", processedPath);
+
   if (queryPart) {
     const originalParams = new URLSearchParams(queryPart);
     for (const [key, value] of originalParams) {
       urlParams.set(key, value);
     }
   }
-  
-  const res = await fetchURL(`${baseUrl}?${urlParams.toString()}`, opts, true, scope);
+
+  const res = await fetchURL(
+    `${baseUrl}?${urlParams.toString()}`,
+    opts,
+    true,
+    scope
+  );
 
   return res;
 }
@@ -132,23 +147,23 @@ export function download(format: any, ...files: string[]) {
       const authStore = useAuthStore();
       const scope = authStore.user?.currentScope?.name;
       if (scope) {
-        params.set('scope', scope);
+        params.set("scope", scope);
         // Path should be relative to the bucket, strip bucket prefix if present
         path = stripS3BucketPrefix(path, scope);
-        if (path.startsWith('/')) {
+        if (path.startsWith("/")) {
           path = path.slice(1);
         }
-        params.set('path', path);
+        params.set("path", path);
         if (format) {
-          params.set('algo', format);
+          params.set("algo", format);
         }
-        url += '?' + params.toString();
+        url += "?" + params.toString();
         window.open(url);
         return;
       }
     }
-    params.set('path', removePrefix(path));
-    url += '?' + params.toString();
+    params.set("path", removePrefix(path));
+    url += "?" + params.toString();
   } else {
     let arg = "";
 
@@ -157,12 +172,12 @@ export function download(format: any, ...files: string[]) {
     }
 
     arg = arg.substring(0, arg.length - 1);
-    params.set('files', arg);
-    url += '?' + params.toString();
+    params.set("files", arg);
+    url += "?" + params.toString();
   }
 
   if (format) {
-    params.set('algo', format);
+    params.set("algo", format);
     // Reconstruct URL with updated params
     const newParams = new URLSearchParams(params.toString());
     url = `${baseURL}/api/raw?${newParams.toString()}`;
@@ -207,12 +222,12 @@ async function postResources(
     const bucketMatch = url.match(/^\/buckets\/([^/]+)/);
     if (bucketMatch) {
       // Remove /buckets/bucket prefix
-      url = url.slice(bucketMatch[0].length) || '/';
+      url = url.slice(bucketMatch[0].length) || "/";
     } else {
       // Also check for /bucket format (without /buckets prefix)
       const simpleBucketMatch = url.match(/^\/([^/]+)/);
       if (simpleBucketMatch) {
-        url = url.slice(simpleBucketMatch[0].length) || '/';
+        url = url.slice(simpleBucketMatch[0].length) || "/";
       }
     }
   }
@@ -226,21 +241,24 @@ async function postResources(
   }
 
   const authStore = useAuthStore();
-  
+
   // Get current scope/bucket for S3 storage
-  const scope = appConfig.StorageType === "s3" ? authStore.user?.currentScope?.name : undefined;
+  const scope =
+    appConfig.StorageType === "s3"
+      ? authStore.user?.currentScope?.name
+      : undefined;
 
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
-    
+
     // Build URL with path and other parameters as query parameters
     const urlParams = new URLSearchParams();
-    urlParams.set('path', url);
-    urlParams.set('override', overwrite.toString());
+    urlParams.set("path", url);
+    urlParams.set("override", overwrite.toString());
     if (scope) {
-      urlParams.set('scope', scope);
+      urlParams.set("scope", scope);
     }
-    
+
     request.open(
       "POST",
       `${baseURL}/api/resources?${urlParams.toString()}`,
@@ -283,20 +301,20 @@ function moveCopy(
   for (const item of items) {
     const from = item.from;
     const to = item.to;
-    
+
     let scope: string | undefined;
     let processedFrom = from;
     let processedTo = to ?? "";
-    
+
     if (appConfig.StorageType === "s3") {
       const bucketMatch = from.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
         scope = bucketMatch[1];
-        processedFrom = from.slice(bucketMatch[0].length) || '/';
-        
+        processedFrom = from.slice(bucketMatch[0].length) || "/";
+
         const toBucketMatch = to?.match(/^\/buckets\/([^/]+)/);
         if (toBucketMatch) {
-          processedTo = to.slice(toBucketMatch[0].length) || '/';
+          processedTo = to.slice(toBucketMatch[0].length) || "/";
         }
       }
     } else {
@@ -304,19 +322,21 @@ function moveCopy(
       processedFrom = removePrefix(from);
       processedTo = removePrefix(to ?? "");
     }
-    
+
     // Build query parameters for PATCH request
     const urlParams = new URLSearchParams();
-    urlParams.set('path', processedFrom);
-    urlParams.set('action', copy ? "copy" : "rename");
-    urlParams.set('destination', processedTo);
-    urlParams.set('override', overwrite.toString());
-    urlParams.set('rename', rename.toString());
-    
-    promises.push(resourceAction(`?${urlParams.toString()}`, "PATCH", undefined, scope));
+    urlParams.set("path", processedFrom);
+    urlParams.set("action", copy ? "copy" : "rename");
+    urlParams.set("destination", processedTo);
+    urlParams.set("override", overwrite.toString());
+    urlParams.set("rename", rename.toString());
+
+    promises.push(
+      resourceAction(`?${urlParams.toString()}`, "PATCH", undefined, scope)
+    );
   }
   return Promise.all(promises);
- }
+}
 
 export function move(items: any[], overwrite = false, rename = false) {
   return moveCopy(items, false, overwrite, rename);
@@ -328,12 +348,17 @@ export function copy(items: any[], overwrite = false, rename = false) {
 
 export async function checksum(url: string, algo: ChecksumAlg, scope?: string) {
   // Extract path and query parameters
-  const [path, query] = url.split('?');
-  const urlParams = new URLSearchParams(query || '');
-  urlParams.set('path', path);
-  urlParams.set('checksum', algo);
-  
-  const data = await resourceAction(`?${urlParams.toString()}`, "GET", undefined, scope);
+  const [path, query] = url.split("?");
+  const urlParams = new URLSearchParams(query || "");
+  urlParams.set("path", path);
+  urlParams.set("checksum", algo);
+
+  const data = await resourceAction(
+    `?${urlParams.toString()}`,
+    "GET",
+    undefined,
+    scope
+  );
   return (await data.json()).checksums[algo];
 }
 
@@ -353,7 +378,7 @@ export function getDownloadURL(file: ResourceItem, inline: any) {
       params.scope = scope;
       // Path should be relative to the bucket, strip bucket prefix if present
       path = stripS3BucketPrefix(path, scope);
-      if (path.startsWith('/')) {
+      if (path.startsWith("/")) {
         path = path.slice(1); // Remove leading slash
       }
       params.path = path;
@@ -397,12 +422,12 @@ export async function usage(url: string, signal: AbortSignal, scope?: string) {
       const bucketMatch = url.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
         // Remove /buckets/bucket prefix
-        url = url.slice(bucketMatch[0].length) || '/';
+        url = url.slice(bucketMatch[0].length) || "/";
       } else {
         // Also check for /bucket format (without /buckets prefix)
         const simpleBucketMatch = url.match(/^\/([^/]+)/);
         if (simpleBucketMatch) {
-          url = url.slice(simpleBucketMatch[0].length) || '/';
+          url = url.slice(simpleBucketMatch[0].length) || "/";
         }
       }
     }
@@ -414,8 +439,13 @@ export async function usage(url: string, signal: AbortSignal, scope?: string) {
   const urlParams = new URLSearchParams();
   // Decode first to avoid double encoding when path contains encoded characters
   const decodedUrl = decodeURIComponent(url);
-  urlParams.set('path', decodedUrl);
-  const res = await fetchURL(`/api/usage?${urlParams.toString()}`, { signal }, true, scope);
+  urlParams.set("path", decodedUrl);
+  const res = await fetchURL(
+    `/api/usage?${urlParams.toString()}`,
+    { signal },
+    true,
+    scope
+  );
 
   try {
     return await res.json();

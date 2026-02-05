@@ -11,16 +11,26 @@
       @action="openSidebar"
     />
 
-    <div v-if="!isSearchActive && !isPreviewMode && hasBuckets && showBucketSelect" id="bucket-select">
+    <div
+      v-if="!isSearchActive && !isPreviewMode && hasBuckets && showBucketSelect"
+      id="bucket-select"
+    >
       <div id="input" @click="toggleDropdown" ref="selectRef">
         <i class="material-icons">folder</i>
         <span class="selected-value">{{ selectedBucket }}</span>
-        <i class="material-icons arrow" :class="{ open: isDropdownOpen }">arrow_drop_down</i>
+        <i class="material-icons arrow" :class="{ open: isDropdownOpen }"
+          >arrow_drop_down</i
+        >
       </div>
       <Transition name="dropdown">
         <div v-if="isDropdownOpen" class="dropdown-menu">
-          <div v-for="bucket in buckets" :key="bucket.name" class="dropdown-item"
-            :class="{ active: selectedBucket === bucket.name }" @click="selectBucket(bucket.name)">
+          <div
+            v-for="bucket in buckets"
+            :key="bucket.name"
+            class="dropdown-item"
+            :class="{ active: selectedBucket === bucket.name }"
+            @click="selectBucket(bucket.name)"
+          >
             {{ bucket.name }}
           </div>
         </div>
@@ -31,7 +41,12 @@
     <slot />
 
     <!-- 搜索组件 - 仅在 /files 或 /buckets 路由显示且没有插槽内容时 -->
-    <template v-if="(route.path.includes('/files') || route.path.includes('/buckets')) && !hasSlotContent">
+    <template
+      v-if="
+        (route.path.includes('/files') || route.path.includes('/buckets')) &&
+        !hasSlotContent
+      "
+    >
       <search />
       <title />
       <action
@@ -42,12 +57,20 @@
       />
     </template>
 
-    <div id="dropdown" :class="{ active: layoutStore.currentPromptName === 'more' }">
+    <div
+      id="dropdown"
+      :class="{ active: layoutStore.currentPromptName === 'more' }"
+    >
       <!-- 插槽操作内容 - 允许组件内部定义自定义操作按钮 -->
       <slot name="actions" />
 
       <!-- 文件路由的操作按钮 - 仅在 /files 或 /buckets 路由显示且没有插槽操作内容时 -->
-      <template v-if="(route.path.includes('/files') || route.path.includes('/buckets')) && !hasActionsSlotContent">
+      <template
+        v-if="
+          (route.path.includes('/files') || route.path.includes('/buckets')) &&
+          !hasActionsSlotContent
+        "
+      >
         <template v-if="!isMobile">
           <action
             v-if="headerButtons.share"
@@ -132,10 +155,19 @@
       <!-- 其他路由的操作按钮可以在这里添加 -->
     </div>
 
-    <Action v-if="hasActions || hasActionsSlotContent" id="more" icon="more_vert" :label="t('buttons.more')"
-      @action="layoutStore.showHover('more')" />
+    <Action
+      v-if="hasActions || hasActionsSlotContent"
+      id="more"
+      icon="more_vert"
+      :label="t('buttons.more')"
+      @action="layoutStore.showHover('more')"
+    />
 
-    <div class="overlay" v-show="layoutStore.currentPromptName == 'more'" @click="layoutStore.closeHovers" />
+    <div
+      class="overlay"
+      v-show="layoutStore.currentPromptName == 'more'"
+      @click="layoutStore.closeHovers"
+    />
   </header>
 </template>
 
@@ -181,7 +213,7 @@ const hasActionsSlotContent = computed(() => {
 
 // 检查是否有操作按钮（默认操作按钮或插槽操作按钮）
 const hasActions = computed(() => {
-  return route.path.includes('/buckets') || hasActionsSlotContent.value;
+  return route.path.includes("/buckets") || hasActionsSlotContent.value;
 });
 
 const isSearchActive = computed(
@@ -253,7 +285,7 @@ const selectBucket = async (bucketName: string) => {
 
   // Get current path after the bucket
   const currentPath = route.path;
-  const newPath = `/buckets/${bucketName}${currentPath.replace(/^\/buckets\/[^/]+/, '') || '/'}`;
+  const newPath = `/buckets/${bucketName}${currentPath.replace(/^\/buckets\/[^/]+/, "") || "/"}`;
 
   // Navigate to the new bucket URL
   router.push(newPath);
@@ -314,8 +346,7 @@ const switchView = async () => {
 
   const data = {
     id: authStore.user?.id,
-    viewMode: (modes[authStore.user?.viewMode ?? "list"] ||
-      "list") as any,
+    viewMode: (modes[authStore.user?.viewMode ?? "list"] || "list") as any,
   };
 
   users.update(data, ["viewMode"]).catch((error: any) => {
@@ -374,15 +405,19 @@ onMounted(() => {
 });
 
 // Watch for route changes to update selected bucket
-watch(currentBucketFromUrl, (newBucket) => {
-  if (newBucket) {
-    selectedBucket.value = newBucket;
-  } else if (authStore.user?.currentScope.name) {
-    selectedBucket.value = authStore.user.currentScope.name;
-  } else if (buckets.value.length > 0) {
-    selectedBucket.value = buckets.value[0].name;
-  }
-}, { immediate: true });
+watch(
+  currentBucketFromUrl,
+  (newBucket) => {
+    if (newBucket) {
+      selectedBucket.value = newBucket;
+    } else if (authStore.user?.currentScope.name) {
+      selectedBucket.value = authStore.user.currentScope.name;
+    } else if (buckets.value.length > 0) {
+      selectedBucket.value = buckets.value[0].name;
+    }
+  },
+  { immediate: true }
+);
 
 onUnmounted(() => {
   document.removeEventListener("click", closeDropdown);

@@ -1,8 +1,14 @@
 <template>
   <video ref="videoPlayer" class="video-max video-js" controls preload="auto">
     <source />
-    <track kind="subtitles" v-for="(sub, index) in subtitles" :key="index" :src="sub" :label="subLabel(sub)"
-      :default="index === 0" />
+    <track
+      kind="subtitles"
+      v-for="(sub, index) in subtitles"
+      :key="index"
+      :src="sub"
+      :label="subLabel(sub)"
+      :default="index === 0"
+    />
     <p class="vjs-no-js">
       Sorry, your browser doesn't support embedded videos, but don't worry, you
       can <a :href="source">download it</a>
@@ -61,7 +67,7 @@ const initVideoPlayer = async () => {
     //
     sourceType.value = getSourceType(source.value);
 
-    console.log("source url", props.source)
+    console.log("source url", props.source);
     const srcOpt = { sources: [{ src: props.source, type: sourceType.value }] };
     //Supporting localized language display.
     const langOpt = { language: code };
@@ -73,7 +79,7 @@ const initVideoPlayer = async () => {
       srcOpt,
       playbackRatesOpt
     );
-    player.value = videojs(videoPlayer.value!, options, () => { });
+    player.value = videojs(videoPlayer.value!, options, () => {});
 
     // TODO: need to test on mobile
     // @ts-expect-error no ts definition for mobileUi
@@ -112,26 +118,26 @@ const getSourceType = (source: string) => {
   const ext = fileExtension?.toLowerCase() ?? "";
 
   const mimeTypes: { [key: string]: string } = {
-    "mp4": "video/mp4",
-    "m4v": "video/mp4",
-    "webm": "video/webm",
-    "ogg": "video/ogg",
-    "ogv": "video/ogg",
-    "avi": "video/x-msvideo",
-    "mov": "video/quicktime",
-    "qt": "video/quicktime",
-    "flv": "video/x-flv",
-    "wmv": "video/x-ms-wmv",
-    "mkv": "video/mp4",
-    "mpeg": "video/mpeg",
-    "mpg": "video/mpeg",
-    "mpe": "video/mpeg",
-    "m2v": "video/mpeg",
-    "m1v": "video/mpeg",
+    mp4: "video/mp4",
+    m4v: "video/mp4",
+    webm: "video/webm",
+    ogg: "video/ogg",
+    ogv: "video/ogg",
+    avi: "video/x-msvideo",
+    mov: "video/quicktime",
+    qt: "video/quicktime",
+    flv: "video/x-flv",
+    wmv: "video/x-ms-wmv",
+    mkv: "video/mp4",
+    mpeg: "video/mpeg",
+    mpg: "video/mpeg",
+    mpe: "video/mpeg",
+    m2v: "video/mpeg",
+    m1v: "video/mpeg",
     "3gp": "video/3gpp",
     "3g2": "video/3gpp2",
-    "asf": "video/x-ms-asf",
-    "swf": "application/x-shockwave-flash"
+    asf: "video/x-ms-asf",
+    swf: "application/x-shockwave-flash",
   };
 
   return mimeTypes[ext] || "video/mp4"; // 默认返回mp4

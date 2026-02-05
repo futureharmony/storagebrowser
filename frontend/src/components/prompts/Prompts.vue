@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from "vue";
+import { watch, h } from "vue";
 import { ModalsContainer, useModal } from "vue-final-modal";
 import { storeToRefs } from "pinia";
 import { useLayoutStore } from "@/stores/layout";
@@ -53,10 +53,13 @@ watch(currentPromptName, (newValue) => {
   const modal = components.get(newValue!);
   if (!modal) return;
 
+  const layout = useLayoutStore();
+  const currentPrompt = layout.currentPrompt;
+  
   const { open, close } = useModal({
     component: BaseModal,
     slots: {
-      default: modal,
+      default: () => h(modal, currentPrompt?.props || {}),
     },
   });
 

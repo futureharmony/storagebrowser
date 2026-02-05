@@ -49,7 +49,8 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
   // Determine the correct base URL for item links
   // If scope is provided, use S3 bucket path regardless of config (for compatibility)
   if (scope) {
-    data.url = `/buckets/${scope}${url}`;
+    // 使用处理后的path，而不是原始的url
+    data.url = `/buckets/${scope}${path}`;
   } else {
     data.url = `/files${url}`;
   }

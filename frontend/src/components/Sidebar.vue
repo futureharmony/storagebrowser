@@ -335,7 +335,7 @@ nav.sidebar {
   background-color: var(--surfaceSecondary);
   cursor: pointer;
   transition: all 0.2s ease;
-  z-index: 10000;
+  z-index: 900;
 }
 
 nav.sidebar.sidebar-collapsed .collapse-toggle {

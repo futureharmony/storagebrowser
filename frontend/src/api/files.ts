@@ -3,6 +3,7 @@ import { useLayoutStore } from "@/stores/layout";
 import { baseURL } from "@/utils/constants";
 import { upload as postTus, useTus } from "./tus";
 import { createURL, fetchURL, removePrefix, StatusError } from "./utils";
+import { stripS3BucketPrefix } from "@/utils/path";
 
 export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
   console.log('[API FETCH] original url:', url);
@@ -13,11 +14,7 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
   if (appConfig.StorageType === "s3") {
     if (scope) {
       // For S3 storage with scope, strip the bucket prefix from the URL
-      // The scope is already known, so we need the path within the bucket
-      const bucketMatch = path.match(/^\/buckets\/([^/]+)/);
-      if (bucketMatch) {
-        path = path.slice(bucketMatch[0].length) || '/';
-      }
+      path = stripS3BucketPrefix(path, scope);
     } else {
       path = removePrefix(path);
       const bucketMatch = path.match(/^\/buckets\/([^/]+)/);
@@ -80,13 +77,10 @@ async function resourceAction(url: string, method: ApiMethod, content?: any, sco
   const appConfig = (window as any).FileBrowser || {};
   if (appConfig.StorageType === "s3" && scope) {
     // For S3 storage with scope, strip the bucket prefix from the URL
-    const bucketMatch = processedPath.match(/^\/buckets\/([^/]+)/);
-    if (bucketMatch) {
-      processedPath = processedPath.slice(bucketMatch[0].length) || '/';
-    }
+    processedPath = stripS3BucketPrefix(processedPath, scope);
   } else {
     processedPath = removePrefix(processedPath);
-    
+
     if (appConfig.StorageType === "s3") {
       const bucketMatch = processedPath.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
@@ -140,9 +134,8 @@ export function download(format: any, ...files: string[]) {
       if (scope) {
         params.set('scope', scope);
         // Path should be relative to the bucket, strip bucket prefix if present
-        if (path.startsWith('/buckets/' + scope)) {
-          path = path.slice(('/buckets/' + scope).length) || '/';
-        } else if (path.startsWith('/')) {
+        path = stripS3BucketPrefix(path, scope);
+        if (path.startsWith('/')) {
           path = path.slice(1);
         }
         params.set('path', path);
@@ -322,9 +315,8 @@ function moveCopy(
     
     promises.push(resourceAction(`?${urlParams.toString()}`, "PATCH", undefined, scope));
   }
-  layoutStore.closeHovers();
   return Promise.all(promises);
-}
+ }
 
 export function move(items: any[], overwrite = false, rename = false) {
   return moveCopy(items, false, overwrite, rename);
@@ -360,9 +352,8 @@ export function getDownloadURL(file: ResourceItem, inline: any) {
     if (scope) {
       params.scope = scope;
       // Path should be relative to the bucket, strip bucket prefix if present
-      if (path.startsWith('/buckets/' + scope)) {
-        path = path.slice(('/buckets/' + scope).length) || '/';
-      } else if (path.startsWith('/')) {
+      path = stripS3BucketPrefix(path, scope);
+      if (path.startsWith('/')) {
         path = path.slice(1); // Remove leading slash
       }
       params.path = path;

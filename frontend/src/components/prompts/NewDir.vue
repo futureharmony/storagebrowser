@@ -19,7 +19,7 @@
     <div class="card-action">
       <button
         class="button button--flat button--grey"
-        @click="layoutStore.closeHovers"
+        @click="layoutStore.closeCurrentHover"
         :aria-label="t('buttons.cancel')"
         :title="t('buttons.cancel')"
         tabindex="3"
@@ -105,6 +105,6 @@ const submit = async (event: Event) => {
     }
   }
 
-  layoutStore.closeHovers();
+  layoutStore.closeCurrentHover();
 };
 </script>

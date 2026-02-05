@@ -160,7 +160,7 @@
       id="more"
       icon="more_vert"
       :label="t('buttons.more')"
-      @action="layoutStore.showHover('more')"
+      @action="handleMoreClick"
     />
 
     <div
@@ -181,7 +181,15 @@ import { files as api, users } from "@/api";
 import Action from "@/components/header/Action.vue";
 import Search from "@/components/Search.vue";
 import { enableExec, logoURL } from "@/utils/constants";
-import { computed, onMounted, onUnmounted, ref, useSlots, watch } from "vue";
+import {
+  computed,
+  inject,
+  onMounted,
+  onUnmounted,
+  ref,
+  useSlots,
+  watch,
+} from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -198,6 +206,14 @@ const authStore = useAuthStore();
 const clipboardStore = useClipboardStore();
 const slots = useSlots();
 const route = useRoute();
+
+// 获取Prompts组件的ref
+const promptsRef = inject<{
+  value: {
+    setZIndex: (zIndex: string) => void;
+    resetZIndex: () => void;
+  } | null;
+}>("promptsRef");
 
 const { t } = useI18n();
 
@@ -397,6 +413,22 @@ const uploadFunc = () => {
     layoutStore.showHover("upload");
   } else {
     document.getElementById("upload-input")?.click();
+  }
+};
+
+// More按钮点击处理函数
+const handleMoreClick = () => {
+  // 显示更多菜单
+  layoutStore.showHover("more");
+
+  // 如果是移动设备，修改modal-overlay的z-index为999
+  if (isMobile.value && promptsRef?.value) {
+    // 使用nextTick确保DOM已更新
+    setTimeout(() => {
+      if (promptsRef.value) {
+        promptsRef.value.setZIndex("999");
+      }
+    }, 0);
   }
 };
 

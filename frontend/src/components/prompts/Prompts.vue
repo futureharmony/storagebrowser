@@ -3,6 +3,7 @@
     <Teleport to="body">
       <div
         v-if="currentPrompt"
+        ref="modalOverlayRef"
         class="modal-overlay"
         @click.self="handleClickOutside"
       >
@@ -18,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { Teleport } from "vue";
+import { ref, defineExpose } from "vue";
 import { storeToRefs } from "pinia";
 import { useLayoutStore } from "@/stores/layout";
 
@@ -40,6 +41,27 @@ import DiscardEditorChanges from "./DiscardEditorChanges.vue";
 
 const layoutStore = useLayoutStore();
 const { currentPrompt } = storeToRefs(layoutStore);
+
+const modalOverlayRef = ref<HTMLElement | null>(null);
+
+const setZIndex = (zIndex: string) => {
+  if (modalOverlayRef.value) {
+    modalOverlayRef.value.style.zIndex = zIndex;
+  }
+};
+
+const resetZIndex = () => {
+  if (modalOverlayRef.value) {
+    // 重置为默认值或空值
+    modalOverlayRef.value.style.zIndex = "";
+  }
+};
+
+// 暴露方法给父组件
+defineExpose({
+  setZIndex,
+  resetZIndex,
+});
 
 const components = new Map<string, any>([
   ["info", Info],

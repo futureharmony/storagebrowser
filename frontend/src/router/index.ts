@@ -210,7 +210,9 @@ router.beforeResolve(async (to, from, next) => {
   }
 
   if (to.path.endsWith("/login") && authStore.isLoggedIn) {
-    const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
+    const bucket =
+      authStore.user?.currentScope?.name ||
+      authStore.user?.availableScopes?.[0]?.name;
     const redirectPath = bucket ? `/buckets/${bucket}/` : "/settings/profile";
     next({ path: redirectPath });
     return;
@@ -222,7 +224,9 @@ router.beforeResolve(async (to, from, next) => {
       next({ path: "/login" });
       return;
     }
-    const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
+    const bucket =
+      authStore.user?.currentScope?.name ||
+      authStore.user?.availableScopes?.[0]?.name;
     if (bucket) {
       next(`/buckets/${bucket}/`);
       return;

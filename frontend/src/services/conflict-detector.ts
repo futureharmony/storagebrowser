@@ -17,7 +17,7 @@ export interface ResolutionOptions {
 
 export interface ConflictResolution {
   resolvedPaths: string[];
-  action: 'overwrite' | 'rename' | 'skip';
+  action: "overwrite" | "rename" | "skip";
 }
 
 // 资源项类型定义（与现有代码兼容）
@@ -72,7 +72,10 @@ class ConflictDetector {
     };
 
     if (hasConflict && duplicateNames.length === 1) {
-      result.suggestedNewName = this.generateNewName(duplicateNames[0], Array.from(existingNames));
+      result.suggestedNewName = this.generateNewName(
+        duplicateNames[0],
+        Array.from(existingNames)
+      );
     }
 
     return result;
@@ -93,24 +96,24 @@ class ConflictDetector {
     if (overwrite) {
       return {
         resolvedPaths: conflict.duplicateNames,
-        action: 'overwrite'
+        action: "overwrite",
       };
     }
 
     if (rename) {
-      const renamedPaths = conflict.duplicateNames.map(name => {
+      const renamedPaths = conflict.duplicateNames.map((name) => {
         return customName || this.generateNewName(name, conflict.existingItems);
       });
 
       return {
         resolvedPaths: renamedPaths,
-        action: 'rename'
+        action: "rename",
       };
     }
 
     return {
       resolvedPaths: [],
-      action: 'skip'
+      action: "skip",
     };
   }
 
@@ -134,7 +137,7 @@ class ConflictDetector {
     let newName: string;
     do {
       version++;
-      newName = `${baseName} (${version})${extension || ''}`;
+      newName = `${baseName} (${version})${extension || ""}`;
     } while (existingNames.includes(newName));
 
     return newName;
@@ -146,7 +149,10 @@ class ConflictDetector {
    * @param existingNames 已存在的名称数组
    * @returns 可用的新名称
    */
-  private findAvailableName(originalName: string, existingNames: string[]): string {
+  private findAvailableName(
+    originalName: string,
+    existingNames: string[]
+  ): string {
     let version = 1;
     let newName: string;
 
@@ -172,7 +178,7 @@ class ConflictDetector {
     if (scope && fetchPath.match(/^\/buckets\/[^/]+/)) {
       const bucketMatch = fetchPath.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
-        fetchPath = fetchPath.slice(bucketMatch[0].length) || '/';
+        fetchPath = fetchPath.slice(bucketMatch[0].length) || "/";
       }
     }
 
@@ -180,7 +186,7 @@ class ConflictDetector {
       const data = await api.fetch(fetchPath, undefined, scope);
       return data.items || [];
     } catch (error) {
-      console.error('Failed to fetch existing items:', error);
+      console.error("Failed to fetch existing items:", error);
       return [];
     }
   }
@@ -198,9 +204,16 @@ class ConflictDetector {
     options: ResolutionOptions = {}
   ): Promise<{ conflict: ConflictResult; resolution?: ConflictResolution }> {
     const existingItems = await this.getExistingItems(destPath);
-    const conflict = await this.checkConflict(sourcePaths, destPath, existingItems);
+    const conflict = await this.checkConflict(
+      sourcePaths,
+      destPath,
+      existingItems
+    );
 
-    if (conflict.hasConflict && (options.overwrite || options.rename || options.customName)) {
+    if (
+      conflict.hasConflict &&
+      (options.overwrite || options.rename || options.customName)
+    ) {
       const resolution = await this.resolveConflict(conflict, options);
       return { conflict, resolution };
     }

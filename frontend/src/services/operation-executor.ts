@@ -53,8 +53,13 @@ export class OperationExecutor {
   /**
    * 处理成功结果
    */
-  handleSuccessResult(_result: any, mode: 'move' | 'copy', items: any[], destPath: string): OperationResult {
-    const affectedItems = items.map(item => item.name);
+  handleSuccessResult(
+    _result: any,
+    mode: "move" | "copy",
+    items: any[],
+    destPath: string
+  ): OperationResult {
+    const affectedItems = items.map((item) => item.name);
     const firstItemPath = items[0].to;
 
     // 设置预选择项
@@ -62,12 +67,15 @@ export class OperationExecutor {
 
     const operationResult: OperationResult = {
       success: true,
-      message: mode === 'move' ? 'Move operation completed successfully' : 'Copy operation completed successfully',
+      message:
+        mode === "move"
+          ? "Move operation completed successfully"
+          : "Copy operation completed successfully",
       affectedItems,
     };
 
     // 处理导航逻辑
-    if (mode === 'move') {
+    if (mode === "move") {
       operationResult.redirectPath = destPath;
     } else {
       // 复制操作：如果是同一路径，需要刷新；否则导航
@@ -85,7 +93,10 @@ export class OperationExecutor {
   /**
    * 执行移动操作
    */
-  async executeMove(operation: MoveOperation, options?: OperationOptions): Promise<OperationResult> {
+  async executeMove(
+    operation: MoveOperation,
+    options?: OperationOptions
+  ): Promise<OperationResult> {
     const { items, destPath } = operation;
     const { overwrite = false, rename = false } = options || {};
 
@@ -102,7 +113,7 @@ export class OperationExecutor {
       if (scope && fetchPath.match(/^\/buckets\/[^/]+/)) {
         const bucketMatch = fetchPath.match(/^\/buckets\/([^/]+)/);
         if (bucketMatch) {
-          fetchPath = fetchPath.slice(bucketMatch[0].length) || '/';
+          fetchPath = fetchPath.slice(bucketMatch[0].length) || "/";
         }
       }
       const dstItems = (await api.fetch(fetchPath, undefined, scope)).items;
@@ -112,7 +123,7 @@ export class OperationExecutor {
         buttons.done("move");
         return {
           success: false,
-          error: 'Conflict detected: File already exists at destination',
+          error: "Conflict detected: File already exists at destination",
         };
       }
 
@@ -121,13 +132,13 @@ export class OperationExecutor {
 
       buttons.success("move");
 
-      return this.handleSuccessResult({}, 'move', payload, destPath);
+      return this.handleSuccessResult({}, "move", payload, destPath);
     } catch (error) {
       buttons.done("move");
-      console.error('Move operation failed:', error);
+      console.error("Move operation failed:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -135,7 +146,10 @@ export class OperationExecutor {
   /**
    * 执行复制操作
    */
-  async executeCopy(operation: MoveOperation, options?: OperationOptions): Promise<OperationResult> {
+  async executeCopy(
+    operation: MoveOperation,
+    options?: OperationOptions
+  ): Promise<OperationResult> {
     const { items, destPath } = operation;
     const { overwrite = false, rename = false } = options || {};
 
@@ -152,7 +166,7 @@ export class OperationExecutor {
       if (scope && fetchPath.match(/^\/buckets\/[^/]+/)) {
         const bucketMatch = fetchPath.match(/^\/buckets\/([^/]+)/);
         if (bucketMatch) {
-          fetchPath = fetchPath.slice(bucketMatch[0].length) || '/';
+          fetchPath = fetchPath.slice(bucketMatch[0].length) || "/";
         }
       }
       const dstItems = (await api.fetch(fetchPath, undefined, scope)).items;
@@ -162,7 +176,7 @@ export class OperationExecutor {
         buttons.done("copy");
         return {
           success: false,
-          error: 'Conflict detected: File already exists at destination',
+          error: "Conflict detected: File already exists at destination",
         };
       }
 
@@ -171,13 +185,13 @@ export class OperationExecutor {
 
       buttons.success("copy");
 
-      return this.handleSuccessResult({}, 'copy', payload, destPath);
+      return this.handleSuccessResult({}, "copy", payload, destPath);
     } catch (error) {
       buttons.done("copy");
-      console.error('Copy operation failed:', error);
+      console.error("Copy operation failed:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -195,7 +209,7 @@ export class OperationExecutor {
     if (scope && fetchPath.match(/^\/buckets\/[^/]+/)) {
       const bucketMatch = fetchPath.match(/^\/buckets\/([^/]+)/);
       if (bucketMatch) {
-        fetchPath = fetchPath.slice(bucketMatch[0].length) || '/';
+        fetchPath = fetchPath.slice(bucketMatch[0].length) || "/";
       }
     }
 

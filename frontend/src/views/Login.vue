@@ -110,8 +110,12 @@ const submit = async (event: Event) => {
     await auth.login(username.value, password.value, captcha);
 
     // After successful login, compute redirect based on user info
-    const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
-    const defaultRedirect = bucket ? `/buckets/${bucket}/` : "/settings/profile";
+    const bucket =
+      authStore.user?.currentScope?.name ||
+      authStore.user?.availableScopes?.[0]?.name;
+    const defaultRedirect = bucket
+      ? `/buckets/${bucket}/`
+      : "/settings/profile";
     const finalRedirect = redirect || defaultRedirect;
 
     router.push({ path: finalRedirect });

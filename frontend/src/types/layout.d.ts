@@ -4,7 +4,8 @@ interface PopupProps {
   action?: PopupAction;
   saveAction?: () => void;
   props?: any;
-  close?: (() => Promise<string>) | null;
+  close?: (() => Promise<string | void> | void) | null;
+  visible?: boolean;
 }
 
 type PopupAction = (e: Event) => void;

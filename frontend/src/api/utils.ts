@@ -28,19 +28,19 @@ export async function fetchURL(
   // Add scope parameter to URL if provided
   let finalUrl = url;
   const params = [];
-  
+
   // Extract existing query parameters
   const urlObj = new URL(`${origin}${baseURL}${url}`);
   const existingParams = new URLSearchParams(urlObj.search);
-  
+
   // Add scope parameter if provided
   if (scope) {
-    existingParams.set('scope', scope);
+    existingParams.set("scope", scope);
   }
-  
+
   // Reconstruct URL with all parameters
   const queryString = existingParams.toString();
-  finalUrl = url.split('?')[0];
+  finalUrl = url.split("?")[0];
   if (queryString) {
     finalUrl += `?${queryString}`;
   }
@@ -84,7 +84,11 @@ export async function fetchURL(
   return res;
 }
 
-export async function fetchJSON<T>(url: string, opts?: any, scope?: string): Promise<T> {
+export async function fetchJSON<T>(
+  url: string,
+  opts?: any,
+  scope?: string
+): Promise<T> {
   const res = await fetchURL(url, opts, true, scope);
 
   if (res.status === 200) {

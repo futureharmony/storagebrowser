@@ -1,23 +1,25 @@
 <template>
-    <nav :class="['sidebar', { active, 'sidebar-collapsed': isCollapsed }]">
-     <!-- Collapse Toggle Button - 只在桌面端显示 -->
-     <div v-if="!isMobile" class="collapse-toggle" @click="toggleCollapse">
-       <i class="material-icons">{{ isCollapsed ? 'chevron_right' : 'chevron_left' }}</i>
-     </div>
+  <nav :class="['sidebar', { active, 'sidebar-collapsed': isCollapsed }]">
+    <!-- Collapse Toggle Button - 只在桌面端显示 -->
+    <div v-if="!isMobile" class="collapse-toggle" @click="toggleCollapse">
+      <i class="material-icons">{{
+        isCollapsed ? "chevron_right" : "chevron_left"
+      }}</i>
+    </div>
 
-     <!-- User Profile Section - Compact -->
-     <div v-if="authStore.isLoggedIn && authStore.user" class="sidebar-profile">
-       <div class="profile-avatar">
-         <i class="material-icons">account_circle</i>
-       </div>
-       <div v-if="!isCollapsed" class="profile-info">
-         <h3 class="profile-name">{{ authStore.user.username }}</h3>
-         <div v-if="authStore.user.perm.admin" class="profile-badge">
-           <i class="material-icons">verified</i>
-           <span>Admin</span>
-         </div>
-       </div>
-     </div>
+    <!-- User Profile Section - Compact -->
+    <div v-if="authStore.isLoggedIn && authStore.user" class="sidebar-profile">
+      <div class="profile-avatar">
+        <i class="material-icons">account_circle</i>
+      </div>
+      <div v-if="!isCollapsed" class="profile-info">
+        <h3 class="profile-name">{{ authStore.user.username }}</h3>
+        <div v-if="authStore.user.perm.admin" class="profile-badge">
+          <i class="material-icons">verified</i>
+          <span>Admin</span>
+        </div>
+      </div>
+    </div>
 
     <!-- Navigation Menu -->
     <nav class="sidebar-nav">
@@ -26,29 +28,58 @@
         <h4 v-if="!isCollapsed" class="nav-section-title">Navigation</h4>
         <ul class="nav-list">
           <li>
-            <button @click="toRoot" class="nav-item" :class="{ active: isFilesRoute }"
-              :aria-label="$t('sidebar.myFiles')" :title="$t('sidebar.myFiles')">
+            <button
+              @click="toRoot"
+              class="nav-item"
+              :class="{ active: isFilesRoute }"
+              :aria-label="$t('sidebar.myFiles')"
+              :title="$t('sidebar.myFiles')"
+            >
               <i class="material-icons">folder</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.myFiles") }}</span>
-              <i v-if="!isCollapsed && isFilesRoute" class="material-icons indicator">chevron_right</i>
+              <i
+                v-if="!isCollapsed && isFilesRoute"
+                class="material-icons indicator"
+                >chevron_right</i
+              >
             </button>
           </li>
           <li>
-            <button @click="toAccountSettings" class="nav-item" :class="{ active: isProfileRoute }"
-              :aria-label="$t('sidebar.profile')" :title="$t('sidebar.profile')">
+            <button
+              @click="toAccountSettings"
+              class="nav-item"
+              :class="{ active: isProfileRoute }"
+              :aria-label="$t('sidebar.profile')"
+              :title="$t('sidebar.profile')"
+            >
               <i class="material-icons">person</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.profile") }}</span>
-              <i v-if="!isCollapsed && isProfileRoute" class="material-icons indicator">chevron_right</i>
+              <i
+                v-if="!isCollapsed && isProfileRoute"
+                class="material-icons indicator"
+                >chevron_right</i
+              >
             </button>
           </li>
-           <li v-if="authStore.user?.perm.admin">
-             <button @click="toGlobalSettings" class="nav-item" :class="{ active: isGlobalSettingsRoute }"
-               :aria-label="$t('sidebar.globalSettings')" :title="$t('sidebar.globalSettings')">
-               <i class="material-icons">settings_applications</i>
-               <span v-if="!isCollapsed">{{ $t("sidebar.globalSettings") }}</span>
-               <i v-if="!isCollapsed && isGlobalSettingsRoute" class="material-icons indicator">chevron_right</i>
-             </button>
-           </li>
+          <li v-if="authStore.user?.perm.admin">
+            <button
+              @click="toGlobalSettings"
+              class="nav-item"
+              :class="{ active: isGlobalSettingsRoute }"
+              :aria-label="$t('sidebar.globalSettings')"
+              :title="$t('sidebar.globalSettings')"
+            >
+              <i class="material-icons">settings_applications</i>
+              <span v-if="!isCollapsed">{{
+                $t("sidebar.globalSettings")
+              }}</span>
+              <i
+                v-if="!isCollapsed && isGlobalSettingsRoute"
+                class="material-icons indicator"
+                >chevron_right</i
+              >
+            </button>
+          </li>
         </ul>
       </div>
 
@@ -57,30 +88,46 @@
         <h4 v-if="!isCollapsed" class="nav-section-title">Account</h4>
         <ul class="nav-list">
           <li>
-            <router-link to="/login" class="nav-item" :aria-label="$t('sidebar.login')" :title="$t('sidebar.login')">
+            <router-link
+              to="/login"
+              class="nav-item"
+              :aria-label="$t('sidebar.login')"
+              :title="$t('sidebar.login')"
+            >
               <i class="material-icons">login</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.login") }}</span>
-              <i v-if="!isCollapsed" class="material-icons indicator">chevron_right</i>
+              <i v-if="!isCollapsed" class="material-icons indicator"
+                >chevron_right</i
+              >
             </router-link>
           </li>
           <li v-if="signup">
-            <router-link to="/login" class="nav-item" :aria-label="$t('sidebar.signup')" :title="$t('sidebar.signup')">
+            <router-link
+              to="/login"
+              class="nav-item"
+              :aria-label="$t('sidebar.signup')"
+              :title="$t('sidebar.signup')"
+            >
               <i class="material-icons">person_add</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.signup") }}</span>
-              <i v-if="!isCollapsed" class="material-icons indicator">chevron_right</i>
+              <i v-if="!isCollapsed" class="material-icons indicator"
+                >chevron_right</i
+              >
             </router-link>
           </li>
         </ul>
       </div>
 
-
-
       <!-- Logout Button -->
       <div v-if="authStore.isLoggedIn && canLogout" class="nav-section">
         <ul class="nav-list">
           <li>
-            <button @click="logout" class="nav-item nav-item-logout" :aria-label="$t('sidebar.logout')"
-              :title="$t('sidebar.logout')">
+            <button
+              @click="logout"
+              class="nav-item nav-item-logout"
+              :aria-label="$t('sidebar.logout')"
+              :title="$t('sidebar.logout')"
+            >
               <i class="material-icons">logout</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.logout") }}</span>
             </button>
@@ -92,8 +139,13 @@
     <!-- Footer (Only show when expanded) -->
     <footer v-if="!isCollapsed" class="sidebar-footer">
       <div class="footer-links">
-        <a v-if="!disableExternal" rel="noopener noreferrer" target="_blank"
-          href="https://github.com/futureharmony/storagebrowser" class="footer-link">
+        <a
+          v-if="!disableExternal"
+          rel="noopener noreferrer"
+          target="_blank"
+          href="https://github.com/futureharmony/storagebrowser"
+          class="footer-link"
+        >
           <i class="material-icons">code</i>
           <span>GitHub</span>
         </a>
@@ -101,7 +153,6 @@
           <i class="material-icons">help</i>
           <span>{{ $t("sidebar.help") }}</span>
         </button>
-
       </div>
       <div class="footer-info">
         <span class="app-name">StorageBrowser</span>
@@ -142,29 +193,27 @@ const isCollapsed = ref(isMobile.value);
 // 计算属性
 const active = computed(() => {
   const isActive = layoutStore.currentPromptName === "sidebar";
-  console.log('Sidebar active state:', { 
-    isActive, 
+  console.log("Sidebar active state:", {
+    isActive,
     currentPromptName: layoutStore.currentPromptName,
-    prompts: layoutStore.prompts 
+    prompts: layoutStore.prompts,
   });
   return isActive;
 });
 
-const isFilesRoute = computed(() =>
-  route.path.includes("/files") || route.path.includes("/buckets")
+const isFilesRoute = computed(
+  () => route.path.includes("/files") || route.path.includes("/buckets")
 );
 
-const isProfileRoute = computed(() =>
-  route.path === "/settings/profile"
-);
+const isProfileRoute = computed(() => route.path === "/settings/profile");
 
-const isGlobalSettingsRoute = computed(() =>
-  route.path === "/settings/global"
-);
+const isGlobalSettingsRoute = computed(() => route.path === "/settings/global");
 
 // 方法
 const toRoot = () => {
-  const bucket = authStore.user?.currentScope?.name || authStore.user?.availableScopes?.[0]?.name;
+  const bucket =
+    authStore.user?.currentScope?.name ||
+    authStore.user?.availableScopes?.[0]?.name;
   const path = bucket ? `/buckets/${bucket}/` : "/settings/profile";
   router.push({ path });
   layoutStore.closeHovers();
@@ -188,8 +237,6 @@ const logout = () => {
   auth.logout();
 };
 
-
-
 const toggleCollapse = () => {
   // 移动端不能切换collapsed状态
   if (!isMobile.value) {
@@ -208,36 +255,41 @@ const handleResize = () => {
 let unsubscribeGesture: (() => void) | null = null;
 
 const handleLeftEdgeSwipeRight = (gestureEvent: GestureEvent) => {
-  console.log('[Sidebar] Received left-edge-swipe-right gesture', {
+  console.log("[Sidebar] Received left-edge-swipe-right gesture", {
     deltaX: gestureEvent.deltaX,
-    duration: gestureEvent.duration
+    duration: gestureEvent.duration,
   });
-  
+
   // 只在移动端且侧边栏未激活时响应
   if (!isMobile.value || active.value) {
-    console.log('[Sidebar] Ignoring gesture: not mobile or sidebar already active');
+    console.log(
+      "[Sidebar] Ignoring gesture: not mobile or sidebar already active"
+    );
     return;
   }
-  
-  console.log('[Sidebar] Showing sidebar from gesture');
+
+  console.log("[Sidebar] Showing sidebar from gesture");
   layoutStore.showHover("sidebar");
 };
 
 onMounted(() => {
-  window.addEventListener('resize', handleResize);
-  
+  window.addEventListener("resize", handleResize);
+
   // 订阅全局手势检测
-  unsubscribeGesture = gestureDetector.subscribe('left-edge-swipe-right', handleLeftEdgeSwipeRight);
-  console.log('[Sidebar] Subscribed to global gesture detection');
+  unsubscribeGesture = gestureDetector.subscribe(
+    "left-edge-swipe-right",
+    handleLeftEdgeSwipeRight
+  );
+  console.log("[Sidebar] Subscribed to global gesture detection");
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
-  
+  window.removeEventListener("resize", handleResize);
+
   // 取消订阅全局手势检测
   if (unsubscribeGesture) {
     unsubscribeGesture();
-    console.log('[Sidebar] Unsubscribed from global gesture detection');
+    console.log("[Sidebar] Unsubscribed from global gesture detection");
   }
 });
 
@@ -255,8 +307,6 @@ const canLogout = !noAuth && loginPage;
   --blue-rgb: 33, 150, 243;
   --red-rgb: 244, 67, 54;
 }
-
-
 
 /* Main Sidebar Container */
 nav.sidebar {
@@ -474,7 +524,7 @@ nav.sidebar.sidebar-collapsed .nav-item {
 }
 
 .nav-item.active::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 50%;
@@ -547,11 +597,11 @@ nav.sidebar.sidebar-collapsed .nav-item .indicator {
   background-color: rgba(var(--red-rgb, 244, 67, 54), 0.08);
 }
 
-  .nav-item-logout i.material-icons {
+.nav-item-logout i.material-icons {
   color: var(--red);
 }
 
-  /* Footer - Clean and Spacious */
+/* Footer - Clean and Spacious */
 .sidebar-footer {
   padding: 1.25rem 1.5rem 1rem;
   background-color: transparent;
@@ -628,23 +678,23 @@ nav.sidebar.sidebar-collapsed .nav-item .indicator {
     padding-top: env(safe-area-inset-top, 0);
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
-  
+
   nav.sidebar .profile-info {
     display: none !important;
   }
-  
+
   nav.sidebar .nav-item span {
     display: none !important;
   }
-  
+
   nav.sidebar .nav-item .indicator {
     display: none !important;
   }
-  
+
   nav.sidebar .nav-section-title {
     display: none !important;
   }
-  
+
   nav.sidebar .sidebar-footer {
     display: none !important;
   }

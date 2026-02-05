@@ -1,7 +1,11 @@
 <template>
-  <div class="card floating">
+  <div
+    class="card floating"
+    @keydown.esc="closeHovers"
+    @keydown.enter="handleEnterKey"
+  >
     <div class="card-title">
-      <h2>{{ mode === 'move' ? $t("prompts.move") : $t("prompts.copy") }}</h2>
+      <h2>{{ mode === "move" ? $t("prompts.move") : $t("prompts.copy") }}</h2>
     </div>
 
     <div class="card-content">
@@ -25,6 +29,7 @@
           :aria-label="$t('sidebar.newFolder')"
           :title="$t('sidebar.newFolder')"
           style="justify-self: left"
+          tabindex="4"
         >
           <span>{{ $t("sidebar.newFolder") }}</span>
         </button>
@@ -43,12 +48,14 @@
           id="focus-prompt"
           class="button button--flat"
           @click="handleAction"
-          :disabled="mode === 'move' && $route.path === dest"
-          :aria-label="mode === 'move' ? $t('buttons.move') : $t('buttons.copy')"
+          :disabled="mode === 'move' && route.path === dest"
+          :aria-label="
+            mode === 'move' ? $t('buttons.move') : $t('buttons.copy')
+          "
           :title="mode === 'move' ? $t('buttons.move') : $t('buttons.copy')"
           tabindex="2"
         >
-          {{ mode === 'move' ? $t("buttons.move") : $t("buttons.copy") }}
+          {{ mode === "move" ? $t("buttons.move") : $t("buttons.copy") }}
         </button>
       </div>
     </div>
@@ -56,10 +63,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, inject } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter, useRoute } from "vue-router";
-import { mapActions, mapState, mapWritableState } from "pinia";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 import { useAuthStore } from "@/stores/auth";
@@ -109,20 +115,49 @@ const excludedFolders = computed(() => {
   return [];
 });
 
-// Methods
-const { showHover, closeHovers } = mapActions(useLayoutStore, ["showHover", "closeHovers"]);
+// Injections
+interface IToastError {
+  (error: Error | string, displayReport?: boolean): void;
+}
+const $showError = inject<IToastError>("$showError")!;
+
+// Store methods - use directly from store
+const showHover = (value: any) => layoutStore.showHover(value);
+const closeHovers = () => layoutStore.closeHovers();
+
+const handleEnterKey = (event: KeyboardEvent) => {
+  // 防止事件冒泡
+  event.preventDefault();
+  event.stopPropagation();
+
+  // 如果焦点在按钮上，不处理（让按钮自己的点击事件处理）
+  if (event.target instanceof HTMLButtonElement) {
+    return;
+  }
+
+  // 否则触发默认操作
+  handleAction(event as unknown as MouseEvent);
+};
 
 const handleAction = async (event: MouseEvent) => {
   console.log(`${props.mode} function called, event:`, event);
 
   event.preventDefault();
   const scope = authStore.user?.currentScope?.name;
-  console.log(`${props.mode}: scope:`, scope, "selected:", selected.value, "dest:", dest.value, "current route:", route.path);
+  console.log(
+    `${props.mode}: scope:`,
+    scope,
+    "selected:",
+    selected.value,
+    "dest:",
+    dest.value,
+    "current route:",
+    route.path
+  );
 
   // 检查是否选择了目标文件夹
   if (!dest.value) {
     console.error("No destination folder selected");
-    // @ts-ignore - $showError is injected
     $showError("Please select a destination folder");
     return;
   }
@@ -132,7 +167,13 @@ const handleAction = async (event: MouseEvent) => {
     return;
   }
 
-  const items: Array<{ from: string; to: string; name: string; isDir: boolean; size: number }> = [];
+  const items: Array<{
+    from: string;
+    to: string;
+    name: string;
+    isDir: boolean;
+    size: number;
+  }> = [];
 
   for (const item of selected.value) {
     const fileItem = req.value.items[item];
@@ -146,7 +187,14 @@ const handleAction = async (event: MouseEvent) => {
   }
 
   const action = async (overwrite: boolean, rename: boolean) => {
-    console.log(`${props.mode} action called with overwrite:`, overwrite, "rename:", rename, "items:", items);
+    console.log(
+      `${props.mode} action called with overwrite:`,
+      overwrite,
+      "rename:",
+      rename,
+      "items:",
+      items
+    );
     buttons.loading(props.mode);
 
     const apiMethod = props.mode === "move" ? api.move : api.copy;
@@ -163,26 +211,29 @@ const handleAction = async (event: MouseEvent) => {
         return;
       }
 
-      console.log("Different path, closing modal first, then navigating to:", dest.value);
-      closeHovers();
+      console.log(
+        "Different path, closing modal first, then navigating to:",
+        dest.value
+      );
+      layoutStore.closeHovers();
+      console.log("Modal closed, now navigating");
       router.push({ path: dest.value! });
     } catch (e) {
       console.error(`${props.mode} API call failed:`, e);
       buttons.done(props.mode);
-      // @ts-ignore - $showError is injected
-      $showError(e);
+      $showError(e instanceof Error ? e : String(e));
     }
   };
 
   if (props.mode === "copy" && route.path === dest.value) {
     console.log("Same path detected, closing hovers before action");
-    closeHovers();
+    layoutStore.closeHovers();
     action(false, true);
     return;
   }
 
   // 对于S3 bucket路径，需要移除/buckets/{bucketName}/前缀
-  let fetchPath = stripS3BucketPrefix(dest.value, scope);
+  const fetchPath = stripS3BucketPrefix(dest.value, scope);
   const dstItems = (await api.fetch(fetchPath, undefined, scope)).items;
   const conflict = upload.checkConflict(items, dstItems);
 
@@ -192,13 +243,13 @@ const handleAction = async (event: MouseEvent) => {
   if (conflict) {
     showHover({
       prompt: "replace-rename",
-      confirm: (event: MouseEvent, option: string) => {
+      confirm: async (event: MouseEvent, option: string) => {
         overwrite = option === "overwrite";
         rename = option === "rename";
 
         event.preventDefault();
-        closeHovers();
-        action(overwrite, rename);
+        await layoutStore.closeHovers();
+        await action(overwrite, rename);
       },
     });
 

@@ -55,7 +55,9 @@ export const useAuthStore = defineStore("auth", {
     async switchBucket(bucketName: string) {
       if (!this.user) return;
 
-      const scope = this.user.availableScopes.find(s => s.name === bucketName);
+      const scope = this.user.availableScopes.find(
+        (s) => s.name === bucketName
+      );
       if (scope) {
         const data = {
           id: this.user.id,

@@ -164,13 +164,11 @@
 
 <script setup lang="ts">
 import { useAuthStore } from "@/stores/auth";
-import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, inject, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import * as auth from "@/utils/auth";
-import gestureDetector, { type GestureEvent } from "@/utils/gesture";
 import {
   disableExternal,
   loginPage,
@@ -178,11 +176,20 @@ import {
   signup,
   version,
 } from "@/utils/constants";
+import gestureDetector, { type GestureEvent } from "@/utils/gesture";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const layoutStore = useLayoutStore();
+
+// 获取Prompts组件的ref
+const promptsRef = inject<{
+  value: {
+    setZIndex: (zIndex: string) => void;
+    resetZIndex: () => void;
+  } | null;
+}>("promptsRef");
 
 // 检测是否为小设备（移动设备）
 const isMobile = ref(window.innerWidth <= 736);
@@ -270,6 +277,16 @@ const handleLeftEdgeSwipeRight = (gestureEvent: GestureEvent) => {
 
   console.log("[Sidebar] Showing sidebar from gesture");
   layoutStore.showHover("sidebar");
+
+  // 修改modal-overlay的z-index为999
+  if (promptsRef?.value) {
+    // 使用nextTick确保DOM已更新
+    setTimeout(() => {
+      if (promptsRef.value) {
+        promptsRef.value.setZIndex("999");
+      }
+    }, 0);
+  }
 };
 
 onMounted(() => {

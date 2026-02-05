@@ -64,6 +64,7 @@ import { files as api } from "@/api";
 import buttons from "@/utils/buttons";
 import * as upload from "@/utils/upload";
 import { removePrefix } from "@/api/utils";
+import { stripS3BucketPrefix } from "@/utils/path";
 
 export default {
   name: "move",
@@ -87,12 +88,21 @@ export default {
   },
   methods: {
     ...mapActions(useLayoutStore, ["showHover", "closeHovers"]),
-     move: async function (event) {
-       event.preventDefault();
-        const authStore = useAuthStore();
-        const scope = authStore.user?.currentScope?.name;
-        console.log('Move: scope:', scope, 'dest:', this.dest);
-        const items = [];
+      move: async function (event) {
+        console.log('Move function called, event:', event);
+        event.preventDefault();
+         const authStore = useAuthStore();
+         const scope = authStore.user?.currentScope?.name;
+         console.log('Move: scope:', scope, 'selected:', this.selected, 'dest:', this.dest, 'current route:', this.$route.path);
+         
+         // 检查是否选择了目标文件夹
+         if (!this.dest) {
+           console.error('No destination folder selected');
+           this.$showError('Please select a destination folder');
+           return;
+         }
+         
+         const items = [];
 
       for (const item of this.selected) {
         items.push({
@@ -102,30 +112,29 @@ export default {
         });
       }
 
-      const action = async (overwrite, rename) => {
-        buttons.loading("move");
+       const action = async (overwrite, rename) => {
+         console.log('Move action called with overwrite:', overwrite, 'rename:', rename, 'items:', items);
+         buttons.loading("move");
 
-        await api
-          .move(items, overwrite, rename)
-          .then(() => {
-            buttons.success("move");
-            this.preselect = removePrefix(items[0].to);
-            this.$router.push({ path: this.dest });
-          })
-          .catch((e) => {
-            buttons.done("move");
-            this.$showError(e);
-          });
-      };
+         await api
+           .move(items, overwrite, rename)
+            .then(() => {
+              console.log('Move API call succeeded');
+              buttons.success("move");
+              this.preselect = removePrefix(items[0].to);
+              console.log('Different path, closing modal first, then navigating to:', this.dest);
+              this.closeHovers();
+              this.$router.push({ path: this.dest });
+            })
+           .catch((e) => {
+             console.error('Move API call failed:', e);
+             buttons.done("move");
+             this.$showError(e);
+           });
+       };
 
-        // 对于S3 bucket路径，需要移除/buckets/test1/前缀
-        let fetchPath = this.dest;
-        if (scope && fetchPath.match(/^\/buckets\/[^/]+/)) {
-          const bucketMatch = fetchPath.match(/^\/buckets\/([^/]+)/);
-          if (bucketMatch) {
-            fetchPath = fetchPath.slice(bucketMatch[0].length) || '/';
-          }
-        }
+        // 对于S3 bucket路径，需要移除/buckets/{bucketName}/前缀
+        let fetchPath = stripS3BucketPrefix(this.dest, scope);
         const dstItems = (await api.fetch(fetchPath, undefined, scope)).items;
       const conflict = upload.checkConflict(items, dstItems);
 

@@ -33,6 +33,7 @@ import { mapActions, mapState } from "pinia";
 import { files } from "@/api";
 import { StatusError } from "@/api/utils.js";
 import url from "@/utils/url";
+import { extractS3BucketName, stripS3BucketPrefix } from "@/utils/path";
 
 export default {
   name: "file-list",
@@ -87,21 +88,29 @@ export default {
     abortOngoingNext() {
       this.nextAbortController.abort();
     },
-    fillOptions(req) {
-      // Sets up current path and resets
-      // current items.
-      this.current = req.url;
-      this.items = [];
-
-      this.$emit("update:selected", this.current);
+     fillOptions(req) {
+       // Sets up current path and resets
+       // current items.
+       this.current = req.url;
+       this.items = [];
+       
+       console.log('FileList fillOptions called, current:', this.current, 'selected:', this.selected);
+       
+       // 只有在没有用户选择时才将dest重置为当前路径
+       if (!this.selected) {
+         this.$emit("update:selected", this.current);
+       } else {
+         // 保持用户的选择
+         this.$emit("update:selected", this.selected);
+       }
 
       // Determine root path based on bucket
       let rootPath = "/files/";
       let bucket = "";
-      const match = this.$route.path.match(/^\/buckets\/([^/]+)/);
-      if (match) {
-        bucket = match[1];
-        rootPath = `/buckets/${match[1]}/`;
+      const bucketName = extractS3BucketName(this.$route.path);
+      if (bucketName) {
+        bucket = bucketName;
+        rootPath = `/buckets/${bucketName}/`;
       }
 
       // Calculate parent directory URL
@@ -156,18 +165,12 @@ export default {
       // user just clicked on and fills up options with its
       // content.
       let uri = event.currentTarget.dataset.url;
-      
+
       // Get current scope from route
-      const match = this.$route.path.match(/^\/buckets\/([^/]+)/);
-      const scope = match ? match[1] : undefined;
-      
+      const scope = extractS3BucketName(this.$route.path);
+
       // For S3 bucket paths, remove bucket prefix before calling fetch
-      if (scope && uri.match(/^\/buckets\/[^/]+/)) {
-        const bucketMatch = uri.match(/^\/buckets\/([^/]+)/);
-        if (bucketMatch) {
-          uri = uri.slice(bucketMatch[0].length) || '/';
-        }
-      }
+      uri = stripS3BucketPrefix(uri, scope);
       
       this.abortOngoingNext();
       this.nextAbortController = new AbortController();

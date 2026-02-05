@@ -76,7 +76,24 @@ export const useLayoutStore = defineStore("layout", {
       });
     },
     closeHovers() {
-      this.prompts.pop()?.close?.();
+      console.log('closeHovers called, current prompts:', this.prompts.length);
+      // 只关闭最后一个模态框
+      if (this.prompts.length > 0) {
+        const popped = this.prompts.pop();
+        console.log('Popped prompt:', popped?.prompt);
+        popped?.close?.();
+      }
+      console.log('After closeHovers, prompts:', this.prompts.length);
+    },
+    closeCurrentHover() {
+      console.log('closeCurrentHover called, current prompts:', this.prompts.length);
+      // 只关闭当前活动的模态框（最后一个）
+      if (this.prompts.length > 0) {
+        const popped = this.prompts.pop();
+        console.log('Popped current prompt:', popped?.prompt);
+        popped?.close?.();
+      }
+      console.log('After closeCurrentHover, prompts:', this.prompts.length);
     },
     // easily reset state using `$reset`
     clearLayout() {

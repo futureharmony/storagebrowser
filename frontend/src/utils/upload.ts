@@ -2,15 +2,16 @@ import { useLayoutStore } from "@/stores/layout";
 import { useUploadStore } from "@/stores/upload";
 import url from "@/utils/url";
 
+// 保持向后兼容性的函数
 export function checkConflict(
-  files: UploadList,
+  files: Array<{ name: string; fullPath?: string; size?: number; isDir?: boolean }>,
   dest: ResourceItem[]
 ): boolean {
   if (typeof dest === "undefined" || dest === null) {
     dest = [];
   }
 
-  const folder_upload = files[0].fullPath !== undefined;
+  const folder_upload = files[0]?.fullPath !== undefined;
 
   const names = new Set<string>();
   for (let i = 0; i < files.length; i++) {

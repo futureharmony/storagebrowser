@@ -15,8 +15,9 @@ import Delete from "./Delete.vue";
 import DeleteUser from "./DeleteUser.vue";
 import Download from "./Download.vue";
 import Rename from "./Rename.vue";
-import Move from "./Move.vue";
-import Copy from "./Copy.vue";
+import MoveCopyModal from "./MoveCopyModal.vue";
+import Move from "./Move.vue"; // 保持向后兼容
+import Copy from "./Copy.vue"; // 保持向后兼容
 import NewFile from "./NewFile.vue";
 import NewDir from "./NewDir.vue";
 import Replace from "./Replace.vue";
@@ -35,8 +36,8 @@ const components = new Map<string, any>([
   ["help", Help],
   ["delete", Delete],
   ["rename", Rename],
-  ["move", Move],
-  ["copy", Copy],
+  ["move", MoveCopyModal],
+  ["copy", MoveCopyModal],
   ["newFile", NewFile],
   ["newDir", NewDir],
   ["download", Download],
@@ -55,11 +56,17 @@ watch(currentPromptName, (newValue) => {
 
   const layout = useLayoutStore();
   const currentPrompt = layout.currentPrompt;
-  
+
+  // 为 MoveCopyModal 组件传递 mode 属性
+  const props = currentPrompt?.props || {};
+  if (modal === MoveCopyModal) {
+    props.mode = newValue; // 使用 prompt 名称作为 mode
+  }
+
   const { open, close } = useModal({
     component: BaseModal,
     slots: {
-      default: () => h(modal, currentPrompt?.props || {}),
+      default: () => h(modal, props),
     },
   });
 
@@ -70,9 +77,9 @@ watch(currentPromptName, (newValue) => {
 window.addEventListener("keydown", (event) => {
   if (!layoutStore.currentPrompt) return;
 
-  if (event.key === "Escape") {
-    event.stopImmediatePropagation();
-    layoutStore.closeHovers();
-  }
+   if (event.key === "Escape") {
+     event.stopImmediatePropagation();
+     layoutStore.closeCurrentHover();
+   }
 });
 </script>

@@ -63,6 +63,7 @@ import { files as api } from "@/api";
 import buttons from "@/utils/buttons";
 import * as upload from "@/utils/upload";
 import { removePrefix } from "@/api/utils";
+import { stripS3BucketPrefix } from "@/utils/path";
 
 export default {
   name: "copy",
@@ -79,13 +80,28 @@ export default {
     ...mapState(useAuthStore, ["user"]),
     ...mapWritableState(useFileStore, ["reload", "preselect"]),
   },
-  methods: {
-    ...mapActions(useLayoutStore, ["showHover", "closeHovers"]),
-     copy: async function (event) {
-       event.preventDefault();
-       const authStore = useAuthStore();
-       const scope = authStore.user?.currentScope?.name;
-       const items = [];
+   methods: {
+     ...mapActions(useLayoutStore, ["showHover", "closeHovers"]),
+       copy: async function (event) {
+         console.log('Copy function called, event:', event);
+         
+         // Import layoutStore here to get current state
+         const layoutStore = useLayoutStore();
+         console.log('Copy: prompts count:', layoutStore.prompts.length, 'prompts:', layoutStore.prompts);
+         
+         event.preventDefault();
+         const authStore = useAuthStore();
+         const scope = authStore.user?.currentScope?.name;
+         console.log('Copy: scope:', scope, 'selected:', this.selected, 'dest:', this.dest, 'current route:', this.$route.path);
+        
+        // 检查是否选择了目标文件夹
+        if (!this.dest) {
+          console.error('No destination folder selected');
+          this.$showError('Please select a destination folder');
+          return;
+        }
+        
+        const items = [];
 
       // Create a new promise for each file.
       for (const item of this.selected) {
@@ -96,44 +112,45 @@ export default {
         });
       }
 
-      const action = async (overwrite, rename) => {
-        buttons.loading("copy");
+       const action = async (overwrite, rename) => {
+         console.log('Copy action called with overwrite:', overwrite, 'rename:', rename, 'items:', items);
+         buttons.loading("copy");
 
-        await api
-          .copy(items, overwrite, rename)
-          .then(() => {
-            buttons.success("copy");
-            this.preselect = removePrefix(items[0].to);
+          await api
+            .copy(items, overwrite, rename)
+             .then(() => {
+               console.log('Copy API call succeeded');
+               buttons.success("copy");
+               this.preselect = removePrefix(items[0].to);
 
-            if (this.$route.path === this.dest) {
-              this.reload = true;
+               if (this.$route.path === this.dest) {
+                 console.log('Same path, setting reload to true');
+                 this.reload = true;
 
-              return;
-            }
+                 return;
+               }
 
-            this.$router.push({ path: this.dest });
-          })
-          .catch((e) => {
-            buttons.done("copy");
-            this.$showError(e);
-          });
-      };
+               console.log('Different path, closing modal first, then navigating to:', this.dest);
+               this.closeHovers();
+               this.$router.push({ path: this.dest });
+             })
+           .catch((e) => {
+             console.error('Copy API call failed:', e);
+             buttons.done("copy");
+             this.$showError(e);
+           });
+       };
 
-      if (this.$route.path === this.dest) {
-        this.closeHovers();
-        action(false, true);
+       if (this.$route.path === this.dest) {
+         console.log('Same path detected, closing hovers before action');
+         this.closeHovers();
+         action(false, true);
 
-        return;
-      }
+         return;
+       }
 
-        // 对于S3 bucket路径，需要移除/buckets/test1/前缀
-        let fetchPath = this.dest;
-        if (scope && fetchPath.match(/^\/buckets\/[^/]+/)) {
-          const bucketMatch = fetchPath.match(/^\/buckets\/([^/]+)/);
-          if (bucketMatch) {
-            fetchPath = fetchPath.slice(bucketMatch[0].length) || '/';
-          }
-        }
+        // 对于S3 bucket路径，需要移除/buckets/{bucketName}/前缀
+        let fetchPath = stripS3BucketPrefix(this.dest, scope);
         const dstItems = (await api.fetch(fetchPath, undefined, scope)).items;
       const conflict = upload.checkConflict(items, dstItems);
 

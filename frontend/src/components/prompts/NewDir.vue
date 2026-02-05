@@ -72,7 +72,7 @@ const name = ref<string>("");
 const submit = async (event: Event) => {
   event.preventDefault();
   if (name.value === "") return;
-
+  
   // Build the path of the new directory.
   let uri: string;
   if (props.base) uri = props.base;
@@ -93,8 +93,10 @@ const submit = async (event: Event) => {
     await api.post(uri, "", false, () => {}, scope);
     if (props.redirect) {
       router.push({ path: uri });
-    } else if (!props.base) {
-      const res = await api.fetch(url.removeLastDir(uri) + "/");
+    } else {
+      // 无论是通过props.base还是当前路由，都需要更新对应的文件列表
+      const fetchPath = props.base ? props.base : url.removeLastDir(uri) + "/";
+      const res = await api.fetch(fetchPath, undefined, scope);
       fileStore.updateRequest(res);
     }
   } catch (e) {

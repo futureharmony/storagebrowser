@@ -89,9 +89,10 @@ export default {
     ...mapActions(useLayoutStore, ["showHover", "closeHovers"]),
      move: async function (event) {
        event.preventDefault();
-       const authStore = useAuthStore();
-       const scope = authStore.user?.currentScope?.name;
-       const items = [];
+        const authStore = useAuthStore();
+        const scope = authStore.user?.currentScope?.name;
+        console.log('Move: scope:', scope, 'dest:', this.dest);
+        const items = [];
 
       for (const item of this.selected) {
         items.push({
@@ -117,7 +118,15 @@ export default {
           });
       };
 
-       const dstItems = (await api.fetch(this.dest, undefined, scope)).items;
+        // 对于S3 bucket路径，需要移除/buckets/test1/前缀
+        let fetchPath = this.dest;
+        if (scope && fetchPath.match(/^\/buckets\/[^/]+/)) {
+          const bucketMatch = fetchPath.match(/^\/buckets\/([^/]+)/);
+          if (bucketMatch) {
+            fetchPath = fetchPath.slice(bucketMatch[0].length) || '/';
+          }
+        }
+        const dstItems = (await api.fetch(fetchPath, undefined, scope)).items;
       const conflict = upload.checkConflict(items, dstItems);
 
       let overwrite = false;

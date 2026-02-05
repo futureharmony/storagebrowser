@@ -62,6 +62,20 @@ export default {
       return decodeURIComponent(this.current);
     },
   },
+  watch: {
+    req: {
+      handler(newReq) {
+        if (newReq) {
+          // 使用setTimeout确保在下一个事件循环中执行
+          setTimeout(() => {
+            this.fillOptions(newReq);
+          }, 0);
+        }
+      },
+      deep: true,
+      immediate: true,
+    },
+  },
   mounted() {
     this.fillOptions(this.req);
   },
@@ -209,13 +223,23 @@ export default {
       this.$emit("update:selected", this.selected);
     },
     createDir: async function () {
+      // 规范化路径进行比较，确保末尾斜杠一致
+      const normalizePath = (path) => {
+        if (!path) return '/';
+        if (!path.endsWith('/')) return path + '/';
+        return path;
+      };
+      
+      const normalizedCurrent = normalizePath(this.current);
+      const normalizedRoutePath = normalizePath(this.$route.path);
+      
       this.showHover({
         prompt: "newDir",
         action: null,
         confirm: null,
         props: {
           redirect: false,
-          base: this.current === this.$route.path ? null : this.current,
+          base: normalizedCurrent === normalizedRoutePath ? null : this.current,
         },
       });
     },

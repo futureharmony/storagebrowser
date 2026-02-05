@@ -165,14 +165,44 @@ export function download(format: any, ...files: string[]) {
     params.set("path", removePrefix(path));
     url += "?" + params.toString();
   } else {
-    let arg = "";
+    if (appConfig.StorageType === "s3") {
+      const authStore = useAuthStore();
+      const scope = authStore.user?.currentScope?.name;
 
-    for (const file of files) {
-      arg += removePrefix(file) + ",";
+      if (scope) {
+        params.set("scope", scope);
+        let arg = "";
+
+        for (const file of files) {
+          // Strip bucket prefix and get relative path
+          let relativePath = stripS3BucketPrefix(file, scope);
+          // Remove leading slash to make it relative
+          if (relativePath.startsWith("/")) {
+            relativePath = relativePath.slice(1);
+          }
+          arg += relativePath + ",";
+        }
+
+        arg = arg.substring(0, arg.length - 1);
+        params.set("files", arg);
+      } else {
+        // Fallback to original logic if no scope
+        let arg = "";
+        for (const file of files) {
+          arg += removePrefix(file) + ",";
+        }
+        arg = arg.substring(0, arg.length - 1);
+        params.set("files", arg);
+      }
+    } else {
+      // Original logic for non-S3 storage
+      let arg = "";
+      for (const file of files) {
+        arg += removePrefix(file) + ",";
+      }
+      arg = arg.substring(0, arg.length - 1);
+      params.set("files", arg);
     }
-
-    arg = arg.substring(0, arg.length - 1);
-    params.set("files", arg);
     url += "?" + params.toString();
   }
 

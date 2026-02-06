@@ -342,16 +342,6 @@ const openSearch = () => {
 // 打开侧边栏函数
 const openSidebar = () => {
   layoutStore.showHover("sidebar");
-
-  // 如果是移动设备，修改modal-overlay的z-index为999
-  if (isMobile.value && promptsRef?.value) {
-    // 使用nextTick确保DOM已更新
-    setTimeout(() => {
-      if (promptsRef.value) {
-        promptsRef.value.setZIndex("999");
-      }
-    }, 0);
-  }
 };
 
 // 多选切换
@@ -430,16 +420,6 @@ const uploadFunc = () => {
 const handleMoreClick = () => {
   // 显示更多菜单
   layoutStore.showHover("more");
-
-  // 如果是移动设备，修改modal-overlay的z-index为999
-  if (isMobile.value && promptsRef?.value) {
-    // 使用nextTick确保DOM已更新
-    setTimeout(() => {
-      if (promptsRef.value) {
-        promptsRef.value.setZIndex("999");
-      }
-    }, 0);
-  }
 };
 
 onMounted(() => {
@@ -526,7 +506,7 @@ onUnmounted(() => {
   border: 1px solid var(--borderPrimary);
   border-radius: 0.3em;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: var(--z-dropdown, 100);
   overflow: hidden;
   padding: 0.25em 0;
   max-height: 200px;

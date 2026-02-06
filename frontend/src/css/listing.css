@@ -217,7 +217,7 @@ html[dir="rtl"] #listing {
 #listing.list .item.header {
   display: flex !important;
   background: var(--background);
-  z-index: 999;
+  z-index: var(--z-dropdown, 100);
   padding: 0.85em;
   border: 0;
   border-bottom: 1px solid var(--borderPrimary);
@@ -264,7 +264,7 @@ html[dir="rtl"] #listing {
   position: fixed;
   bottom: -4em;
   left: 0;
-  z-index: 99999;
+  z-index: var(--z-notification, 800);
   width: 100%;
   background-color: var(--blue);
   height: 4em;

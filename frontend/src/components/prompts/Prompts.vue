@@ -2,7 +2,7 @@
   <div>
     <Teleport to="body">
       <div
-        v-if="currentPrompt"
+        v-if="currentPrompt && currentPrompt.prompt !== 'search'"
         ref="modalOverlayRef"
         class="modal-overlay"
         @click.self="handleClickOutside"
@@ -129,7 +129,7 @@ window.addEventListener("keydown", (event) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-modal, 500);
 }
 
 .modal-content {

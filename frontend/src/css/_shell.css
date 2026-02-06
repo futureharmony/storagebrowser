@@ -5,7 +5,7 @@
   max-height: calc(100% - 4em);
   background: var(--surfacePrimary);
   color: var(--textPrimary);
-  z-index: 9999;
+  z-index: var(--z-modal, 500);
   background: var(--dividerSecondary);
   transition: 0.2s ease background;
   cursor: ns-resize;
@@ -40,7 +40,7 @@
   height: 100%;
   top: 0px;
   left: 0px;
-  z-index: 9998;
+  z-index: var(--z-modal-backdrop, 400);
   background-color: var(--dividerPrimary);
 }
 

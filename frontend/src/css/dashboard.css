@@ -332,7 +332,7 @@ body.rtl .card .card-action {
   left: 0;
   height: 100%;
   width: 100%;
-  z-index: 9999;
+  z-index: var(--z-overlay, 900);
   visibility: hidden;
   opacity: 0;
   animation: 0.1s show forwards;

@@ -1,5 +1,5 @@
 header {
-  z-index: 1000;
+  z-index: var(--z-fixed, 300);
   background: var(--surfacePrimary);
   border-bottom: 1px solid var(--divider);
   box-shadow: 0 0 5px var(--borderPrimary);
@@ -78,7 +78,7 @@ header .menu-button {
   width: 100%;
   max-width: 100%;
   height: 100%;
-  z-index: 9999;
+  z-index: var(--z-overlay, 900);
 }
 
 #search #input {
@@ -90,7 +90,7 @@ header .menu-button {
   border-radius: 0.3em;
   transition: 0.1s ease all;
   align-items: center;
-  z-index: 2;
+  z-index: var(--z-base, 0);
 }
 
 #search #input input::placeholder {
@@ -139,7 +139,7 @@ header .menu-button {
     0.1s ease padding;
   overflow-x: hidden;
   overflow-y: auto;
-  z-index: 1;
+  z-index: var(--z-base, 0);
 }
 
 html[dir="rtl"] #search #result {

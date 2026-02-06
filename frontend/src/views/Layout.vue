@@ -145,7 +145,7 @@ watch(sidebarActive, (newValue, oldValue) => {
   height: 4em;
   background: var(--surfacePrimary);
   border-bottom: 1px solid var(--divider);
-  z-index: 1000;
+  z-index: var(--z-fixed, 300);
   position: relative;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding-top: env(safe-area-inset-top, 0);
@@ -225,14 +225,14 @@ html[dir="rtl"] .app-sidebar {
 }
 
 /* Responsive - Mobile */
-@media (max-width: 736px) {
+  @media (max-width: 736px) {
   .app-sidebar {
     position: fixed;
     top: 0;
     left: 0;
     height: 100vh;
     transform: translateX(-100%);
-    z-index: 1000;
+    z-index: var(--z-fixed, 300);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
     border-right: none;
@@ -251,7 +251,7 @@ html[dir="rtl"] .app-sidebar {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.4);
-    z-index: 1002; /* Higher than header (1000) and sidebar (1000) */
+    z-index: var(--z-overlay, 900);
     cursor: pointer;
     backdrop-filter: blur(1px);
     animation: backdrop-shimmer 0.5s ease-out;

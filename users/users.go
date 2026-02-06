@@ -4,8 +4,8 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/spf13/afero"
 	aferos3 "github.com/futureharmony/afero-aws-s3"
+	"github.com/spf13/afero"
 
 	"github.com/futureharmony/storagebrowser/v2/errors"
 	"github.com/futureharmony/storagebrowser/v2/files"

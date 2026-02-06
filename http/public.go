@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/crypto/bcrypt"
 	"github.com/spf13/afero"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/futureharmony/storagebrowser/v2/files"
 	"github.com/futureharmony/storagebrowser/v2/minio"

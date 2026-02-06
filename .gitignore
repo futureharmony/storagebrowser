@@ -40,6 +40,10 @@ build/
 /frontend/playwright-report/
 /frontend/playwright/.cache/
 
+# Worktree directories
+.worktrees/
+worktrees/
+
 default.nix
 Dockerfile.dev
 __debug_bin*

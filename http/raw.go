@@ -100,25 +100,25 @@ func getContentTypeForExtension(extension string) string {
 	// Custom MIME type mappings for common video/audio formats
 	// that might not be in Go's default database
 	customMimeTypes := map[string]string{
-		".mkv":  "video/mp4",      // Matroska video, treat as MP4
-		".webm": "video/webm",     // WebM video
-		".mp4":  "video/mp4",      // MPEG-4 video
-		".m4v":  "video/mp4",      // MPEG-4 video (Apple variant)
-		".avi":  "video/x-msvideo", // AVI video
-		".mov":  "video/quicktime", // QuickTime video
-		".qt":   "video/quicktime", // QuickTime video
-		".flv":  "video/x-flv",     // Flash video
-		".wmv":  "video/x-ms-wmv",  // Windows Media Video
-		".ogg":  "video/ogg",       // Ogg video
-		".ogv":  "video/ogg",       // Ogg video
-		".mpeg": "video/mpeg",      // MPEG video
-		".mpg":  "video/mpeg",      // MPEG video
-		".mpe":  "video/mpeg",      // MPEG video
-		".m2v":  "video/mpeg",      // MPEG-2 video
-		".m1v":  "video/mpeg",      // MPEG-1 video
-		".3gp":  "video/3gpp",      // 3GPP video
-		".3g2":  "video/3gpp2",     // 3GPP2 video
-		".asf":  "video/x-ms-asf",  // Advanced Systems Format
+		".mkv":  "video/mp4",                     // Matroska video, treat as MP4
+		".webm": "video/webm",                    // WebM video
+		".mp4":  "video/mp4",                     // MPEG-4 video
+		".m4v":  "video/mp4",                     // MPEG-4 video (Apple variant)
+		".avi":  "video/x-msvideo",               // AVI video
+		".mov":  "video/quicktime",               // QuickTime video
+		".qt":   "video/quicktime",               // QuickTime video
+		".flv":  "video/x-flv",                   // Flash video
+		".wmv":  "video/x-ms-wmv",                // Windows Media Video
+		".ogg":  "video/ogg",                     // Ogg video
+		".ogv":  "video/ogg",                     // Ogg video
+		".mpeg": "video/mpeg",                    // MPEG video
+		".mpg":  "video/mpeg",                    // MPEG video
+		".mpe":  "video/mpeg",                    // MPEG video
+		".m2v":  "video/mpeg",                    // MPEG-2 video
+		".m1v":  "video/mpeg",                    // MPEG-1 video
+		".3gp":  "video/3gpp",                    // 3GPP video
+		".3g2":  "video/3gpp2",                   // 3GPP2 video
+		".asf":  "video/x-ms-asf",                // Advanced Systems Format
 		".swf":  "application/x-shockwave-flash", // Shockwave Flash
 	}
 

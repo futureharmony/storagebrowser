@@ -20,12 +20,12 @@ type handleFunc func(w http.ResponseWriter, r *http.Request, d *data) (int, erro
 
 type data struct {
 	*runner.Runner
-	settings   *settings.Settings
-	server     *settings.Server
-	store      *storage.Storage
-	user       *users.User
-	raw        interface{}
-	requestFs  afero.Fs  // Filesystem instance for this specific request (created based on scope parameter)
+	settings     *settings.Settings
+	server       *settings.Server
+	store        *storage.Storage
+	user         *users.User
+	raw          interface{}
+	requestFs    afero.Fs     // Filesystem instance for this specific request (created based on scope parameter)
 	requestScope *users.Scope // Scope used for this request (from scope parameter or user.CurrentScope)
 }
 

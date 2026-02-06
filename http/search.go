@@ -11,7 +11,13 @@ var searchHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *dat
 	response := []map[string]interface{}{}
 	query := r.URL.Query().Get("query")
 
-	err := search.Search(d.requestFs, r.URL.Path, query, d, func(path string, f os.FileInfo) error {
+	// Get path from query parameter (default to "/")
+	path := r.URL.Query().Get("path")
+	if path == "" {
+		path = "/"
+	}
+
+	err := search.Search(d.requestFs, path, query, d, func(path string, f os.FileInfo) error {
 		if f == nil {
 			return nil
 		}

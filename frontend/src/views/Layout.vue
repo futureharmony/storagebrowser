@@ -225,7 +225,7 @@ html[dir="rtl"] .app-sidebar {
 }
 
 /* Responsive - Mobile */
-  @media (max-width: 736px) {
+@media (max-width: 736px) {
   .app-sidebar {
     position: fixed;
     top: 0;

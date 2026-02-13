@@ -40,7 +40,11 @@
     </div>
     <div v-else-if="error">
       <div v-if="error.status === 401">
-        <div class="card floating" id="password" :style="{ zIndex: 'var(--z-modal, 500)' }">
+        <div
+          class="card floating"
+          id="password"
+          :style="{ zIndex: 'var(--z-modal, 500)' }"
+        >
           <div v-if="attemptedPasswordLogin" class="share__wrong__password">
             {{ t("login.wrongCredentials") }}
           </div>

@@ -10,21 +10,27 @@ export default async function search(base: string, query: string) {
   let scope: string | undefined;
   let path: string;
 
-  if (isS3) {
-    // For S3 storage, extract scope from /buckets/{scope}/ pattern
-    base = removePrefix(base);
-    const bucketMatch = base.match(/^\/buckets\/([^/]+)/);
+  // First, extract bucket/scope from the base path before removing prefix
+  // The base path is like /buckets/test1/path
+  const bucketMatch = base.match(/^\/buckets\/([^/]+)(\/.*)?$/);
 
-    if (bucketMatch) {
-      scope = bucketMatch[1];
-      // Strip the bucket prefix to get the actual path
-      path = stripS3BucketPrefix(base, scope);
+  if (bucketMatch) {
+    scope = bucketMatch[1];
+    const fullPath = bucketMatch[2] || "/";
+
+    // Now remove the prefix for API call
+    base = removePrefix(base);
+
+    if (isS3) {
+      // For S3 storage, strip the bucket prefix to get the actual path
+      path = stripS3BucketPrefix(fullPath, scope);
     } else {
-      // Not a bucket path, use as-is
-      path = base;
+      // For local storage, use the full path without the bucket part
+      // Since removePrefix already removed /buckets/, we need to get the remaining path
+      path = fullPath;
     }
   } else {
-    // For local storage
+    // Not a bucket path
     base = removePrefix(base);
     path = base;
   }
@@ -50,14 +56,14 @@ export default async function search(base: string, query: string) {
 
   let data = await res.json();
 
-  // Determine correct base for URLs based on storage type
+  // Determine correct base for URLs
   let urlBase: string;
-  if (isS3 && scope) {
-    // For S3 with scope, use bucket path
+  if (scope) {
+    // Always use /buckets/{scope} prefix
     urlBase = `/buckets/${scope}${path}`;
   } else {
-    // For local storage, use the original base (with /files prefix added)
-    urlBase = `/files${base}`;
+    // If no scope, use /buckets/ root
+    urlBase = "/buckets/";
   }
 
   // Ensure urlBase ends with slash for directory

@@ -29,7 +29,10 @@ export const useLayoutStore = defineStore("layout", {
     toggleShell() {
       this.showShell = !this.showShell;
     },
-    setCloseOnPrompt(closeFunction: () => Promise<string | void> | void, onPrompt: string) {
+    setCloseOnPrompt(
+      closeFunction: () => Promise<string | void> | void,
+      onPrompt: string
+    ) {
       const prompt = this.prompts.find((prompt) => prompt.prompt === onPrompt);
       if (prompt) {
         prompt.close = closeFunction;

@@ -49,12 +49,22 @@ export async function fetch(url: string, signal?: AbortSignal, scope?: string) {
   }
 
   // Determine the correct base URL for item links
-  // If scope is provided, use S3 bucket path regardless of config (for compatibility)
-  if (scope) {
-    // 使用处理后的path，而不是原始的url
-    data.url = `/buckets/${scope}${path}`;
+  // Always use /buckets prefix to match router configuration
+  let bucketName: string | undefined = scope;
+
+  // If scope not provided, try to extract from the original URL
+  if (!bucketName) {
+    const bucketMatch = url.match(/^\/buckets\/([^/]+)/);
+    if (bucketMatch) {
+      bucketName = bucketMatch[1];
+    }
+  }
+
+  if (bucketName) {
+    data.url = `/buckets/${bucketName}${path}`;
   } else {
-    data.url = `/files${url}`;
+    // Fallback to /buckets/ root if no bucket can be determined
+    data.url = `/buckets/${path}`;
   }
 
   if (data.isDir) {

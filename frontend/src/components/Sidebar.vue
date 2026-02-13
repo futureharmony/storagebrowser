@@ -4,7 +4,7 @@
     <div v-if="!isMobile" class="collapse-toggle" @click="toggleCollapse">
       <i class="material-icons">{{
         isCollapsed ? "chevron_right" : "chevron_left"
-        }}</i>
+      }}</i>
     </div>
 
     <!-- User Profile Section - Compact -->
@@ -28,29 +28,56 @@
         <h4 v-if="!isCollapsed" class="nav-section-title">Navigation</h4>
         <ul class="nav-list">
           <li>
-            <button @click="toRoot" class="nav-item" :class="{ active: isFilesRoute }"
-              :aria-label="$t('sidebar.myFiles')" :title="$t('sidebar.myFiles')">
+            <button
+              @click="toRoot"
+              class="nav-item"
+              :class="{ active: isFilesRoute }"
+              :aria-label="$t('sidebar.myFiles')"
+              :title="$t('sidebar.myFiles')"
+            >
               <i class="material-icons">folder</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.myFiles") }}</span>
-              <i v-if="!isCollapsed && isFilesRoute" class="material-icons indicator">chevron_right</i>
+              <i
+                v-if="!isCollapsed && isFilesRoute"
+                class="material-icons indicator"
+                >chevron_right</i
+              >
             </button>
           </li>
           <li>
-            <button @click="toAccountSettings" class="nav-item" :class="{ active: isProfileRoute }"
-              :aria-label="$t('sidebar.profile')" :title="$t('sidebar.profile')">
+            <button
+              @click="toAccountSettings"
+              class="nav-item"
+              :class="{ active: isProfileRoute }"
+              :aria-label="$t('sidebar.profile')"
+              :title="$t('sidebar.profile')"
+            >
               <i class="material-icons">person</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.profile") }}</span>
-              <i v-if="!isCollapsed && isProfileRoute" class="material-icons indicator">chevron_right</i>
+              <i
+                v-if="!isCollapsed && isProfileRoute"
+                class="material-icons indicator"
+                >chevron_right</i
+              >
             </button>
           </li>
           <li v-if="authStore.user?.perm.admin">
-            <button @click="toGlobalSettings" class="nav-item" :class="{ active: isGlobalSettingsRoute }"
-              :aria-label="$t('sidebar.globalSettings')" :title="$t('sidebar.globalSettings')">
+            <button
+              @click="toGlobalSettings"
+              class="nav-item"
+              :class="{ active: isGlobalSettingsRoute }"
+              :aria-label="$t('sidebar.globalSettings')"
+              :title="$t('sidebar.globalSettings')"
+            >
               <i class="material-icons">settings_applications</i>
               <span v-if="!isCollapsed">{{
                 $t("sidebar.globalSettings")
-                }}</span>
-              <i v-if="!isCollapsed && isGlobalSettingsRoute" class="material-icons indicator">chevron_right</i>
+              }}</span>
+              <i
+                v-if="!isCollapsed && isGlobalSettingsRoute"
+                class="material-icons indicator"
+                >chevron_right</i
+              >
             </button>
           </li>
         </ul>
@@ -61,17 +88,31 @@
         <h4 v-if="!isCollapsed" class="nav-section-title">Account</h4>
         <ul class="nav-list">
           <li>
-            <router-link to="/login" class="nav-item" :aria-label="$t('sidebar.login')" :title="$t('sidebar.login')">
+            <router-link
+              to="/login"
+              class="nav-item"
+              :aria-label="$t('sidebar.login')"
+              :title="$t('sidebar.login')"
+            >
               <i class="material-icons">login</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.login") }}</span>
-              <i v-if="!isCollapsed" class="material-icons indicator">chevron_right</i>
+              <i v-if="!isCollapsed" class="material-icons indicator"
+                >chevron_right</i
+              >
             </router-link>
           </li>
           <li v-if="signup">
-            <router-link to="/login" class="nav-item" :aria-label="$t('sidebar.signup')" :title="$t('sidebar.signup')">
+            <router-link
+              to="/login"
+              class="nav-item"
+              :aria-label="$t('sidebar.signup')"
+              :title="$t('sidebar.signup')"
+            >
               <i class="material-icons">person_add</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.signup") }}</span>
-              <i v-if="!isCollapsed" class="material-icons indicator">chevron_right</i>
+              <i v-if="!isCollapsed" class="material-icons indicator"
+                >chevron_right</i
+              >
             </router-link>
           </li>
         </ul>
@@ -81,8 +122,12 @@
       <div v-if="authStore.isLoggedIn && canLogout" class="nav-section">
         <ul class="nav-list">
           <li>
-            <button @click="logout" class="nav-item nav-item-logout" :aria-label="$t('sidebar.logout')"
-              :title="$t('sidebar.logout')">
+            <button
+              @click="logout"
+              class="nav-item nav-item-logout"
+              :aria-label="$t('sidebar.logout')"
+              :title="$t('sidebar.logout')"
+            >
               <i class="material-icons">logout</i>
               <span v-if="!isCollapsed">{{ $t("sidebar.logout") }}</span>
             </button>
@@ -94,8 +139,13 @@
     <!-- Footer (Only show when expanded) -->
     <footer v-if="!isCollapsed" class="sidebar-footer">
       <div class="footer-links">
-        <a v-if="!disableExternal" rel="noopener noreferrer" target="_blank"
-          href="https://github.com/futureharmony/storagebrowser" class="footer-link">
+        <a
+          v-if="!disableExternal"
+          rel="noopener noreferrer"
+          target="_blank"
+          href="https://github.com/futureharmony/storagebrowser"
+          class="footer-link"
+        >
           <i class="material-icons">code</i>
           <span>GitHub</span>
         </a>

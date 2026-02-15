@@ -1,5 +1,5 @@
 <template>
-  <div class="search-container">
+  <div class="search-container" ref="searchContainer">
     <div class="search-input-wrapper">
       <i class="material-icons search-icon">search</i>
       <input
@@ -33,34 +33,36 @@
       </button>
     </div>
 
-    <div v-if="isSearching" class="search-loading">
-      <i class="material-icons spin">autorenew</i>
-    </div>
+    <div v-if="showResults" class="results-wrapper">
+      <div v-if="isSearching" class="search-loading">
+        <i class="material-icons spin">autorenew</i>
+      </div>
 
-    <div v-else-if="searchResults.length > 0" class="search-results">
-      <div
-        v-for="item in searchResults"
-        :key="item.path"
-        class="result-item"
-        @click="navigateTo(item)"
-      >
-        <i class="material-icons">{{ item.dir ? 'folder' : 'insert_drive_file' }}</i>
-        <div class="result-info">
-          <span class="result-name">{{ getFileName(item.path) }}</span>
-          <span class="result-path">{{ getDirectory(item.path) }}</span>
+      <div v-else-if="searchResults.length > 0" class="search-results">
+        <div
+          v-for="item in searchResults"
+          :key="item.path"
+          class="result-item"
+          @click="navigateTo(item)"
+        >
+          <i class="material-icons">{{ item.dir ? 'folder' : 'insert_drive_file' }}</i>
+          <div class="result-info">
+            <span class="result-name">{{ getFileName(item.path) }}</span>
+            <span class="result-path">{{ getDirectory(item.path) }}</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div v-else-if="searchQuery && hasSearched" class="search-empty">
-      <i class="material-icons">search_off</i>
-      <p>{{ $t('search.noResults') }}</p>
+      <div v-else-if="searchQuery" class="search-empty">
+        <i class="material-icons">search_off</i>
+        <p>{{ $t('search.noResults') }}</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useFileStore } from "@/stores/file";
 import url from "@/utils/url";
@@ -83,44 +85,39 @@ const router = useRouter();
 const route = useRoute();
 const fileStore = useFileStore();
 
+const searchContainer = ref<HTMLElement | null>(null);
 const searchQuery = ref("");
 const activeFilter = ref<string | null>(null);
 const searchResults = ref<SearchResult[]>([]);
 const isSearching = ref(false);
-const hasSearched = ref(false);
 
-const handleInput = () => {
-  if (searchQuery.value.length === 0) {
-    clearSearch();
-  }
-};
+const showResults = computed(() => searchQuery.value || activeFilter.value);
 
 const clearSearch = () => {
   searchQuery.value = "";
   searchResults.value = [];
-  hasSearched.value = false;
   activeFilter.value = null;
 };
 
 const toggleFilter = (key: string) => {
-  if (activeFilter.value === key) {
-    activeFilter.value = null;
-    if (!searchQuery.value) {
-      clearSearch();
-      return;
-    }
-  } else {
-    activeFilter.value = key;
-  }
+  activeFilter.value = activeFilter.value === key ? null : key;
   if (searchQuery.value || activeFilter.value) {
     handleSearch();
+  } else {
+    searchResults.value = [];
+  }
+};
+
+const handleInput = () => {
+  if (!searchQuery.value && !activeFilter.value) {
+    searchResults.value = [];
   }
 };
 
 const handleSearch = async () => {
   const query = searchQuery.value.trim();
   if (!query && !activeFilter.value) {
-    clearSearch();
+    searchResults.value = [];
     return;
   }
 
@@ -135,7 +132,6 @@ const handleSearch = async () => {
   }
 
   isSearching.value = true;
-  hasSearched.value = true;
 
   try {
     searchResults.value = await search(path, fullQuery);
@@ -162,6 +158,15 @@ const getDirectory = (path: string): string => {
   parts.pop();
   return parts.join("/") || "/";
 };
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (searchContainer.value && !searchContainer.value.contains(event.target as Node)) {
+    searchResults.value = [];
+  }
+};
+
+onMounted(() => document.addEventListener("click", handleClickOutside));
+onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 </script>
 
 <style scoped>
@@ -272,6 +277,15 @@ const getDirectory = (path: string): string => {
   font-size: 1rem;
 }
 
+.results-wrapper {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  z-index: 100;
+}
+
 .search-loading {
   display: flex;
   justify-content: center;
@@ -284,18 +298,12 @@ const getDirectory = (path: string): string => {
 }
 
 .search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 0.5rem;
   background: var(--surfacePrimary);
   border: 1px solid var(--borderPrimary);
   border-radius: 0.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   max-height: 400px;
   overflow-y: auto;
-  z-index: 100;
 }
 
 .result-item {
@@ -346,17 +354,11 @@ const getDirectory = (path: string): string => {
 }
 
 .search-empty {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 0.5rem;
   background: var(--surfacePrimary);
   border: 1px solid var(--borderPrimary);
   border-radius: 0.5rem;
   padding: 2rem;
   text-align: center;
-  z-index: 100;
 }
 
 .search-empty i {
@@ -376,11 +378,7 @@ const getDirectory = (path: string): string => {
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -1,203 +1,132 @@
 <template>
-  <div id="search" @click="open" v-bind:class="{ active, ongoing }">
-    <div id="input">
-      <button
-        v-if="active"
-        class="action"
-        @click="close"
-        :aria-label="$t('buttons.close')"
-        :title="$t('buttons.close')"
-      >
-        <i class="material-icons">arrow_back</i>
-      </button>
-      <i v-else class="material-icons">search</i>
+  <div class="search-container">
+    <div class="search-input-wrapper">
+      <i class="material-icons search-icon">search</i>
       <input
         type="text"
-        @keyup.exact="keyup"
-        @keyup.enter="submit"
-        ref="input"
-        :autofocus="active"
-        v-model.trim="prompt"
-        :aria-label="$t('search.search')"
+        v-model="searchQuery"
+        @input="handleInput"
+        @keydown.enter="handleSearch"
+        @keydown.escape="clearSearch"
         :placeholder="$t('search.search')"
+        class="search-input"
       />
+      <button
+        v-if="searchQuery"
+        class="clear-btn"
+        @click="clearSearch"
+        :aria-label="$t('buttons.close')"
+      >
+        <i class="material-icons">close</i>
+      </button>
     </div>
 
-    <div id="result" ref="result">
-      <div>
-        <template v-if="isEmpty">
-          <p>{{ text }}</p>
+    <div class="type-filters">
+      <button
+        v-for="filter in typeFilters"
+        :key="filter.key"
+        :class="['filter-btn', { active: activeFilter === filter.key }]"
+        @click="toggleFilter(filter.key)"
+      >
+        <i class="material-icons">{{ filter.icon }}</i>
+        <span>{{ $t('search.' + filter.label) }}</span>
+      </button>
+    </div>
 
-          <template v-if="prompt.length === 0">
-            <div class="boxes">
-              <h3>{{ $t("search.types") }}</h3>
-              <div>
-                <div
-                  tabindex="0"
-                  v-for="(v, k) in boxes"
-                  :key="k"
-                  role="button"
-                  @click="init('type:' + k)"
-                  :aria-label="$t('search.' + v.label)"
-                >
-                  <i class="material-icons">{{ v.icon }}</i>
-                  <p>{{ $t("search." + v.label) }}</p>
-                </div>
-              </div>
-            </div>
-          </template>
-        </template>
-        <ul v-show="results.length > 0">
-          <li v-for="(s, k) in filteredResults" :key="k">
-            <router-link v-on:click="close" :to="s.url">
-              <i v-if="s.dir" class="material-icons">folder</i>
-              <i v-else class="material-icons">insert_drive_file</i>
-              <span>./{{ s.path }}</span>
-            </router-link>
-          </li>
-        </ul>
+    <div v-if="isSearching" class="search-loading">
+      <i class="material-icons spin">autorenew</i>
+    </div>
+
+    <div v-else-if="searchResults.length > 0" class="search-results">
+      <div
+        v-for="item in searchResults"
+        :key="item.path"
+        class="result-item"
+        @click="navigateTo(item)"
+      >
+        <i class="material-icons">{{ item.dir ? 'folder' : 'insert_drive_file' }}</i>
+        <div class="result-info">
+          <span class="result-name">{{ getFileName(item.path) }}</span>
+          <span class="result-path">{{ getDirectory(item.path) }}</span>
+        </div>
       </div>
-      <p id="renew">
-        <i class="material-icons spin">autorenew</i>
-      </p>
+    </div>
+
+    <div v-else-if="searchQuery && hasSearched" class="search-empty">
+      <i class="material-icons">search_off</i>
+      <p>{{ $t('search.noResults') }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { useFileStore } from "@/stores/file";
-import { useLayoutStore } from "@/stores/layout";
-
 import url from "@/utils/url";
 import { search } from "@/api";
-import { computed, inject, onMounted, ref, watch } from "vue";
-import { useI18n } from "vue-i18n";
-import { useRoute } from "vue-router";
-import { storeToRefs } from "pinia";
 
-const boxes = {
-  image: { label: "images", icon: "insert_photo" },
-  audio: { label: "music", icon: "volume_up" },
-  video: { label: "video", icon: "movie" },
-  pdf: { label: "pdf", icon: "picture_as_pdf" },
-};
+interface SearchResult {
+  path: string;
+  dir: boolean;
+  url: string;
+}
 
-const layoutStore = useLayoutStore();
+const typeFilters = [
+  { key: "image", label: "images", icon: "insert_photo" },
+  { key: "audio", label: "music", icon: "volume_up" },
+  { key: "video", label: "video", icon: "movie" },
+  { key: "pdf", label: "pdf", icon: "picture_as_pdf" },
+];
+
+const router = useRouter();
+const route = useRoute();
 const fileStore = useFileStore();
 
-const { currentPromptName } = storeToRefs(layoutStore);
+const searchQuery = ref("");
+const activeFilter = ref<string | null>(null);
+const searchResults = ref<SearchResult[]>([]);
+const isSearching = ref(false);
+const hasSearched = ref(false);
 
-const prompt = ref<string>("");
-const active = ref<boolean>(false);
-const ongoing = ref<boolean>(false);
-const results = ref<any[]>([]);
-const reload = ref<boolean>(false);
-const resultsCount = ref<number>(50);
+const handleInput = () => {
+  if (searchQuery.value.length === 0) {
+    clearSearch();
+  }
+};
 
-const $showError = inject<IToastError>("$showError")!;
+const clearSearch = () => {
+  searchQuery.value = "";
+  searchResults.value = [];
+  hasSearched.value = false;
+  activeFilter.value = null;
+};
 
-const input = ref<HTMLInputElement | null>(null);
-const result = ref<HTMLElement | null>(null);
-
-const { t } = useI18n();
-
-const route = useRoute();
-
-watch(currentPromptName, (newVal, oldVal) => {
-  active.value = newVal === "search";
-
-  if (oldVal === "search" && !active.value) {
-    if (reload.value) {
-      fileStore.reload = true;
+const toggleFilter = (key: string) => {
+  if (activeFilter.value === key) {
+    activeFilter.value = null;
+    if (!searchQuery.value) {
+      clearSearch();
+      return;
     }
-
-    document.body.style.overflow = "auto";
-    reset();
-    prompt.value = "";
-    active.value = false;
-    input.value?.blur();
-  } else if (active.value) {
-    reload.value = false;
-    input.value?.focus();
-    document.body.style.overflow = "hidden";
+  } else {
+    activeFilter.value = key;
   }
-});
-
-watch(prompt, () => {
-  if (results.value.length) {
-    reset();
+  if (searchQuery.value || activeFilter.value) {
+    handleSearch();
   }
-});
+};
 
-// ...mapState(useFileStore, ["isListing"]),
-// ...mapState(useLayoutStore, ["show"]),
-// ...mapWritableState(useFileStore, { sReload: "reload" }),
-
-const isEmpty = computed(() => {
-  return results.value.length === 0;
-});
-const text = computed(() => {
-  if (ongoing.value) {
-    return "";
-  }
-
-  return prompt.value === ""
-    ? t("search.typeToSearch")
-    : t("search.pressToSearch");
-});
-const filteredResults = computed(() => {
-  return results.value.slice(0, resultsCount.value);
-});
-
-onMounted(() => {
-  if (result.value === null) {
+const handleSearch = async () => {
+  const query = searchQuery.value.trim();
+  if (!query && !activeFilter.value) {
+    clearSearch();
     return;
   }
-  result.value.addEventListener("scroll", (event: Event) => {
-    if (
-      (event.target as HTMLElement).offsetHeight +
-        (event.target as HTMLElement).scrollTop >=
-      (event.target as HTMLElement).scrollHeight - 100
-    ) {
-      resultsCount.value += 50;
-    }
-  });
-});
 
-const open = () => {
-  !active.value && layoutStore.showHover("search");
-};
-
-const close = (event: Event) => {
-  event.stopPropagation();
-  event.preventDefault();
-  layoutStore.closeHovers();
-};
-
-const keyup = (event: KeyboardEvent) => {
-  if (event.key === "Escape") {
-    close(event);
-    return;
-  }
-  results.value.length = 0;
-};
-
-const init = (string: string) => {
-  prompt.value = `${string} `;
-  input.value !== null ? input.value.focus() : "";
-};
-
-const reset = () => {
-  ongoing.value = false;
-  resultsCount.value = 50;
-  results.value = [];
-};
-
-const submit = async (event: Event) => {
-  event.preventDefault();
-
-  if (prompt.value === "") {
-    return;
+  let fullQuery = query;
+  if (activeFilter.value) {
+    fullQuery = `type:${activeFilter.value} ${query}`.trim();
   }
 
   let path = route.path;
@@ -205,14 +134,253 @@ const submit = async (event: Event) => {
     path = url.removeLastDir(path) + "/";
   }
 
-  ongoing.value = true;
+  isSearching.value = true;
+  hasSearched.value = true;
 
   try {
-    results.value = await search(path, prompt.value);
-  } catch (error: any) {
-    $showError(error);
+    searchResults.value = await search(path, fullQuery);
+  } catch (error) {
+    console.error("Search error:", error);
+    searchResults.value = [];
+  } finally {
+    isSearching.value = false;
   }
+};
 
-  ongoing.value = false;
+const navigateTo = (item: SearchResult) => {
+  router.push(item.url);
+  clearSearch();
+};
+
+const getFileName = (path: string): string => {
+  const parts = path.split("/");
+  return parts[parts.length - 1] || "";
+};
+
+const getDirectory = (path: string): string => {
+  const parts = path.split("/");
+  parts.pop();
+  return parts.join("/") || "/";
 };
 </script>
+
+<style scoped>
+.search-container {
+  position: relative;
+  flex: 1;
+  max-width: 500px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--surfaceSecondary);
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  padding: 0 0.75rem;
+  height: 2.5rem;
+  min-width: 200px;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.search-input-wrapper:focus-within {
+  background: var(--surfacePrimary);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.15);
+}
+
+.search-icon {
+  color: var(--textSecondary);
+  font-size: 1.25rem;
+  margin-right: 0.5rem;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: var(--textPrimary);
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: var(--textSecondary);
+  opacity: 0.7;
+}
+
+.clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  color: var(--textSecondary);
+  transition: all 0.15s ease;
+}
+
+.clear-btn:hover {
+  background: var(--hover);
+  color: var(--textPrimary);
+}
+
+.clear-btn i {
+  font-size: 1.125rem;
+}
+
+.type-filters {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: nowrap;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--borderPrimary);
+  border-radius: 1rem;
+  background: var(--surfacePrimary);
+  color: var(--textSecondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.filter-btn:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.filter-btn.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: white;
+}
+
+.filter-btn i {
+  font-size: 1rem;
+}
+
+.search-loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.search-loading i {
+  color: var(--blue);
+  font-size: 1.5rem;
+}
+
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background: var(--surfacePrimary);
+  border: 1px solid var(--borderPrimary);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.result-item:hover {
+  background: var(--hover);
+}
+
+.result-item:first-child {
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.result-item:last-child {
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.result-item i {
+  color: var(--blue);
+  margin-right: 0.75rem;
+}
+
+.result-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.result-name {
+  font-weight: 500;
+  color: var(--textPrimary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-path {
+  font-size: 0.8rem;
+  color: var(--textSecondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-empty {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.5rem;
+  background: var(--surfacePrimary);
+  border: 1px solid var(--borderPrimary);
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  z-index: 100;
+}
+
+.search-empty i {
+  font-size: 3rem;
+  color: var(--textSecondary);
+  opacity: 0.5;
+  margin-bottom: 0.5rem;
+}
+
+.search-empty p {
+  color: var(--textSecondary);
+  margin: 0;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

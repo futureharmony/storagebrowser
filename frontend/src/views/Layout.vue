@@ -25,6 +25,9 @@
         <div
           v-if="sidebarActive && !isEditor"
           class="sidebar-backdrop"
+          :style="{
+            zIndex: isMobile ? 'var(--z-modal-backdrop, 400)' : 'auto',
+          }"
           @click="layoutStore.closeHovers()"
         ></div>
       </transition>
@@ -71,6 +74,7 @@ import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 import { useUploadStore } from "@/stores/upload";
 import { enableExec } from "@/utils/constants";
+import { useResponsive } from "@/utils/responsive";
 import { computed, provide, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
@@ -79,6 +83,7 @@ const authStore = useAuthStore();
 const fileStore = useFileStore();
 const uploadStore = useUploadStore();
 const route = useRoute();
+const { isMobile } = useResponsive();
 
 const promptsRef = ref<InstanceType<typeof Prompts> | null>(null);
 
@@ -232,7 +237,7 @@ html[dir="rtl"] .app-sidebar {
     left: 0;
     height: 100vh;
     transform: translateX(-100%);
-    z-index: var(--z-fixed, 300);
+    z-index: var(--z-modal-backdrop, 400);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
     border-right: none;

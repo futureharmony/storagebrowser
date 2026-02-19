@@ -2,7 +2,11 @@
   <div>
     <Teleport to="body">
       <div
-        v-if="currentPrompt && currentPrompt.prompt !== 'search'"
+        v-if="
+          currentPrompt &&
+          currentPrompt.prompt !== 'search' &&
+          currentPrompt.prompt !== 'sidebar'
+        "
         ref="modalOverlayRef"
         class="modal-overlay"
         @click.self="handleClickOutside"

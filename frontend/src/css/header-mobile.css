@@ -1,0 +1,95 @@
+/* Mobile-specific header styles */
+
+@media (max-width: 736px) {
+  /* Search container visible on mobile, fills available space */
+  header .search-container {
+    flex: 1 1 auto;
+    min-width: 80px;
+  }
+
+  /* Ensure bucket selector doesn't overflow */
+  #bucket-select {
+    max-width: 120px;
+    flex-shrink: 1;
+  }
+
+  #bucket-select #input .selected-value {
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Hide title element on mobile to save space */
+  header title {
+    display: none;
+  }
+
+  /* Limit header content width */
+  header {
+    overflow-x: hidden;
+    min-width: 0;
+    gap: 0.25em;
+  }
+
+  header > * {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  /* Menu and more buttons should not shrink */
+  header .menu-button,
+  header #more {
+    flex-shrink: 0;
+  }
+
+  /* Ensure action buttons are touch-friendly */
+  header .action-button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Further reduce bucket selector width on very small screens */
+  #bucket-select {
+    max-width: 90px;
+  }
+
+  #bucket-select #input .selected-value {
+    max-width: 45px;
+    font-size: 0.85em;
+  }
+
+  #bucket-select #input {
+    padding: 0em 0.3em;
+  }
+}
+
+@media (max-width: 400px) {
+  /* Hide bucket select on very small screens - use sidebar for navigation */
+  #bucket-select {
+    display: none;
+  }
+}
+
+/* Action buttons in dropdown - ensure proper sizing */
+@media (max-width: 736px) {
+  #dropdown .action {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #dropdown .action i {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  #dropdown .action span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

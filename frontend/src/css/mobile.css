@@ -28,7 +28,7 @@
     transform: scale(0);
     transition: 0.1s ease-in-out transform;
     transform-origin: top right;
-    z-index: var(--z-dropdown, 100);
+    z-index: var(--z-popover, 600);
   }
 
   html[dir="rtl"] #dropdown {
@@ -69,7 +69,7 @@
       rgba(0, 0, 0, 0.12) 0px 1px 2px;
     width: 90%;
     max-width: 20em;
-    z-index: var(--z-base, 0);
+    z-index: var(--z-fixed, 300);
     padding: 0.2em 0.5em;
     border-radius: 16px;
   }
@@ -89,7 +89,7 @@
   /* Mobile sidebar */
   nav.sidebar {
     top: 0 !important;
-    z-index: var(--z-fixed, 300) !important;
+    z-index: var(--z-modal-backdrop, 400) !important;
     background: var(--surfaceSecondary) !important;
     height: 100vh !important;
     width: 16em !important;
@@ -117,7 +117,6 @@
     height: 12px;
   }
 
-  header .search-button,
   header .menu-button {
     display: inherit;
   }
@@ -151,12 +150,7 @@
   html[dir="rtl"] main {
     margin-right: 0;
   }
-  #search {
-    display: none;
-  }
-  #search.active {
-    display: block;
-  }
+  /* Search is always visible on mobile, no toggle needed */
 }
 
 @media (max-width: 450px) {

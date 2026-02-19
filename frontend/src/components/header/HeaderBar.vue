@@ -49,111 +49,115 @@
     >
       <search />
       <title />
+    </template>
+
+    <!-- PC端按钮 - 在header中直接显示 -->
+    <template
+      v-if="
+        (route.path.includes('/files') || route.path.includes('/buckets')) &&
+        !isMobile
+      "
+    >
       <action
-        class="search-button"
-        icon="search"
-        :label="t('buttons.search')"
-        @action="openSearch"
+        v-if="headerButtons.share"
+        icon="share"
+        :label="t('buttons.share')"
+        show="share"
+      />
+      <action
+        v-if="headerButtons.rename"
+        icon="mode_edit"
+        :label="t('buttons.rename')"
+        show="rename"
+      />
+      <action
+        v-if="headerButtons.copy"
+        id="copy-button"
+        icon="content_copy"
+        :label="t('buttons.copyFile')"
+        show="copy"
+      />
+      <action
+        v-if="headerButtons.move"
+        id="move-button"
+        icon="forward"
+        :label="t('buttons.moveFile')"
+        show="move"
+      />
+      <action
+        v-if="headerButtons.delete"
+        id="delete-button"
+        icon="delete"
+        :label="t('buttons.delete')"
+        show="delete"
+      />
+      <action
+        v-if="headerButtons.shell"
+        icon="code"
+        :label="t('buttons.shell')"
+        @action="layoutStore.toggleShell"
+      />
+      <action
+        :icon="viewIcon"
+        :label="t('buttons.switchView')"
+        @action="switchView"
+      />
+      <action
+        v-if="headerButtons.download"
+        icon="file_download"
+        :label="t('buttons.download')"
+        @action="download"
+        :counter="fileStore.selectedCount"
+      />
+      <action
+        v-if="headerButtons.upload"
+        icon="file_upload"
+        id="upload-button"
+        :label="t('buttons.upload')"
+        @action="uploadFunc"
+      />
+      <action icon="info" :label="t('buttons.info')" show="info" />
+      <action
+        v-if="authStore.user?.perm.create"
+        icon="create_new_folder"
+        :label="t('sidebar.newFolder')"
+        show="newDir"
+      />
+      <action
+        v-if="authStore.user?.perm.create"
+        icon="create"
+        :label="t('sidebar.newFile')"
+        show="newFile"
+      />
+      <action
+        icon="check_circle"
+        :label="t('buttons.selectMultiple')"
+        @action="toggleMultipleSelection"
       />
     </template>
 
-    <div
-      id="dropdown"
-      :class="{ active: layoutStore.currentPromptName === 'more' }"
-    >
-      <!-- 插槽操作内容 - 允许组件内部定义自定义操作按钮 -->
-      <slot name="actions" />
-
-      <!-- 文件路由的操作按钮 - 仅在 /files 或 /buckets 路由显示且没有插槽操作内容时 -->
-      <template
-        v-if="
-          (route.path.includes('/files') || route.path.includes('/buckets')) &&
-          !hasActionsSlotContent
-        "
+    <!-- 移动端的操作按钮 - 在Teleport中 -->
+    <Teleport to="body">
+      <div
+        id="dropdown"
+        :class="{ active: layoutStore.currentPromptName === 'more' }"
       >
-        <template v-if="!isMobile">
-          <action
-            v-if="headerButtons.share"
-            icon="share"
-            :label="t('buttons.share')"
-            show="share"
-          />
-          <action
-            v-if="headerButtons.rename"
-            icon="mode_edit"
-            :label="t('buttons.rename')"
-            show="rename"
-          />
-          <action
-            v-if="headerButtons.copy"
-            id="copy-button"
-            icon="content_copy"
-            :label="t('buttons.copyFile')"
-            show="copy"
-          />
-          <action
-            v-if="headerButtons.move"
-            id="move-button"
-            icon="forward"
-            :label="t('buttons.moveFile')"
-            show="move"
-          />
-          <action
-            v-if="headerButtons.delete"
-            id="delete-button"
-            icon="delete"
-            :label="t('buttons.delete')"
-            show="delete"
-          />
+        <!-- 插槽操作内容 - 允许组件内部定义自定义操作按钮 -->
+        <slot name="actions" />
+
+        <!--文件路由的操作按钮 - 仅在 /files 或 /buckets 路由显示且没有插槽操作内容时 -->
+        <template
+          v-if="
+            (route.path.includes('/files') ||
+              route.path.includes('/buckets')) &&
+            !hasActionsSlotContent
+          "
+        >
         </template>
 
-        <action
-          v-if="headerButtons.shell"
-          icon="code"
-          :label="t('buttons.shell')"
-          @action="layoutStore.toggleShell"
-        />
-        <action
-          :icon="viewIcon"
-          :label="t('buttons.switchView')"
-          @action="switchView"
-        />
-        <action
-          v-if="headerButtons.download"
-          icon="file_download"
-          :label="t('buttons.download')"
-          @action="download"
-          :counter="fileStore.selectedCount"
-        />
-        <action
-          v-if="headerButtons.upload"
-          icon="file_upload"
-          id="upload-button"
-          :label="t('buttons.upload')"
-          @action="uploadFunc"
-        />
-        <action icon="info" :label="t('buttons.info')" show="info" />
-        <action
-          v-if="authStore.user?.perm.create"
-          icon="create_new_folder"
-          :label="t('sidebar.newFolder')"
-          show="newDir"
-        />
-        <action
-          v-if="authStore.user?.perm.create"
-          icon="create"
-          :label="t('sidebar.newFile')"
-          show="newFile"
-        />
-        <action
-          icon="check_circle"
-          :label="t('buttons.selectMultiple')"
-          @action="toggleMultipleSelection"
-        />
-      </template>
-
-      <!-- 其他路由的操作按钮可以在这里添加 -->
-    </div>
+        <!-- 其他路由的操作按钮可以在这里添加 -->
+      </div>
+    </Teleport>
 
     <Action
       v-if="hasActions || hasActionsSlotContent"
@@ -181,6 +185,7 @@ import { files as api, users } from "@/api";
 import Action from "@/components/header/Action.vue";
 import Search from "@/components/Search.vue";
 import { enableExec, logoURL } from "@/utils/constants";
+import { useResponsive } from "@/utils/responsive";
 import {
   computed,
   inject,
@@ -254,9 +259,8 @@ const currentBucketFromUrl = computed(() => {
   return match ? match[1] : "";
 });
 
-const isMobile = computed(() => {
-  return window.innerWidth <= 736;
-});
+// Use responsive utilities
+const { isMobile } = useResponsive();
 
 // 视图模式图标
 const viewIcon = computed(() => {
@@ -332,11 +336,6 @@ const closeDropdown = (event: MouseEvent) => {
   if (selectRef.value && !selectRef.value.contains(event.target as Node)) {
     isDropdownOpen.value = false;
   }
-};
-
-// 搜索函数
-const openSearch = () => {
-  layoutStore.showHover("search");
 };
 
 // 打开侧边栏函数
@@ -557,34 +556,5 @@ html[dir="rtl"] #bucket-select #input .arrow {
 html[dir="rtl"] .dropdown-menu {
   left: auto;
   right: 0;
-}
-
-@media (max-width: 736px) {
-  #bucket-select #input {
-    padding: 0em 0.5em;
-  }
-
-  #bucket-select #input .selected-value {
-    font-size: 1em;
-  }
-
-  .dropdown-item {
-    font-size: 1em;
-  }
-}
-
-@media (max-width: 600px) {
-  #bucket-select #input {
-    padding: 0em 0.4em;
-  }
-
-  #bucket-select #input .selected-value {
-    font-size: 0.9em;
-  }
-
-  .dropdown-item {
-    font-size: 0.9em;
-    padding: 0.4em 0.5em;
-  }
 }
 </style>

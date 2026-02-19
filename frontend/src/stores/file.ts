@@ -53,5 +53,20 @@ export const useFileStore = defineStore("file", {
     clearFile() {
       this.$reset();
     },
+    clearSelection() {
+      this.selected = [];
+    },
+    downloadSelected() {
+      // Implementation will be added later
+      console.log("downloadSelected called", this.selected);
+    },
+    shareSelected() {
+      // Implementation will be added later
+      console.log("shareSelected called", this.selected);
+    },
+    deleteSelected() {
+      // Implementation will be added later
+      console.log("deleteSelected called", this.selected);
+    },
   },
 });

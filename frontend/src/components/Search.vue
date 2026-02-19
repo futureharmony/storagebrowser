@@ -29,9 +29,16 @@
         @click="toggleFilter(filter.key)"
       >
         <i class="material-icons">{{ filter.icon }}</i>
-        <span>{{ $t('search.' + filter.label) }}</span>
+        <span>{{ $t("search." + filter.label) }}</span>
       </button>
     </div>
+
+    <!-- Mobile search results backdrop -->
+    <div
+      v-if="showResults && isMobile"
+      class="search-backdrop"
+      @click="clearSearch"
+    ></div>
 
     <div v-if="showResults" class="results-wrapper">
       <div v-if="isSearching" class="search-loading">
@@ -45,7 +52,9 @@
           class="result-item"
           @click="navigateTo(item)"
         >
-          <i class="material-icons">{{ item.dir ? 'folder' : 'insert_drive_file' }}</i>
+          <i class="material-icons">{{
+            item.dir ? "folder" : "insert_drive_file"
+          }}</i>
           <div class="result-info">
             <span class="result-name">{{ getFileName(item.path) }}</span>
             <span class="result-path">{{ getDirectory(item.path) }}</span>
@@ -55,7 +64,7 @@
 
       <div v-else-if="searchQuery" class="search-empty">
         <i class="material-icons">search_off</i>
-        <p>{{ $t('search.noResults') }}</p>
+        <p>{{ $t("search.noResults") }}</p>
       </div>
     </div>
   </div>
@@ -65,6 +74,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useFileStore } from "@/stores/file";
+import { useResponsive } from "@/utils/responsive";
 import url from "@/utils/url";
 import { search } from "@/api";
 
@@ -84,6 +94,7 @@ const typeFilters = [
 const router = useRouter();
 const route = useRoute();
 const fileStore = useFileStore();
+const { isMobile } = useResponsive();
 
 const searchContainer = ref<HTMLElement | null>(null);
 const searchQuery = ref("");
@@ -160,7 +171,10 @@ const getDirectory = (path: string): string => {
 };
 
 const handleClickOutside = (event: MouseEvent) => {
-  if (searchContainer.value && !searchContainer.value.contains(event.target as Node)) {
+  if (
+    searchContainer.value &&
+    !searchContainer.value.contains(event.target as Node)
+  ) {
     searchResults.value = [];
   }
 };
@@ -188,9 +202,23 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   border-radius: 0.5rem;
   padding: 0 0.75rem;
   height: 2.5rem;
-  min-width: 200px;
+  min-width: 0;
   width: 100%;
   transition: all 0.2s ease;
+}
+
+@media (max-width: 640px) {
+  .search-container {
+    flex-direction: row;
+    max-width: none;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .search-input-wrapper {
+    width: 100%;
+    min-width: 80px;
+  }
 }
 
 .search-input-wrapper:focus-within {
@@ -247,6 +275,12 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   flex-wrap: nowrap;
 }
 
+@media (max-width: 640px) {
+  .type-filters {
+    display: none;
+  }
+}
+
 .filter-btn {
   display: flex;
   align-items: center;
@@ -283,7 +317,34 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   left: 0;
   right: 0;
   margin-top: 0.5rem;
-  z-index: 100;
+  z-index: var(--z-dropdown, 600);
+}
+
+@media (max-width: 640px) {
+  .search-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: var(--z-modal-backdrop, 400);
+  }
+
+  .results-wrapper {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100vw - 2rem);
+    max-width: 400px;
+    max-height: 70vh;
+    z-index: var(--z-modal, 500);
+  }
+
+  .search-results {
+    max-height: 60vh;
+  }
 }
 
 .search-loading {
@@ -378,7 +439,11 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

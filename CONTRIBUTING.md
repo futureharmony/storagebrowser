@@ -69,6 +69,15 @@ Translations are managed on Transifex, which is an online website where everyone
 
 Translations are automatically pushed to GitHub via an integration.
 
+## Responsive Design
+
+All UI components must be responsive. Follow these guidelines:
+
+1. **Test on multiple screen sizes** (736px, 480px, 400px breakpoints)
+2. **Use responsive utilities** from `@/utils/responsive`
+3. **Follow component patterns** in `docs/RESPONSIVE-DESIGN.md`
+4. **Ensure accessibility** on touch devices
+
 ## Authentication Provider
 
 To build a new authentication provider, you need to implement the [Auther interface](https://github.com/futureharmony/storagebrowser/blob/master/auth/auth.go), whose method will be called on the login page after the user has submitted their login data.

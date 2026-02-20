@@ -153,6 +153,82 @@
             !hasActionsSlotContent
           "
         >
+          <action
+            v-if="headerButtons.share"
+            icon="share"
+            :label="t('buttons.share')"
+            show="share"
+          />
+          <action
+            v-if="headerButtons.rename"
+            icon="mode_edit"
+            :label="t('buttons.rename')"
+            show="rename"
+          />
+          <action
+            v-if="headerButtons.copy"
+            id="copy-button"
+            icon="content_copy"
+            :label="t('buttons.copyFile')"
+            show="copy"
+          />
+          <action
+            v-if="headerButtons.move"
+            id="move-button"
+            icon="forward"
+            :label="t('buttons.moveFile')"
+            show="move"
+          />
+          <action
+            v-if="headerButtons.delete"
+            id="delete-button"
+            icon="delete"
+            :label="t('buttons.delete')"
+            show="delete"
+          />
+          <action
+            v-if="headerButtons.shell"
+            icon="code"
+            :label="t('buttons.shell')"
+            @action="layoutStore.toggleShell"
+          />
+          <action
+            :icon="viewIcon"
+            :label="t('buttons.switchView')"
+            @action="switchView"
+          />
+          <action
+            v-if="headerButtons.download"
+            icon="file_download"
+            :label="t('buttons.download')"
+            @action="download"
+            :counter="fileStore.selectedCount"
+          />
+          <action
+            v-if="headerButtons.upload"
+            icon="file_upload"
+            id="upload-button"
+            :label="t('buttons.upload')"
+            @action="uploadFunc"
+          />
+          <action icon="info" :label="t('buttons.info')" show="info" />
+          <action
+            v-if="authStore.user?.perm.create"
+            icon="create_new_folder"
+            :label="t('sidebar.newFolder')"
+            show="newDir"
+          />
+          <action
+            v-if="authStore.user?.perm.create"
+            icon="create"
+            :label="t('sidebar.newFile')"
+            show="newFile"
+          />
+          <action
+            icon="check_circle"
+            :label="t('buttons.selectMultiple')"
+            @action="toggleMultipleSelection"
+          />
         </template>
 
         <!-- 其他路由的操作按钮可以在这里添加 -->

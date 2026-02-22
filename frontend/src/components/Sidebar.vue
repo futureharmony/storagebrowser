@@ -176,7 +176,6 @@ import {
   signup,
   version,
 } from "@/utils/constants";
-import gestureDetector, { type GestureEvent } from "@/utils/gesture";
 
 const route = useRoute();
 const router = useRouter();
@@ -258,46 +257,12 @@ const handleResize = () => {
   isCollapsed.value = isMobile.value;
 };
 
-// 手势事件处理
-let unsubscribeGesture: (() => void) | null = null;
-
-const handleLeftEdgeSwipeRight = (gestureEvent: GestureEvent) => {
-  console.log("[Sidebar] Received left-edge-swipe-right gesture", {
-    deltaX: gestureEvent.deltaX,
-    duration: gestureEvent.duration,
-  });
-
-  // 只在移动端且侧边栏未激活时响应
-  if (!isMobile.value || active.value) {
-    console.log(
-      "[Sidebar] Ignoring gesture: not mobile or sidebar already active"
-    );
-    return;
-  }
-
-  console.log("[Sidebar] Showing sidebar from gesture");
-  layoutStore.showHover("sidebar");
-};
-
 onMounted(() => {
   window.addEventListener("resize", handleResize);
-
-  // 订阅全局手势检测
-  unsubscribeGesture = gestureDetector.subscribe(
-    "left-edge-swipe-right",
-    handleLeftEdgeSwipeRight
-  );
-  console.log("[Sidebar] Subscribed to global gesture detection");
 });
 
 onUnmounted(() => {
   window.removeEventListener("resize", handleResize);
-
-  // 取消订阅全局手势检测
-  if (unsubscribeGesture) {
-    unsubscribeGesture();
-    console.log("[Sidebar] Unsubscribed from global gesture detection");
-  }
 });
 
 // 常量

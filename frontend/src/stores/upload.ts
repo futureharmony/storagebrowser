@@ -42,6 +42,13 @@ export const useUploadStore = defineStore("upload", () => {
     overwrite: boolean,
     type: ResourceType
   ) => {
+    console.log("[UPLOAD] Starting upload:", {
+      path,
+      name,
+      fileSize: file?.size,
+      type,
+    });
+
     if (type !== "dir" && file) {
       try {
         await ensureTokenValid();

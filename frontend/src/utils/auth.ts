@@ -99,6 +99,7 @@ export async function login(
 }
 
 export async function renew(jwt: string) {
+  console.log("[AUTH] renew called, attempting to refresh token");
   const res = await fetch(`${baseURL}/api/renew`, {
     method: "POST",
     headers: {
@@ -108,9 +109,11 @@ export async function renew(jwt: string) {
 
   if (res.status === 200) {
     const response = await res.json();
+    console.log("[AUTH] renew successful");
     await parseAuthResponse(response);
   } else {
     const body = await res.text();
+    console.error("[AUTH] renew failed:", res.status, body);
     throw new StatusError(
       body || `${res.status} ${res.statusText}`,
       res.status
@@ -135,6 +138,8 @@ export async function signup(username: string, password: string) {
 }
 
 export function logout(reason?: string) {
+  console.log("[AUTH] logout called, reason:", reason);
+  console.trace("[AUTH] logout stack trace");
   document.cookie = "auth=; Max-Age=0; Path=/; SameSite=Strict;";
 
   const authStore = useAuthStore();

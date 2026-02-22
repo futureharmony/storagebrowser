@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/stores/auth";
+import { useUploadStore } from "@/stores/upload";
 import { renew, logout } from "@/utils/auth";
 import { baseURL } from "@/utils/constants";
 import { encodePath } from "@/utils/url";
@@ -60,15 +61,18 @@ export async function fetchURL(
     if (e instanceof Error && e.name === "AbortError") {
       throw new StatusError("000 No connection", 0, true);
     }
+    console.error("[API] Network error:", e);
     throw new StatusError("000 No connection", 0);
   }
 
   if (auth && res.headers.get("X-Renew-Token") === "true") {
+    console.log("[API] Token renewal needed, calling renew()");
     try {
       await renew(authStore.jwt);
-    } catch {
-      // Token refresh failed - don't throw, let the request continue
-      // If the token is truly expired, the server will return 401
+    } catch (renewError) {
+      console.warn("[API] Token renewal failed, will retry on next request:", renewError);
+      // Don't throw - let the request continue with existing token
+      // The server will handle the expired token case on the next request
     }
   }
 
@@ -80,7 +84,17 @@ export async function fetchURL(
     );
 
     if (auth && res.status == 401) {
-      logout();
+      console.log("[API] Received 401, URL:", url);
+      // Check if there are active uploads - don't logout during upload to prevent page refresh
+      const uploadStore = useUploadStore();
+      if (uploadStore.totalBytes > 0) {
+        console.warn("[API] 401 received during active upload, deferring logout");
+        // Don't logout immediately - the upload will fail and user can retry after re-auth
+        // For now, just throw the error
+      } else {
+        console.log("[API] Calling logout due to 401");
+        logout();
+      }
     }
 
     throw error;

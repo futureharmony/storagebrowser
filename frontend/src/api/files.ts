@@ -233,6 +233,13 @@ export async function post(
   onupload: any = () => {},
   scope?: string
 ) {
+  console.log(
+    "[UPLOAD] post called, url:",
+    url,
+    "content type:",
+    typeof content,
+    content instanceof Blob ? `size: ${content.size}` : ""
+  );
   // Use the pre-existing API if:
   const useResourcesApi =
     // a folder is being created
@@ -242,9 +249,18 @@ export async function post(
       !["http:", "https:"].includes(window.location.protocol)) ||
     // Tus is disabled / not applicable
     !(await useTus(content));
-  return useResourcesApi
-    ? postResources(url, content, overwrite, onupload)
-    : postTus(url, content, overwrite, onupload);
+  console.log(
+    "[UPLOAD] Using:",
+    useResourcesApi ? "resources API (XHR)" : "TUS"
+  );
+  try {
+    return useResourcesApi
+      ? postResources(url, content, overwrite, onupload)
+      : postTus(url, content, overwrite, onupload);
+  } catch (err) {
+    console.error("[UPLOAD] post failed:", err);
+    throw err;
+  }
 }
 
 async function postResources(

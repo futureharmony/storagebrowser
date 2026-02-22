@@ -77,6 +77,7 @@ func withUser(fn handleFunc) handleFunc {
 		token, err := request.ParseFromRequest(r, &extractor{}, keyFunc, request.WithClaims(&tk))
 
 		if err != nil || !token.Valid {
+			log.Printf("[AUTH] Token validation failed for %s %s: %v", r.Method, r.URL.Path, err)
 			return http.StatusUnauthorized, nil
 		}
 
@@ -84,6 +85,7 @@ func withUser(fn handleFunc) handleFunc {
 		updated := tk.IssuedAt != nil && tk.IssuedAt.Unix() < d.store.Users.LastUpdate(tk.User.ID)
 
 		if expired || updated {
+			log.Printf("[AUTH] Token needs renewal for user %s (expired=%v, updated=%v)", tk.User.Username, expired, updated)
 			w.Header().Add("X-Renew-Token", "true")
 		}
 

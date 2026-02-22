@@ -13,6 +13,7 @@ export async function upload(
   overwrite = false,
   onupload: any
 ) {
+  console.log("[TUS] Starting upload, filePath:", filePath, "size:", content instanceof Blob ? content.size : "unknown");
   if (!tusSettings) {
     // Shouldn't happen as we check for tus support before calling this function
     throw new Error("Tus.io settings are not defined");
@@ -82,6 +83,7 @@ export async function upload(
         return true;
       },
       onError: function (error: Error | tus.DetailedError) {
+        console.error("[TUS] Upload error:", error);
         delete CURRENT_UPLOAD_LIST[filePath];
 
         if (error.message === "Upload aborted") {
@@ -105,6 +107,7 @@ export async function upload(
         }
       },
       onSuccess: function () {
+        console.log("[TUS] Upload success, filePath:", filePath);
         delete CURRENT_UPLOAD_LIST[filePath];
         resolve();
       },

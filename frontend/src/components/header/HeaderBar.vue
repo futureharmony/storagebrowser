@@ -633,4 +633,31 @@ html[dir="rtl"] .dropdown-menu {
   left: auto;
   right: 0;
 }
+
+@media (max-width: 736px) {
+  #bucket-select {
+    margin-right: 6px;
+  }
+
+  #bucket-select #input {
+    padding: 0 0.5em;
+  }
+
+  #bucket-select #input i {
+    font-size: 0.9em;
+  }
+
+  #bucket-select #input .selected-value {
+    font-size: 0.9em;
+  }
+
+  #bucket-select #input .arrow {
+    font-size: 1em;
+  }
+
+  .dropdown-item {
+    font-size: 0.9em;
+    padding: 0.4em 0.5em;
+  }
+}
 </style>

@@ -5,6 +5,7 @@ import { files as api } from "@/api";
 import buttons from "@/utils/buttons";
 import { computed, inject, markRaw, ref } from "vue";
 import * as tus from "@/api/tus";
+import { ensureTokenValid } from "@/utils/token";
 
 // TODO: make this into a user setting
 const UPLOADS_LIMIT = 5;
@@ -34,13 +35,24 @@ export const useUploadStore = defineStore("upload", () => {
   // ACTIONS
   //
 
-  const upload = (
+  const upload = async (
     path: string,
     name: string,
     file: File | null,
     overwrite: boolean,
     type: ResourceType
   ) => {
+    if (type !== "dir" && file) {
+      try {
+        await ensureTokenValid();
+      } catch {
+        $showError(
+          "Session expired. Please refresh the page and log in again before uploading."
+        );
+        return;
+      }
+    }
+
     if (!hasActiveUploads() && !hasPendingUploads()) {
       window.addEventListener("beforeunload", beforeUnload);
       buttons.loading("upload");

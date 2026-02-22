@@ -64,7 +64,12 @@ export async function fetchURL(
   }
 
   if (auth && res.headers.get("X-Renew-Token") === "true") {
-    await renew(authStore.jwt);
+    try {
+      await renew(authStore.jwt);
+    } catch {
+      // Token refresh failed - don't throw, let the request continue
+      // If the token is truly expired, the server will return 401
+    }
   }
 
   if (res.status < 200 || res.status > 299) {

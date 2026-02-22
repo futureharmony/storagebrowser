@@ -31,6 +31,7 @@ export default defineConfig(({ command }) => {
       plugins,
       resolve,
       server: {
+        host: "0.0.0.0",
         proxy: {
           "/api/command": {
             target: "ws://127.0.0.1:8080",

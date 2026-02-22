@@ -1,0 +1,96 @@
+2026/02/22 08:32:17 Using database: /Users/x/DATA0/Projects/storagebrowser/filebrowser.db
+2026/02/22 08:32:17 Using config file: settings.local.json
+2026/02/22 08:32:18 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 08:32:18 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: false
+2026/02/22 08:32:18 Listening on [::]:8080
+2026/02/22 09:07:32 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:07:32 /api/login: 403 127.0.0.1 <nil>
+2026/02/22 09:07:41 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:07:42 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:07:42 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:07:43 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:07:43 [RESOURCE] GET request path: /, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:09:18 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:18 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:18 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:18 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:18 [RESOURCE] GET request path: /, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:09:22 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:22 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:22 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:23 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+SDK 2026/02/22 09:09:23 WARN Response has no supported checksum. Not validating response payload.
+SDK 2026/02/22 09:09:23 WARN Response has no supported checksum. Not validating response payload.
+SDK 2026/02/22 09:09:24 WARN Response has no supported checksum. Not validating response payload.
+SDK 2026/02/22 09:09:24 WARN Response has no supported checksum. Not validating response payload.
+SDK 2026/02/22 09:09:24 WARN Response has no supported checksum. Not validating response payload.
+SDK 2026/02/22 09:09:24 WARN Response has no supported checksum. Not validating response payload.
+SDK 2026/02/22 09:09:25 WARN Response has no supported checksum. Not validating response payload.
+SDK 2026/02/22 09:09:25 WARN Response has no supported checksum. Not validating response payload.
+SDK 2026/02/22 09:09:25 WARN Response has no supported checksum. Not validating response payload.
+2026/02/22 09:09:27 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:27 [RESOURCE] GET request path: /upload/, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:09:27 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:27 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:29 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:29 [RESOURCE] GET request path: /, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:09:29 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:34 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:34 [USER CLEAN] User: , CurrentScope:  (rootPrefix: ), Fs is nil: true
+2026/02/22 09:09:40 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:40 [USER CLEAN] User: , CurrentScope:  (rootPrefix: ), Fs is nil: true
+2026/02/22 09:09:40 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:41 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+SDK 2026/02/22 09:09:42 WARN Response has no supported checksum. Not validating response payload.
+2026/02/22 09:09:43 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:09:43 [RESOURCE] GET request path: /2023届毕业生就业质量年度报告.pdf, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:09:43 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+SDK 2026/02/22 09:09:43 WARN Response has no supported checksum. Not validating response payload.
+SDK 2026/02/22 09:09:44 WARN Response has no supported checksum. Not validating response payload.
+2026/02/22 09:09:51 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:10:03 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:10:03 [RESOURCE] GET request path: /, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:10:03 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:10:07 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:10:07 [RESOURCE] GET request path: /9038e38a-4231-49bd-9e56-36ab55eb7e1c.font.png, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:10:07 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:10:11 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:10:18 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:10:30 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:10:30 [RESOURCE] GET request path: /Banner.png, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:10:30 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+SDK 2026/02/22 09:10:31 WARN Response has no supported checksum. Not validating response payload.
+2026/02/22 09:10:31 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:10:31 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:10:31 [RESOURCE] GET request path: /, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+SDK 2026/02/22 09:10:32 WARN Response has no supported checksum. Not validating response payload.
+2026/02/22 09:49:09 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:49:09 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:49:10 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:49:10 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:49:10 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:49:10 [RESOURCE] GET request path: /, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:49:21 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:49:21 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:49:21 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:49:21 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:49:21 [RESOURCE] GET request path: /, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:57:37 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:57:39 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:57:41 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:57:41 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:57:41 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:57:41 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 09:57:41 [RESOURCE] GET request path: /, user: admin, currentScope: test (rootPrefix: /), storageType: s3, limit: 1000
+2026/02/22 09:57:42 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:02:03 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:02:14 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:03:12 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:03:18 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:33:40 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:34:53 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:34:55 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:35:05 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:35:08 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:40:35 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true
+2026/02/22 10:40:40 [USER CLEAN] User: admin, CurrentScope: test (rootPrefix: /), Fs is nil: true

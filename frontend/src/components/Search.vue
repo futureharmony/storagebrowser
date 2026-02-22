@@ -8,14 +8,14 @@
         @input="handleInput"
         @keydown.enter="handleSearch"
         @keydown.escape="clearSearch"
-        :placeholder="$t('search.search')"
+        :placeholder="searchPlaceholder"
         class="search-input"
       />
       <button
         v-if="searchQuery"
         class="clear-btn"
         @click="clearSearch"
-        :aria-label="$t('buttons.close')"
+        :aria-label="t('buttons.close')"
       >
         <i class="material-icons">close</i>
       </button>
@@ -29,7 +29,7 @@
         @click="toggleFilter(filter.key)"
       >
         <i class="material-icons">{{ filter.icon }}</i>
-        <span>{{ $t("search." + filter.label) }}</span>
+        <span>{{ t("search." + filter.label) }}</span>
       </button>
     </div>
 
@@ -64,7 +64,7 @@
 
       <div v-else-if="searchQuery" class="search-empty">
         <i class="material-icons">search_off</i>
-        <p>{{ $t("search.noResults") }}</p>
+        <p>{{ t("search.noResults") }}</p>
       </div>
     </div>
   </div>
@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { useFileStore } from "@/stores/file";
 import { useResponsive } from "@/utils/responsive";
 import url from "@/utils/url";
@@ -93,6 +94,7 @@ const typeFilters = [
 
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
 const fileStore = useFileStore();
 const { isMobile } = useResponsive();
 
@@ -103,6 +105,10 @@ const searchResults = ref<SearchResult[]>([]);
 const isSearching = ref(false);
 
 const showResults = computed(() => searchQuery.value || activeFilter.value);
+
+const searchPlaceholder = computed(() => {
+  return isMobile.value ? t("search.searchMobile") : t("search.search");
+});
 
 const clearSearch = () => {
   searchQuery.value = "";
@@ -207,7 +213,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   transition: all 0.2s ease;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 736px) {
   .search-container {
     flex-direction: row;
     max-width: none;
@@ -247,6 +253,19 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   opacity: 0.7;
 }
 
+/* Mobile-specific placeholder styling */
+@media (max-width: 736px) {
+  .search-input {
+    font-size: 0.9rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .search-input::placeholder {
+    color: transparent;
+  }
+}
+
 .clear-btn {
   display: flex;
   align-items: center;
@@ -275,7 +294,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   flex-wrap: nowrap;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 736px) {
   .type-filters {
     display: none;
   }
@@ -320,7 +339,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   z-index: var(--z-dropdown, 600);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 736px) {
   .search-backdrop {
     position: fixed;
     top: 0;

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Box Mobile Fix Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 32px;
+        }
+        
+        h2 {
+            color: #444;
+            margin-bottom: 16px;
+        }
+        
+        .search-demo {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .device-frame {
+            border: 2px solid #ddd;
+            border-radius: 24px;
+            padding: 16px;
+            background: white;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-frame {
+            width: 375px;
+            height: 667px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            background: #f8f8f8;
+        }
+        
+        .desktop-frame {
+            width: 100%;
+            min-height: 300px;
+        }
+        
+        .screen-content {
+            padding: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* Search box styles matching the actual component */
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 500px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .search-input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #f0f0f0;
+            border: 2px solid transparent;
+            border-radius: 0.5rem;
+            padding: 0 0.75rem;
+            height: 2.5rem;
+            min-width: 0;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+        
+        .search-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 0.95rem;
+            color: #333;
+            outline: none;
+        }
+        
+        .search-input::placeholder {
+            color: #666;
+            opacity: 0.7;
+        }
+        
+        /* Mobile-specific styles (max-width: 736px) */
+        .mobile-frame .search-container {
+            flex-direction: row;
+            max-width: none;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        
+        .mobile-frame .search-input-wrapper {
+            width: 100%;
+            min-width: 80px;
+        }
+        
+        .mobile-frame .search-input::placeholder {
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .status {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-weight: 500;
+        }
+        
+        .status-fixed {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+        
+        .status-before {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        
+        .device-label {
+            text-align: center;
+            margin-top: 12px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .explanation {
+            background: #f8f9fa;
+            border-left: 4px solid #2196f3;
+            padding: 16px;
+            margin-top: 24px;
+            border-radius: 4px;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+        
+        @media (max-width: 768px) {
+            .search-demo {
+                flex-direction: column;
+            }
+            
+            .device-frame {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="demo-section">
+            <h1>🔍 搜索框移动端文字溢出修复</h1>
+            <p class="subtitle">修复了移动端搜索框 placeholder 文字 "Search..." 超出宽度的问题</p>
+            
+            <div class="search-demo">
+                <div class="device-frame">
+                    <div class="mobile-frame">
+                        <div class="screen-content">
+                            <h3 style="margin: 0; color: #333;">移动端视图</h3>
+                            <div class="search-container">
+                                <div class="search-input-wrapper">
+                                    <input 
+                                        type="text" 
+                                        class="search-input" 
+                                        placeholder="搜索"
+                                    />
+                                </div>
+                            </div>
+                            <div class="status status-fixed">
+                                ✅ 已修复：移动端显示简短 placeholder "搜索"
+                            </div>
+                        </div>
+                    </div>
+                    <div class="device-label">移动端 (≤736px)</div>
+                </div>
+                
+                <div class="device-frame">
+                    <div class="desktop-frame">
+                        <div class="screen-content">
+                            <h3 style="margin: 0; color: #333;">桌面端视图</h3>
+                            <div class="search-container">
+                                <div class="search-input-wrapper">
+                                    <input 
+                                        type="text" 
+                                        class="search-input" 
+                                        placeholder="搜索..."
+                                    />
+                                </div>
+                            </div>
+                            <div class="status status-fixed">
+                                ✅ 正常：桌面端显示完整 placeholder "搜索..."
+                            </div>
+                        </div>
+                    </div>
+                    <div class="device-label">桌面端 (>736px)</div>
+                </div>
+            </div>
+            
+            <div class="explanation">
+                <h3>修复方案</h3>
+                <p>问题：在移动端（屏幕宽度 ≤736px）时，搜索框的 placeholder 文本 "Search..." 可能会超出搜索框宽度。</p>
+                <p>解决方案：</p>
+                <ol>
+                    <li>添加移动端专用翻译键 <code>searchMobile</code>，在移动端显示简短文本 "搜索"</li>
+                    <li>添加媒体查询 <code>@media (max-width: 736px)</code> 调整移动端样式</li>
+                    <li>为 placeholder 添加 <code>text-overflow: ellipsis</code> 防止文字溢出</li>
+                </ol>
+                
+                <div class="code-block">
+// 新增计算属性
+const searchPlaceholder = computed(() => {
+    return isMobile.value ? $t("search.searchMobile") : $t("search.search");
+});
+
+// 移动端样式
+@media (max-width: 736px) {
+    .search-input::placeholder {
+        font-size: 0.9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+                </div>
+                
+                <div class="status status-fixed">
+                    ✅ 修复已应用！现在移动端搜索框的 placeholder 文字会自适应屏幕宽度，不会溢出。
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>修复详情</h2>
+            <h3>修改的文件：</h3>
+            <ul>
+                <li><code>/frontend/src/components/Search.vue</code> - 添加移动端 placeholder 逻辑和样式</li>
+                <li><code>/frontend/src/i18n/en.json</code> - 添加 <code>"searchMobile": "Search"</code></li>
+                <li><code>/frontend/src/i18n/zh-cn.json</code> - 添加 <code>"searchMobile": "搜索"</code></li>
+                <li><code>/frontend/src/i18n/zh-tw.json</code> - 添加 <code>"searchMobile": "搜尋"</code></li>
+            </ul>
+            
+            <h3>测试方法：</h3>
+            <ol>
+                <li>在桌面浏览器中打开应用，搜索框显示 "搜索..."</li>
+                <li>缩小浏览器宽度到 736px 以下，搜索框显示 "搜索"</li>
+                <li>在移动设备上访问应用，搜索框显示简短的 placeholder</li>
+            </ol>
+            
+            <p style="color: #666; font-style: italic;">
+                💡 提示：你可以通过 Chrome DevTools 的响应式设计模式测试不同屏幕尺寸的效果。
+            </p>
+        </div>
+    </div>
+</body>
+</html>

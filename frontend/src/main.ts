@@ -20,6 +20,12 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 import "./css/styles.css";
 
+if (import.meta.env.DEV) {
+  import("vconsole").then((vConsole) => {
+    new vConsole.default();
+  });
+}
+
 // register dayjs plugins globally
 dayjs.extend(localizedFormat);
 dayjs.extend(relativeTime);

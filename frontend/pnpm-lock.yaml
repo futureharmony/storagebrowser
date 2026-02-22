@@ -68,6 +68,9 @@ importers:
       utif:
         specifier: ^3.1.0
         version: 3.1.0
+      vconsole:
+        specifier: ^3.15.1
+        version: 3.15.1
       video.js:
         specifier: ^8.23.3
         version: 8.23.4
@@ -1624,6 +1627,10 @@ packages:
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
+  copy-text-to-clipboard@3.2.2:
+    resolution: {integrity: sha512-T6SqyLd1iLuqPA90J5N4cTalrtovCySh58iiZDGJ6FGznbclKh4UI+FGacQSgFzwKG77W7XT5gwbVEbd9cIH1A==}
+    engines: {node: '>=12'}
+
   core-js-compat@3.48.0:
     resolution: {integrity: sha512-OM4cAF3D6VtH/WkLtWvyNC56EZVXsZdU3iqaMG2B4WvYrlqU831pc4UtG5yp0sE9z8Y02wVN7PjW5Zf9Gt0f1Q==}
 
@@ -2224,6 +2231,9 @@ packages:
   muggle-string@0.4.1:
     resolution: {integrity: sha512-VNTrAak/KhO2i8dqqnqnAHOa3cYBwXEZe9h+D5h/1ZqFSTEFHdM65lR7RoIqq3tBBYavsOXV84NoHXZ0AkPyqQ==}
 
+  mutation-observer@1.0.3:
+    resolution: {integrity: sha512-M/O/4rF2h776hV7qGMZUH3utZLO/jK7p8rnNgGkjKUw8zCGjRQPxB8z6+5l8+VjRUQ3dNYu4vjqXYLr+U8ZVNA==}
+
   mux.js@7.1.0:
     resolution: {integrity: sha512-NTxawK/BBELJrYsZThEulyUMDVlLizKdxyAsMuzoCD1eFj97BVaA8D/CvKsKu6FOLYkFojN5CbM9h++ZTZtknA==}
     engines: {node: '>=8', npm: '>=5'}
@@ -2703,6 +2713,9 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  vconsole@3.15.1:
+    resolution: {integrity: sha512-KH8XLdrq9T5YHJO/ixrjivHfmF2PC2CdVoK6RWZB4yftMykYIaXY1mxZYAic70vADM54kpMQF+dYmvl5NRNy1g==}
 
   video.js@8.23.4:
     resolution: {integrity: sha512-qI0VTlYmKzEqRsz1Nppdfcaww4RSxZAq77z2oNSl3cNg2h6do5C8Ffl0KqWQ1OpD8desWXsCrde7tKJ9gGTEyQ==}
@@ -4508,6 +4521,8 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
+  copy-text-to-clipboard@3.2.2: {}
+
   core-js-compat@3.48.0:
     dependencies:
       browserslist: 4.28.1
@@ -5152,6 +5167,8 @@ snapshots:
 
   muggle-string@0.4.1: {}
 
+  mutation-observer@1.0.3: {}
+
   mux.js@7.1.0:
     dependencies:
       '@babel/runtime': 7.28.6
@@ -5600,6 +5617,13 @@ snapshots:
       pako: 1.0.11
 
   util-deprecate@1.0.2: {}
+
+  vconsole@3.15.1:
+    dependencies:
+      '@babel/runtime': 7.28.6
+      copy-text-to-clipboard: 3.2.2
+      core-js: 3.48.0
+      mutation-observer: 1.0.3
 
   video.js@8.23.4:
     dependencies:

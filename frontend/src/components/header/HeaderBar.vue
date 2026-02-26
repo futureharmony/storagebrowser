@@ -660,4 +660,14 @@ html[dir="rtl"] .dropdown-menu {
     padding: 0.4em 0.5em;
   }
 }
+
+#dropdown {
+  display: none;
+}
+
+@media (max-width: 736px) {
+  #dropdown {
+    display: block;
+  }
+}
 </style>

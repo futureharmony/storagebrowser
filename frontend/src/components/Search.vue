@@ -61,11 +61,6 @@
           </div>
         </div>
       </div>
-
-      <div v-else-if="searchQuery" class="search-empty">
-        <i class="material-icons">search_off</i>
-        <p>{{ t("search.noResults") }}</p>
-      </div>
     </div>
   </div>
 </template>
@@ -103,8 +98,7 @@ const searchQuery = ref("");
 const activeFilter = ref<string | null>(null);
 const searchResults = ref<SearchResult[]>([]);
 const isSearching = ref(false);
-
-const showResults = computed(() => searchQuery.value || activeFilter.value);
+const showResults = ref(false);
 
 const searchPlaceholder = computed(() => {
   return isMobile.value ? t("search.searchMobile") : t("search.search");
@@ -114,6 +108,7 @@ const clearSearch = () => {
   searchQuery.value = "";
   searchResults.value = [];
   activeFilter.value = null;
+  showResults.value = false;
 };
 
 const toggleFilter = (key: string) => {
@@ -135,8 +130,11 @@ const handleSearch = async () => {
   const query = searchQuery.value.trim();
   if (!query && !activeFilter.value) {
     searchResults.value = [];
+    showResults.value = false;
     return;
   }
+
+  showResults.value = true;
 
   let fullQuery = query;
   if (activeFilter.value) {

@@ -9,13 +9,19 @@
     </div>
 
     <div class="card-content">
-      <p v-if="mode === 'copy'">{{ $t("prompts.copyMessage") }}</p>
-      <file-list
-        ref="fileList"
-        @update:selected="(val: string | null) => (dest = val)"
-        :exclude="excludedFolders"
-        tabindex="1"
+      <LoadingSpinner
+        v-if="actionLoading"
+        :message="mode === 'move' ? $t('prompts.moving') : $t('prompts.copying')"
       />
+      <div v-else>
+        <p v-if="mode === 'copy'">{{ $t("prompts.copyMessage") }}</p>
+        <file-list
+          ref="fileList"
+          @update:selected="(val: string | null) => (dest = val)"
+          :exclude="excludedFolders"
+          tabindex="1"
+        />
+      </div>
     </div>
 
     <div
@@ -78,7 +84,9 @@ import { useRouter, useRoute } from "vue-router";
 import { useFileStore } from "@/stores/file";
 import { useLayoutStore } from "@/stores/layout";
 import { useAuthStore } from "@/stores/auth";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import FileList from "./FileList.vue";
+import LoadingSpinner from "./LoadingSpinner.vue";
 import { files as api } from "@/api";
 import buttons from "@/utils/buttons";
 import * as upload from "@/utils/upload";
@@ -93,6 +101,7 @@ const props = defineProps<{
 // Refs
 const fileList = ref<any>(null);
 const dest = ref<string | null>(null);
+const actionLoading = ref(false);
 
 // Composables
 const { t } = useI18n();
@@ -205,6 +214,7 @@ const handleAction = async (event: MouseEvent) => {
       items
     );
     buttons.loading(props.mode);
+    actionLoading.value = true;
 
     const apiMethod = props.mode === "move" ? api.move : api.copy;
 
@@ -212,6 +222,7 @@ const handleAction = async (event: MouseEvent) => {
       await apiMethod(items, overwrite, rename);
       console.log(`${props.mode} API call succeeded`);
       buttons.success(props.mode);
+      actionLoading.value = false;
       preselect.value = removePrefix(items[0].to);
 
       if (props.mode === "copy" && route.path === dest.value) {
@@ -230,6 +241,7 @@ const handleAction = async (event: MouseEvent) => {
     } catch (e) {
       console.error(`${props.mode} API call failed:`, e);
       buttons.done(props.mode);
+      actionLoading.value = false;
       $showError(e instanceof Error ? e : String(e));
     }
   };

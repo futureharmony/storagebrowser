@@ -5,15 +5,18 @@
     </div>
 
     <div class="card-content">
-      <p>{{ t("prompts.newDirMessage") }}</p>
-      <input
-        id="focus-prompt"
-        class="input input--block"
-        type="text"
-        @keyup.enter="submit"
-        v-model.trim="name"
-        tabindex="1"
-      />
+      <LoadingSpinner v-if="loading" :message="t('prompts.creating')" />
+      <template v-else>
+        <p>{{ t("prompts.newDirMessage") }}</p>
+        <input
+          id="focus-prompt"
+          class="input input--block"
+          type="text"
+          @keyup.enter="submit"
+          v-model.trim="name"
+          tabindex="1"
+        />
+      </template>
     </div>
 
     <div class="card-action">
@@ -22,6 +25,7 @@
         @click="layoutStore.closeCurrentHover"
         :aria-label="t('buttons.cancel')"
         :title="t('buttons.cancel')"
+        :disabled="loading"
         tabindex="3"
       >
         {{ t("buttons.cancel") }}
@@ -31,6 +35,7 @@
         :aria-label="$t('buttons.create')"
         :title="t('buttons.create')"
         @click="submit"
+        :disabled="loading || name === ''"
         tabindex="2"
       >
         {{ t("buttons.create") }}
@@ -49,6 +54,7 @@ import { files as api } from "@/api";
 import url from "@/utils/url";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
+import LoadingSpinner from "./LoadingSpinner.vue";
 
 const $showError = inject<IToastError>("$showError")!;
 
@@ -68,6 +74,7 @@ const router = useRouter();
 const { t } = useI18n();
 
 const name = ref<string>("");
+const loading = ref(false);
 
 const submit = async (event: Event) => {
   event.preventDefault();
@@ -90,6 +97,7 @@ const submit = async (event: Event) => {
   const scope = authStore.user?.currentScope?.name;
 
   try {
+    loading.value = true;
     await api.post(uri, "", false, () => {}, scope);
     if (props.redirect) {
       router.push({ path: uri });
@@ -103,8 +111,17 @@ const submit = async (event: Event) => {
     if (e instanceof Error) {
       $showError(e);
     }
+  } finally {
+    loading.value = false;
   }
 
   layoutStore.closeCurrentHover();
 };
 </script>
+
+<style scoped>
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+</style>

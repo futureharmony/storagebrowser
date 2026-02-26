@@ -1,6 +1,7 @@
 <template>
   <div @keydown.esc="$emit('close')">
-    <ul class="file-list">
+    <LoadingSpinner v-if="loading" />
+    <ul v-else class="file-list">
       <li
         @click="itemClick"
         @touchstart="touchstart"
@@ -38,9 +39,13 @@ import { files } from "@/api";
 import { StatusError } from "@/api/utils.js";
 import url from "@/utils/url";
 import { extractS3BucketName, stripS3BucketPrefix } from "@/utils/path";
+import LoadingSpinner from "./LoadingSpinner.vue";
 
 export default {
   name: "file-list",
+  components: {
+    LoadingSpinner,
+  },
   props: {
     exclude: {
       type: Array,
@@ -50,6 +55,7 @@ export default {
   data: function () {
     return {
       items: [],
+      loading: false,
       touches: {
         id: "",
         count: 0,
@@ -186,14 +192,19 @@ export default {
 
       this.abortOngoingNext();
       this.nextAbortController = new AbortController();
+      this.loading = true;
       files
         .fetch(uri, this.nextAbortController.signal, scope)
         .then(this.fillOptions)
         .catch((e) => {
+          this.loading = false;
           if (e instanceof StatusError && e.is_canceled) {
             return;
           }
           this.$showError(e);
+        })
+        .finally(() => {
+          this.loading = false;
         });
     },
     touchstart(event) {

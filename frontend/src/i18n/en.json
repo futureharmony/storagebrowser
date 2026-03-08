@@ -284,6 +284,7 @@
     "save": "Save",
     "cancel": "Cancel",
     "confirmDeleteBucket": "Are you sure you want to delete this bucket?",
+    "deleteBucket": "Delete Bucket",
     "bucketCreated": "Bucket created successfully",
     "bucketUpdated": "Bucket settings updated",
     "bucketDeleted": "Bucket deleted successfully",
@@ -299,7 +300,10 @@
     "governance": "Governance",
     "compliance": "Compliance",
     "objectLockEnabled": "Object Lock is enabled for this bucket",
-    "objectLockCannotEnable": "Object Lock must be set when creating the bucket"
+    "objectLockCannotEnable": "Object Lock must be set when creating the bucket",
+    "mobileBucketName": "Bucket Name",
+    "mobileVersioning": "Versioning",
+    "mobileObjectLock": "Object Lock"
   },
   "sidebar": {
     "help": "Help",

@@ -284,6 +284,7 @@
     "save": "保存",
     "cancel": "取消",
     "confirmDeleteBucket": "确定要删除此存储桶吗？",
+    "deleteBucket": "删除存储桶",
     "bucketCreated": "存储桶创建成功",
     "bucketUpdated": "存储桶设置已更新",
     "bucketDeleted": "存储桶删除成功",
@@ -299,7 +300,10 @@
     "governance": "治理模式",
     "compliance": "合规模式",
     "objectLockEnabled": "此存储桶已启用对象锁定",
-    "objectLockCannotEnable": "对象锁定无法在现有存储桶上启用，必须在创建时设置"
+    "objectLockCannotEnable": "对象锁定无法在现有存储桶上启用，必须在创建时设置",
+    "mobileBucketName": "存储桶名称",
+    "mobileVersioning": "版本控制",
+    "mobileObjectLock": "对象锁定"
   },
   "sidebar": {
     "help": "帮助",

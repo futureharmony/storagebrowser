@@ -11,17 +11,9 @@
           <div class="card-actions">
             <div class="search-box">
               <i class="material-icons">search</i>
-              <input
-                v-model="searchTerm"
-                type="text"
-                :placeholder="t('settings.search')"
-              />
+              <input v-model="searchTerm" type="text" :placeholder="t('settings.search')" />
             </div>
-            <button
-              class="button button-primary button-compact"
-              @click="showCreateModal = true"
-              :disabled="!isAdmin"
-            >
+            <button class="button button-primary button-compact" @click="showCreateModal = true" :disabled="!isAdmin">
               <i class="material-icons">add</i>
               <!-- {{ t("settings.createBucket") }} -->
             </button>
@@ -48,12 +40,10 @@
                 </div>
               </td>
               <td>
-                <span
-                  :class="[
-                    'status-badge',
-                    bucket.settings?.versioning ? 'enabled' : 'disabled',
-                  ]"
-                >
+                <span :class="[
+                  'status-badge',
+                  bucket.settings?.versioning ? 'enabled' : 'disabled',
+                ]">
                   {{
                     bucket.settings?.versioning
                       ? t("settings.enabled")
@@ -62,12 +52,10 @@
                 </span>
               </td>
               <td>
-                <span
-                  :class="[
-                    'status-badge',
-                    bucket.settings?.objectLock ? 'enabled' : 'disabled',
-                  ]"
-                >
+                <span :class="[
+                  'status-badge',
+                  bucket.settings?.objectLock ? 'enabled' : 'disabled',
+                ]">
                   {{
                     bucket.settings?.objectLock
                       ? t("settings.enabled")
@@ -76,20 +64,12 @@
                 </span>
               </td>
               <td class="small">
-                <button
-                  class="icon-button"
-                  @click="editBucket(bucket.name)"
-                  :title="t('settings.settings')"
-                  v-if="isAdmin"
-                >
+                <button class="icon-button" @click="editBucket(bucket.name)" :title="t('settings.settings')"
+                  v-if="isAdmin">
                   <i class="material-icons">settings</i>
                 </button>
-                <button
-                  class="icon-button icon-danger"
-                  @click="confirmDelete(bucket.name)"
-                  :title="t('buttons.delete')"
-                  v-if="isAdmin"
-                >
+                <button class="icon-button icon-danger" @click="confirmDelete(bucket.name)" :title="t('buttons.delete')"
+                  v-if="isAdmin">
                   <i class="material-icons">delete</i>
                 </button>
               </td>
@@ -106,11 +86,7 @@
     </div>
   </div>
 
-  <div
-    v-if="showCreateModal"
-    class="modal-wrapper"
-    @click.self="closeCreateModal"
-  >
+  <div v-if="showCreateModal" class="modal-wrapper" @click.self="closeCreateModal">
     <div class="modal modal-lg">
       <div class="modal-header">
         <h3>{{ t("settings.createBucket") }}</h3>
@@ -122,13 +98,8 @@
         <!-- Bucket Name -->
         <div class="form-group">
           <label>{{ t("settings.bucketName") }} *</label>
-          <input
-            v-model="newBucketSettings.name"
-            type="text"
-            :placeholder="t('settings.bucketNamePlaceholder')"
-            :class="{ 'input-error': showNameError }"
-            @keyup.enter="createBucket"
-          />
+          <input v-model="newBucketSettings.name" type="text" :placeholder="t('settings.bucketNamePlaceholder')"
+            :class="{ 'input-error': showNameError }" @keyup.enter="createBucket" />
           <span v-if="showNameError" class="error-text">
             {{ t("settings.bucketNameError") }}
           </span>
@@ -152,11 +123,7 @@
             <span class="setting-desc">{{ t("settings.objectLockInfo") }}</span>
           </div>
           <label class="toggle">
-            <input
-              type="checkbox"
-              v-model="newBucketSettings.objectLock"
-              @change="onObjectLockChange"
-            />
+            <input type="checkbox" v-model="newBucketSettings.objectLock" @change="onObjectLockChange" />
             <span class="toggle-slider"></span>
           </label>
         </div>
@@ -189,11 +156,7 @@
           <div class="form-row">
             <label class="form-label">{{ t("settings.validity") }}</label>
             <div class="input-with-unit">
-              <input
-                v-model.number="newBucketSettings.objectLockDays"
-                type="number"
-                min="1"
-              />
+              <input v-model.number="newBucketSettings.objectLockDays" type="number" min="1" />
               <select v-model="retentionUnit">
                 <option value="day">{{ t("settings.days") }}</option>
                 <option value="year">{{ t("settings.years") }}</option>
@@ -206,11 +169,7 @@
         <button class="button button-secondary" @click="closeCreateModal">
           {{ t("buttons.cancel") }}
         </button>
-        <button
-          class="button"
-          @click="createBucket"
-          :disabled="isCreateDisabled || creating"
-        >
+        <button class="button" @click="createBucket" :disabled="isCreateDisabled || creating">
           <span v-if="creating" class="spinner"></span>
           {{ t("buttons.create") }}
         </button>
@@ -218,11 +177,7 @@
     </div>
   </div>
 
-  <div
-    v-if="showSettingsModal"
-    class="modal-wrapper"
-    @click.self="showSettingsModal = false"
-  >
+  <div v-if="showSettingsModal" class="modal-wrapper" @click.self="showSettingsModal = false">
     <div class="modal modal-lg">
       <div class="modal-header">
         <h3>{{ t("settings.bucketSettings") }}: {{ selectedBucket }}</h3>
@@ -237,12 +192,8 @@
             <span>{{ t("settings.versioning") }}</span>
           </div>
           <label class="toggle">
-            <input
-              type="checkbox"
-              v-model="bucketSettings.versioning"
-              :disabled="objectLockEnabled"
-              :title="objectLockEnabled ? t('settings.versioningDisabledByObjectLock') : ''"
-            />
+            <input type="checkbox" v-model="bucketSettings.versioning" :disabled="objectLockEnabled"
+              :title="objectLockEnabled ? t('settings.versioningDisabledByObjectLock') : ''" />
             <span class="toggle-slider"></span>
           </label>
         </div>
@@ -291,11 +242,7 @@
           <div class="form-row">
             <label class="form-label">{{ t("settings.validity") }}</label>
             <div class="input-with-unit">
-              <input
-                v-model.number="bucketSettings.objectLockDays"
-                type="number"
-                min="1"
-              />
+              <input v-model.number="bucketSettings.objectLockDays" type="number" min="1" />
               <select v-model="retentionUnit">
                 <option value="day">{{ t("settings.days") }}</option>
                 <option value="year">{{ t("settings.years") }}</option>
@@ -305,10 +252,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button
-          class="button button-secondary"
-          @click="showSettingsModal = false"
-        >
+        <button class="button button-secondary" @click="showSettingsModal = false">
           {{ t("buttons.cancel") }}
         </button>
         <button class="button" @click="saveSettings" :disabled="saving">
@@ -319,11 +263,7 @@
     </div>
   </div>
 
-  <div
-    v-if="showDeleteModal"
-    class="modal-wrapper"
-    @click.self="showDeleteModal = false"
-  >
+  <div v-if="showDeleteModal" class="modal-wrapper" @click.self="showDeleteModal = false">
     <div class="modal">
       <div class="modal-header">
         <h3>{{ t("settings.deleteBucket") }}</h3>
@@ -338,10 +278,7 @@
         </p>
       </div>
       <div class="modal-footer">
-        <button
-          class="button button-secondary"
-          @click="showDeleteModal = false"
-        >
+        <button class="button button-secondary" @click="showDeleteModal = false">
           {{ t("buttons.cancel") }}
         </button>
         <button class="button button-danger" @click="deleteBucket">
@@ -600,6 +537,7 @@ const deleteBucket = async () => {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1rem;
 }
 
 .modal {
@@ -617,7 +555,35 @@ const deleteBucket = async () => {
   max-width: 560px;
 }
 
-.modal-header {
+/* Responsive modal for small screens */
+@media (max-width: 600px) {
+  .modal-wrapper {
+    padding: 0.5rem;
+  }
+
+  .modal {
+    max-width: 100%;
+    max-height: 95vh;
+  }
+
+  .modal-lg {
+    max-width: 100%;
+  }
+
+  .modal-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .modal-content {
+    padding: 1rem;
+  }
+
+  .modal-footer {
+    padding: 0.75rem 1rem;
+  }
+}
+
+.form-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -678,7 +644,7 @@ const deleteBucket = async () => {
   flex: 1;
 }
 
-.setting-label > span {
+.setting-label>span {
   font-size: 0.813rem;
   color: var(--textPrimary);
 }
@@ -821,7 +787,7 @@ const deleteBucket = async () => {
   font-size: 0.875rem;
 }
 
-.toggle input:disabled + .toggle-slider {
+.toggle input:disabled+.toggle-slider {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -863,11 +829,11 @@ const deleteBucket = async () => {
   border-radius: 50%;
 }
 
-.toggle input:checked + .toggle-slider {
+.toggle input:checked+.toggle-slider {
   background-color: var(--blue);
 }
 
-.toggle input:checked + .toggle-slider:before {
+.toggle input:checked+.toggle-slider:before {
   transform: translateX(18px);
 }
 
@@ -1059,6 +1025,122 @@ table td.small {
   white-space: nowrap;
 }
 
+/* Responsive table for mobile - card layout */
+@media (max-width: 600px) {
+
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    display: block !important;
+  }
+
+  thead {
+    display: none !important;
+  }
+
+  /* Hide header row on mobile */
+  table tr:first-child {
+    display: none !important;
+  }
+
+  /* Hide empty state row on mobile when no buckets */
+  tr.empty-state {
+    display: none !important;
+  }
+
+  .card-content.full {
+    padding: 0.5rem;
+    overflow-x: visible;
+  }
+
+  tr {
+    border: 1px solid var(--divider) !important;
+    margin-bottom: 0.75rem;
+    background: var(--surfacePrimary);
+    margin: 0.5rem;
+    border-radius: 20px !important;
+  }
+
+  tr:last-child {
+    border: 1px solid var(--divider) !important;
+  }
+
+  td {
+    border: none !important;
+    position: relative !important;
+    padding: 0.75rem 0.5rem 0.75rem 40% !important;
+    min-height: 2.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* tr td {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  } */
+
+  td:nth-child(1)::before {
+    content: "Bucket";
+    position: absolute;
+    top: 1rem;
+    left: 0.5rem;
+    width: 38%;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--textSecondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  td:nth-child(2)::before {
+    content: "Versioning";
+    position: absolute;
+    top: 0.75rem;
+    left: 0.5rem;
+    width: 38%;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--textSecondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  td:nth-child(3)::before {
+    content: "Object Lock";
+    position: absolute;
+    top: 0.75rem;
+    left: 0.5rem;
+    width: 38%;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--textSecondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  td.small {
+    text-align: right !important;
+    padding: 0.75rem 0.5rem !important;
+    padding-left: 40% !important;
+    white-space: nowrap;
+  }
+
+  td.small::before {
+    display: none;
+  }
+
+  td.small button {
+    margin-left: 0.25rem;
+  }
+
+  .bucket-name {
+    padding-left: 0 !important;
+  }
+}
+
 .bucket-name {
   display: flex;
   align-items: center;
@@ -1110,6 +1192,35 @@ table td.small {
   background: linear-gradient(to right, var(--surfacePrimary), var(--bg));
 }
 
+/* Responsive card-title for mobile */
+@media (max-width: 600px) {
+  .card-title {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .card-title-left {
+    width: 100%;
+  }
+
+  .card-title h2 {
+    font-size: 1rem;
+    word-break: break-word;
+  }
+
+  .card-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .card-actions .button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.813rem;
+  }
+}
+
 .card-title-left {
   display: flex;
   flex-direction: column;
@@ -1144,6 +1255,19 @@ table td.small {
   border: 1px solid rgba(128, 128, 128, 0.3);
   border-radius: 20px;
   transition: border-color 0.2s;
+}
+
+/* Responsive search-box for mobile */
+@media (max-width: 600px) {
+  .search-box {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .search-box input {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .search-box:focus-within {
@@ -1243,5 +1367,4 @@ table td.small {
 .options-grid .form-group {
   margin-bottom: 0;
 }
-
 </style>

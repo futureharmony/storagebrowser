@@ -278,6 +278,7 @@
     "save": "儲存",
     "cancel": "取消",
     "confirmDeleteBucket": "確定要刪除此儲存桶嗎？",
+    "deleteBucket": "刪除儲存桶",
     "bucketCreated": "儲存桶建立成功",
     "bucketUpdated": "儲存桶設定已更新",
     "bucketDeleted": "儲存桶刪除成功",
@@ -293,7 +294,10 @@
     "governance": "治理模式",
     "compliance": "合規模式",
     "objectLockEnabled": "此儲存桶已啟用物件鎖定",
-    "objectLockCannotEnable": "物件鎖定無法在現有儲存桶上啟用，必須在建立時設定"
+    "objectLockCannotEnable": "物件鎖定無法在現有儲存桶上啟用，必須在建立時設定",
+    "mobileBucketName": "儲存桶名稱",
+    "mobileVersioning": "版本控制",
+    "mobileObjectLock": "物件鎖定"
   },
   "sidebar": {
     "help": "幫助",

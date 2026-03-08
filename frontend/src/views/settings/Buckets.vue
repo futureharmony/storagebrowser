@@ -37,8 +37,6 @@
               <th>{{ t("settings.bucketName") }}</th>
               <th>{{ t("settings.versioning") }}</th>
               <th>{{ t("settings.objectLock") }}</th>
-              <th>{{ t("settings.quotaStorage") }}</th>
-              <th>{{ t("settings.quotaObjects") }}</th>
               <th></th>
             </tr>
 
@@ -76,16 +74,6 @@
                       : t("settings.disabled")
                   }}
                 </span>
-              </td>
-              <td>
-                {{
-                  bucket.settings?.quotaStorageMB
-                    ? formatStorageQuota(bucket.settings.quotaStorageMB)
-                    : "-"
-                }}
-              </td>
-              <td>
-                {{ bucket.settings?.quotaObjects || "-" }}
               </td>
               <td class="small">
                 <button
@@ -213,50 +201,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Bucket Quota -->
-        <div class="setting-item">
-          <div class="setting-label">
-            <span>{{ t("settings.bucketQuota") }}</span>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" v-model="quotaEnabled" />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-
-        <!-- Quota Settings (nested under Bucket Quota) -->
-        <div class="setting-content setting-nested" v-if="quotaEnabled">
-          <div class="form-row">
-            <label class="form-label">{{ t("settings.quotaStorage") }}</label>
-            <div class="input-with-unit">
-              <input
-                v-model.number="newBucketSettings.quotaStorageMB"
-                type="number"
-                min="0"
-                placeholder="0"
-              />
-              <select v-model="quotaUnit">
-                <option value="MiB">MiB</option>
-                <option value="GiB">GiB</option>
-                <option value="TiB">TiB</option>
-                <option value="PiB">PiB</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <label class="form-label">{{ t("settings.quotaObjects") }}</label>
-            <div class="input-with-unit">
-              <input
-                v-model.number="newBucketSettings.quotaObjects"
-                type="number"
-                min="0"
-                placeholder="0"
-              />
-              <span class="unit-placeholder"></span>
-            </div>
-          </div>
-        </div>
       </div>
       <div class="modal-footer">
         <button class="button button-secondary" @click="closeCreateModal">
@@ -317,50 +261,6 @@
             <i class="material-icons">info</i>
             {{ t("settings.objectLockCannotEnable") }}
           </span>
-        </div>
-
-        <!-- Bucket Quota -->
-        <div class="setting-item">
-          <div class="setting-label">
-            <span>{{ t("settings.bucketQuota") }}</span>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" v-model="bucketQuotaMutable" />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-
-        <!-- Quota Settings (nested under Bucket Quota) -->
-        <div class="setting-content setting-nested" v-if="bucketQuotaMutable">
-          <div class="form-row">
-            <label class="form-label">{{ t("settings.quotaStorage") }}</label>
-            <div class="input-with-unit">
-              <input
-                v-model.number="bucketSettings.quotaStorageMB"
-                type="number"
-                min="0"
-                placeholder="0"
-              />
-              <select v-model="bucketQuotaUnit">
-                <option value="MiB">MiB</option>
-                <option value="GiB">GiB</option>
-                <option value="TiB">TiB</option>
-                <option value="PiB">PiB</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <label class="form-label">{{ t("settings.quotaObjects") }}</label>
-            <div class="input-with-unit">
-              <input
-                v-model.number="bucketSettings.quotaObjects"
-                type="number"
-                min="0"
-                placeholder="0"
-              />
-              <span class="unit-placeholder"></span>
-            </div>
-          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -457,11 +357,8 @@ const showSettingsModal = ref(false);
 const showDeleteModal = ref(false);
 const creating = ref(false);
 
-const quotaEnabled = ref(false);
-const quotaUnit = ref("GiB");
 const retentionEnabled = ref(false);
 const retentionUnit = ref("day");
-const bucketQuotaUnit = ref("GiB");
 
 const newBucketSettings = ref<BucketSettings>({
   name: "",
@@ -469,8 +366,6 @@ const newBucketSettings = ref<BucketSettings>({
   objectLock: false,
   objectLockDays: 180,
   retentionMode: "GOVERNANCE",
-  quotaStorageMB: 0,
-  quotaObjects: 0,
 });
 
 const selectedBucket = ref("");
@@ -482,8 +377,6 @@ const bucketSettings = ref<BucketSettings>({
   objectLock: false,
   objectLockDays: 1,
   retentionMode: "GOVERNANCE",
-  quotaStorageMB: 0,
-  quotaObjects: 0,
 });
 
 const trimmedBucketName = computed(() => newBucketSettings.value.name.trim());
@@ -507,8 +400,6 @@ const objectLockMutable = computed(() => {
   return !objectLockEnabled.value;
 });
 
-const bucketQuotaMutable = ref(false);
-
 const onObjectLockChange = () => {
   if (newBucketSettings.value.objectLock) {
     newBucketSettings.value.versioning = true;
@@ -523,25 +414,8 @@ const closeCreateModal = () => {
     objectLock: false,
     objectLockDays: 180,
     retentionMode: "GOVERNANCE",
-    quotaStorageMB: 0,
-    quotaObjects: 0,
   };
-  quotaEnabled.value = false;
   retentionEnabled.value = false;
-};
-
-// Format storage quota for display (auto-select best unit)
-const formatStorageQuota = (mb: number): string => {
-  if (mb <= 0) return "-";
-  if (mb >= 1024 * 1024 * 1024) {
-    return `${(mb / (1024 * 1024 * 1024)).toFixed(2)} PB`;
-  } else if (mb >= 1024 * 1024) {
-    return `${(mb / (1024 * 1024)).toFixed(2)} TB`;
-  } else if (mb >= 1024) {
-    return `${(mb / 1024).toFixed(2)} GB`;
-  } else {
-    return `${mb} MB`;
-  }
 };
 
 const loadBuckets = async () => {
@@ -577,19 +451,6 @@ const createBucket = async () => {
   if (!trimmedBucketName.value || isCreateDisabled.value) return;
   creating.value = true;
   try {
-    let quotaStorageMB = newBucketSettings.value.quotaStorageMB;
-    if (quotaEnabled.value) {
-      const unitMultiplier: Record<string, number> = {
-        MiB: 1,
-        GiB: 1024,
-        TiB: 1024 * 1024,
-        PiB: 1024 * 1024 * 1024,
-      };
-      quotaStorageMB = Math.round(
-        quotaStorageMB * (unitMultiplier[quotaUnit.value] || 1)
-      );
-    }
-
     let objectLockDays = newBucketSettings.value.objectLockDays;
     if (retentionEnabled.value && retentionUnit.value === "year") {
       objectLockDays = objectLockDays * 365;
@@ -598,7 +459,6 @@ const createBucket = async () => {
     const settings = {
       ...newBucketSettings.value,
       name: trimmedBucketName.value,
-      quotaStorageMB,
       objectLockDays,
     };
     await create(settings);
@@ -620,28 +480,6 @@ const editBucket = async (name: string) => {
   try {
     const settings = await getSettings(name);
     bucketSettings.value = settings;
-    // Initialize quota toggle based on existing values
-    bucketQuotaMutable.value = settings.quotaStorageMB > 0 || settings.quotaObjects > 0;
-    // Convert MB to appropriate display unit
-    if (settings.quotaStorageMB > 0) {
-      const mb = settings.quotaStorageMB;
-      // Choose the best unit based on the value
-      if (mb >= 1024 * 1024 * 1024) {
-        bucketQuotaUnit.value = "PiB";
-        bucketSettings.value.quotaStorageMB = mb / (1024 * 1024 * 1024);
-      } else if (mb >= 1024 * 1024) {
-        bucketQuotaUnit.value = "TiB";
-        bucketSettings.value.quotaStorageMB = mb / (1024 * 1024);
-      } else if (mb >= 1024) {
-        bucketQuotaUnit.value = "GiB";
-        bucketSettings.value.quotaStorageMB = mb / 1024;
-      } else {
-        bucketQuotaUnit.value = "MiB";
-        bucketSettings.value.quotaStorageMB = mb;
-      }
-    } else {
-      bucketQuotaUnit.value = "MiB";
-    }
   } catch {
     bucketSettings.value = {
       name,
@@ -649,11 +487,7 @@ const editBucket = async (name: string) => {
       objectLock: false,
       objectLockDays: 1,
       retentionMode: "GOVERNANCE",
-      quotaStorageMB: 0,
-      quotaObjects: 0,
     };
-    bucketQuotaMutable.value = false;
-    bucketQuotaUnit.value = "MiB";
   }
   showSettingsModal.value = true;
 };
@@ -661,22 +495,6 @@ const editBucket = async (name: string) => {
 const saveSettings = async () => {
   saving.value = true;
   try {
-    // Apply unit conversion for quota storage
-    if (bucketQuotaMutable.value) {
-      const unitMultiplier: Record<string, number> = {
-        MiB: 1,
-        GiB: 1024,
-        TiB: 1024 * 1024,
-        PiB: 1024 * 1024 * 1024,
-      };
-      bucketSettings.value.quotaStorageMB = Math.round(
-        bucketSettings.value.quotaStorageMB * (unitMultiplier[bucketQuotaUnit.value] || 1)
-      );
-    } else {
-      bucketSettings.value.quotaStorageMB = 0;
-      bucketSettings.value.quotaObjects = 0;
-    }
-
     await updateSettings(bucketSettings.value);
     showSettingsModal.value = false;
     await loadBuckets();

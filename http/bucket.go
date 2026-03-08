@@ -46,8 +46,6 @@ type createBucketRequest struct {
 	ObjectLock     bool   `json:"objectLock"`
 	ObjectLockDays int    `json:"objectLockDays"`
 	RetentionMode  string `json:"retentionMode"`
-	QuotaStorageMB int64  `json:"quotaStorageMB"`
-	QuotaObjects   int64  `json:"quotaObjects"`
 }
 
 func createBucketHandler() handleFunc {
@@ -81,8 +79,6 @@ func createBucketHandler() handleFunc {
 			ObjectLock:     req.ObjectLock,
 			ObjectLockDays: req.ObjectLockDays,
 			RetentionMode:  req.RetentionMode,
-			QuotaStorageMB: req.QuotaStorageMB,
-			QuotaObjects:   req.QuotaObjects,
 		}); err != nil {
 			log.Printf("[BUCKET] createBucketHandler: failed to create bucket: %v", err)
 			return http.StatusInternalServerError, err
@@ -234,8 +230,6 @@ type updateBucketSettingsRequest struct {
 	ObjectLock     bool   `json:"objectLock"`
 	ObjectLockDays int    `json:"objectLockDays"`
 	RetentionMode  string `json:"retentionMode"`
-	QuotaStorageMB int64  `json:"quotaStorageMB"`
-	QuotaObjects   int64  `json:"quotaObjects"`
 }
 
 func updateBucketSettingsHandler() handleFunc {
@@ -277,11 +271,6 @@ func updateBucketSettingsHandler() handleFunc {
 		}
 		if err := minio.SetBucketObjectLock(name, req.ObjectLock, req.ObjectLockDays, mode); err != nil {
 			log.Printf("[BUCKET] updateBucketSettingsHandler: failed to set object lock: %v", err)
-			return http.StatusInternalServerError, err
-		}
-
-		if err := minio.SetBucketQuota(name, req.QuotaStorageMB, req.QuotaObjects); err != nil {
-			log.Printf("[BUCKET] updateBucketSettingsHandler: failed to set tags: %v", err)
 			return http.StatusInternalServerError, err
 		}
 

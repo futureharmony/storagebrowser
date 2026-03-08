@@ -17,6 +17,7 @@ import { baseURL, name } from "@/utils/constants";
 import i18n from "@/i18n";
 import { recaptcha, loginPage } from "@/utils/constants";
 import { login, validateLogin, getUserWithScopes } from "@/utils/auth";
+import { loadConfig } from "@/api/config";
 
 const titles = {
   Login: "sidebar.login",
@@ -182,6 +183,9 @@ async function initAuth() {
   } else {
     await login("", "", "");
   }
+
+  // Load app config (including StorageType) after login
+  await loadConfig();
 
   if (recaptcha) {
     await new Promise<void>((resolve) => {

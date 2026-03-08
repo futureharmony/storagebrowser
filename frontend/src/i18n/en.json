@@ -42,8 +42,9 @@
     "update": "Update",
     "upload": "Upload",
     "openFile": "Open file",
-  "discardChanges": "Discard",
-  "saveChanges": "Save changes"
+    "discardChanges": "Discard",
+    "saveChanges": "Save changes",
+    "refresh": "Refresh"
   },
   "download": {
     "downloadFile": "Download File",
@@ -259,10 +260,20 @@
     "username": "Username",
     "users": "Users",
     "bucketManagement": "Bucket Management",
+    "bucketManagementDesc": "Create, configure and manage your storage buckets",
     "createBucket": "Create Bucket",
+    "bucketSettings": "Bucket Settings",
     "bucketName": "Bucket Name",
+    "bucketNamePlaceholder": "Enter bucket name",
+    "bucketQuota": "Bucket Quota",
+    "bucketQuotaDesc": "Limit storage space for this bucket",
     "versioning": "Versioning",
+    "versioningDesc": "Keep multiple versions of objects",
+    "versioningDisabledByObjectLock": "Disabled because Object Lock is enabled",
+    "versioningRequiredByObjectLock": "Versioning is required when Object Lock is enabled",
     "objectLock": "Object Lock",
+    "objectLockInfo": "Object Lock prevents objects from being deleted or overwritten",
+    "retention": "Retention",
     "quotaStorage": "Storage Quota (GB)",
     "quotaObjects": "Object Quota",
     "search": "Search",
@@ -278,10 +289,17 @@
     "bucketDeleted": "Bucket deleted successfully",
     "retentionMode": "Retention Mode",
     "retentionDays": "Retention Days",
+    "validity": "Validity",
+    "days": "Days",
+    "years": "Years",
+    "quotaSize": "Quota Size",
+    "basicSettings": "Basic Settings",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
     "governance": "Governance",
     "compliance": "Compliance",
     "objectLockEnabled": "Object Lock is enabled for this bucket",
-    "objectLockCannotEnable": "Object Lock cannot be enabled on existing buckets, it must be set when creating the bucket"
+    "objectLockCannotEnable": "Object Lock must be set when creating the bucket"
   },
   "sidebar": {
     "help": "Help",
@@ -296,7 +314,8 @@
     "signup": "Signup",
     "siteSettings": "Site Settings",
     "profile": "Profile",
-    "globalSettings": "Global Settings"
+    "globalSettings": "Global Settings",
+    "bucketManagement": "Bucket Management"
   },
   "success": {
     "linkCopied": "Link copied!"

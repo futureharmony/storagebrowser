@@ -46,7 +46,7 @@ type createBucketRequest struct {
 	ObjectLock     bool   `json:"objectLock"`
 	ObjectLockDays int    `json:"objectLockDays"`
 	RetentionMode  string `json:"retentionMode"`
-	QuotaStorageGB int64  `json:"quotaStorageGB"`
+	QuotaStorageMB int64  `json:"quotaStorageMB"`
 	QuotaObjects   int64  `json:"quotaObjects"`
 }
 
@@ -81,7 +81,7 @@ func createBucketHandler() handleFunc {
 			ObjectLock:     req.ObjectLock,
 			ObjectLockDays: req.ObjectLockDays,
 			RetentionMode:  req.RetentionMode,
-			QuotaStorageGB: req.QuotaStorageGB,
+			QuotaStorageMB: req.QuotaStorageMB,
 			QuotaObjects:   req.QuotaObjects,
 		}); err != nil {
 			log.Printf("[BUCKET] createBucketHandler: failed to create bucket: %v", err)
@@ -89,6 +89,42 @@ func createBucketHandler() handleFunc {
 		}
 
 		log.Printf("[BUCKET] createBucketHandler: bucket %s created successfully", req.Name)
+
+		// Update all users to add the new bucket to their AvailableScopes
+		log.Printf("[BUCKET] createBucketHandler: updating users to add bucket %s to scopes", req.Name)
+		allUsers, err := d.store.Users.Gets(d.server.Root)
+		if err != nil {
+			log.Printf("[BUCKET] createBucketHandler: failed to get users: %v", err)
+		} else {
+			for _, user := range allUsers {
+				updated := false
+				// Check if bucket already exists in user's scopes
+				found := false
+				for _, scope := range user.AvailableScopes {
+					if scope.Name == req.Name {
+						found = true
+						break
+					}
+				}
+				if !found {
+					// Add new bucket scope to user's available scopes
+					newScope := users.Scope{
+						Name: req.Name,
+					}
+					user.AvailableScopes = append(user.AvailableScopes, newScope)
+					updated = true
+				}
+				if updated {
+					err := d.store.Users.Update(user)
+					if err != nil {
+						log.Printf("[BUCKET] createBucketHandler: failed to update user %s: %v", user.Username, err)
+					} else {
+						log.Printf("[BUCKET] createBucketHandler: updated user %s, added bucket %s", user.Username, req.Name)
+					}
+				}
+			}
+		}
+
 		return renderJSON(w, r, map[string]string{"name": req.Name})
 	})
 }
@@ -198,7 +234,7 @@ type updateBucketSettingsRequest struct {
 	ObjectLock     bool   `json:"objectLock"`
 	ObjectLockDays int    `json:"objectLockDays"`
 	RetentionMode  string `json:"retentionMode"`
-	QuotaStorageGB int64  `json:"quotaStorageGB"`
+	QuotaStorageMB int64  `json:"quotaStorageMB"`
 	QuotaObjects   int64  `json:"quotaObjects"`
 }
 
@@ -244,7 +280,7 @@ func updateBucketSettingsHandler() handleFunc {
 			return http.StatusInternalServerError, err
 		}
 
-		if err := minio.SetBucketTags(name, req.QuotaStorageGB, req.QuotaObjects); err != nil {
+		if err := minio.SetBucketQuota(name, req.QuotaStorageMB, req.QuotaObjects); err != nil {
 			log.Printf("[BUCKET] updateBucketSettingsHandler: failed to set tags: %v", err)
 			return http.StatusInternalServerError, err
 		}

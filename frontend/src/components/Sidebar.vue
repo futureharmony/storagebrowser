@@ -80,6 +80,25 @@
               >
             </button>
           </li>
+          <li v-if="authStore.user?.perm.admin && isS3">
+            <button
+              @click="toBucketSettings"
+              class="nav-item"
+              :class="{ active: isBucketSettingsRoute }"
+              :aria-label="$t('sidebar.bucketManagement')"
+              :title="$t('sidebar.bucketManagement')"
+            >
+              <i class="material-icons">dns</i>
+              <span v-if="!isCollapsed">{{
+                $t("sidebar.bucketManagement")
+              }}</span>
+              <i
+                v-if="!isCollapsed && isBucketSettingsRoute"
+                class="material-icons indicator"
+                >chevron_right</i
+              >
+            </button>
+          </li>
         </ul>
       </div>
 
@@ -208,12 +227,21 @@ const active = computed(() => {
 });
 
 const isFilesRoute = computed(
-  () => route.path.includes("/files") || route.path.includes("/buckets")
+  () => route.path.includes("/files") || /^\/buckets\/[^/]+\/?/.test(route.path)
 );
 
 const isProfileRoute = computed(() => route.path === "/settings/profile");
 
 const isGlobalSettingsRoute = computed(() => route.path === "/settings/global");
+
+const isBucketSettingsRoute = computed(
+  () => route.path === "/settings/buckets"
+);
+
+const isS3 = computed(() => {
+  const config = (window as any).FileBrowser || {};
+  return config.StorageType === "s3";
+});
 
 // 方法
 const toRoot = () => {
@@ -232,6 +260,11 @@ const toAccountSettings = () => {
 
 const toGlobalSettings = () => {
   router.push({ path: "/settings/global" });
+  layoutStore.closeHovers();
+};
+
+const toBucketSettings = () => {
+  router.push({ path: "/settings/buckets" });
   layoutStore.closeHovers();
 };
 

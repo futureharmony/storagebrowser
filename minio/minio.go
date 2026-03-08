@@ -2,10 +2,13 @@ package minio
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	aferos3 "github.com/futureharmony/afero-aws-s3"
+	madmingo "github.com/minio/madmin-go/v3"
 	"github.com/spf13/afero"
 )
 
@@ -29,13 +33,16 @@ type Config struct {
 }
 
 var (
-	afs    afero.Fs
-	Cfg    Config
-	AwsCfg aws.Config
+	afs         afero.Fs
+	Cfg         Config
+	AwsCfg      aws.Config
+	adminClient *madmingo.AdminClient
 )
 
 func Init(config *Config) error {
 	Cfg = *config
+	log.Printf("[MINIO] Init: starting initialization with endpoint=%s, region=%s, bucket=%s",
+		config.Endpoint, config.Region, config.Bucket)
 
 	httpClient := &http.Client{
 		Timeout: 30 * time.Second,
@@ -69,16 +76,45 @@ func Init(config *Config) error {
 	)
 
 	if err != nil {
+		log.Printf("[MINIO] Init: failed to load AWS config: %v", err)
 		return err
 	}
 
 	log.Printf("[MINIO] Initialized with endpoint: %s, region: %s, bucket: %s", Cfg.Endpoint, Cfg.Region, Cfg.Bucket)
 
+	// Initialize MinIO Admin Client for quota management
+	// Note: madmin.New expects host:port format, not http://host:port
+	adminEndpoint := Cfg.Endpoint
+	if strings.HasPrefix(adminEndpoint, "http://") {
+		adminEndpoint = strings.TrimPrefix(adminEndpoint, "http://")
+	} else if strings.HasPrefix(adminEndpoint, "https://") {
+		adminEndpoint = strings.TrimPrefix(adminEndpoint, "https://")
+	}
+
+	log.Printf("[MINIO] Init: creating admin client with endpoint=%s (original: %s), accessKey=%s",
+		adminEndpoint, Cfg.Endpoint, Cfg.AccessKey)
+	adminClient, err = madmingo.New(adminEndpoint, Cfg.AccessKey, Cfg.SecretKey, false)
+	if err != nil {
+		log.Printf("[MINIO] Init: failed to create admin client: %v", err)
+		return err
+	}
+
+	log.Printf("[MINIO] Init: admin client created, setting custom transport")
+	// Set custom transport to match S3 client configuration
+	adminClient.SetCustomTransport(&http.Transport{
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+	})
+	log.Printf("[MINIO] Admin client initialized: %v", adminClient != nil)
+
 	afs = aferos3.NewFsWrapper(AwsCfg, "", "")
 	err = SetupBucket()
 	if err != nil {
+		log.Printf("[MINIO] Init: failed to setup bucket: %v", err)
 		return err
 	}
+
+	log.Printf("[MINIO] Init: initialization complete")
 	return nil
 }
 
@@ -98,13 +134,26 @@ func CreateUserFs(bucket, scope string) afero.Fs {
 func ListBuckets() ([]string, error) {
 	start := time.Now()
 	log.Printf("[MINIO] ListBuckets: starting")
-	if s3fs, ok := GetS3FileSystem(afs); ok {
-		buckets, err := s3fs.ListBuckets()
-		log.Printf("[MINIO] ListBuckets: took %v, count=%d", time.Since(start), len(buckets))
-		return buckets, err
+
+	// Use S3 client directly to list all buckets
+	client := GetS3Client()
+	ctx := context.Background()
+
+	output, err := client.ListBuckets(ctx, &s3.ListBucketsInput{})
+	if err != nil {
+		log.Printf("[MINIO] ListBuckets: failed to list buckets: %v", err)
+		return nil, err
 	}
-	log.Printf("[MINIO] ListBuckets: not an S3 filesystem")
-	return nil, fmt.Errorf("underlying filesystem is not an S3 filesystem")
+
+	buckets := make([]string, 0, len(output.Buckets))
+	for _, bucket := range output.Buckets {
+		if bucket.Name != nil {
+			buckets = append(buckets, *bucket.Name)
+		}
+	}
+
+	log.Printf("[MINIO] ListBuckets: took %v, count=%d", time.Since(start), len(buckets))
+	return buckets, nil
 }
 
 func SwitchBase(bucket, scope string) error {
@@ -186,7 +235,7 @@ type BucketSettings struct {
 	ObjectLock     bool   `json:"objectLock"`
 	ObjectLockDays int    `json:"objectLockDays"`
 	RetentionMode  string `json:"retentionMode"`
-	QuotaStorageGB int64  `json:"quotaStorageGB"`
+	QuotaStorageMB int64  `json:"quotaStorageMB"`  // Storage quota in MB
 	QuotaObjects   int64  `json:"quotaObjects"`
 }
 
@@ -207,6 +256,11 @@ func CreateBucket(name string, settings *BucketSettings) error {
 		}
 	}
 
+	// Enable object lock at creation time if requested
+	if settings.ObjectLock {
+		input.ObjectLockEnabledForBucket = aws.Bool(true)
+	}
+
 	log.Printf("[MINIO] CreateBucket: input = %+v", input)
 
 	_, err := client.CreateBucket(ctx, input)
@@ -218,7 +272,7 @@ func CreateBucket(name string, settings *BucketSettings) error {
 		case errors.As(err, &bucketExistsErr):
 			return fmt.Errorf("bucket %s already exists", name)
 		case errors.As(err, &bucketOwnedErr):
-			return nil
+			return fmt.Errorf("bucket %s already exists and is owned by you", name)
 		default:
 			return err
 		}
@@ -232,7 +286,8 @@ func CreateBucket(name string, settings *BucketSettings) error {
 		}
 	}
 
-	if settings.ObjectLock {
+	// Set retention settings after bucket is created (object lock must be enabled at creation time)
+	if settings.ObjectLock && settings.ObjectLockDays > 0 {
 		mode := types.ObjectLockRetentionModeGovernance
 		if settings.RetentionMode == "COMPLIANCE" {
 			mode = types.ObjectLockRetentionModeCompliance
@@ -242,8 +297,8 @@ func CreateBucket(name string, settings *BucketSettings) error {
 		}
 	}
 
-	if settings.QuotaStorageGB > 0 || settings.QuotaObjects > 0 {
-		if err := SetBucketTags(name, settings.QuotaStorageGB, settings.QuotaObjects); err != nil {
+	if settings.QuotaStorageMB > 0 || settings.QuotaObjects > 0 {
+		if err := SetBucketQuota(name, settings.QuotaStorageMB, settings.QuotaObjects); err != nil {
 			return err
 		}
 	}
@@ -271,12 +326,11 @@ func GetBucketSettings(name string) (*BucketSettings, error) {
 	start := time.Now()
 
 	var wg sync.WaitGroup
-	var versioningErr, lockErr, tagsErr error
+	var versioningErr, lockErr error
 	var versioningOut *s3.GetBucketVersioningOutput
 	var lockConfigOut *s3.GetObjectLockConfigurationOutput
-	var tagsOut *s3.GetBucketTaggingOutput
 
-	wg.Add(3)
+	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
@@ -296,15 +350,6 @@ func GetBucketSettings(name string) (*BucketSettings, error) {
 		log.Printf("[MINIO] GetBucketSettings: GetObjectLockConfiguration took %v, err=%v", time.Since(v2Start), lockErr)
 	}()
 
-	go func() {
-		defer wg.Done()
-		v3Start := time.Now()
-		tagsOut, tagsErr = client.GetBucketTagging(ctx, &s3.GetBucketTaggingInput{
-			Bucket: aws.String(name),
-		})
-		log.Printf("[MINIO] GetBucketSettings: GetBucketTagging took %v, err=%v", time.Since(v3Start), tagsErr)
-	}()
-
 	wg.Wait()
 
 	if versioningErr == nil && versioningOut != nil && versioningOut.Status == types.BucketVersioningStatusEnabled {
@@ -322,15 +367,11 @@ func GetBucketSettings(name string) (*BucketSettings, error) {
 		}
 	}
 
-	if tagsErr == nil && tagsOut.TagSet != nil {
-		for _, tag := range tagsOut.TagSet {
-			if tag.Key != nil && *tag.Key == "QuotaStorageGB" && tag.Value != nil {
-				fmt.Sscanf(*tag.Value, "%d", &settings.QuotaStorageGB)
-			}
-			if tag.Key != nil && *tag.Key == "QuotaObjects" && tag.Value != nil {
-				fmt.Sscanf(*tag.Value, "%d", &settings.QuotaObjects)
-			}
-		}
+	// Get quota settings using dedicated function
+	quotaStorage, quotaObjects, quotaErr := GetBucketQuota(name)
+	if quotaErr == nil {
+		settings.QuotaStorageMB = quotaStorage
+		settings.QuotaObjects = quotaObjects
 	}
 
 	log.Printf("[MINIO] GetBucketSettings: total time %v", time.Since(start))
@@ -433,4 +474,126 @@ func SetBucketTags(name string, quotaStorageGB int64, quotaObjects int64) error 
 		},
 	})
 	return err
+}
+
+// SetBucketQuota sets the bucket quota using MinIO Admin API
+// This actually enforces the quota on the bucket
+func SetBucketQuota(name string, quotaStorageMB int64, quotaObjects int64) error {
+	ctx := context.Background()
+
+	log.Printf("[MINIO] SetBucketQuota: called for %s, storage=%d MB, objects=%d, adminClient=%v",
+		name, quotaStorageMB, quotaObjects, adminClient != nil)
+
+	// Try to use MinIO Admin API if available
+	if adminClient != nil {
+		// MinIO madmin-go supports storage quota enforcement
+		// Note: Object quota is stored in tags but not enforced by MinIO (API limitation)
+
+		// Set storage quota (convert MB to bytes)
+		var storageQuota uint64 = 0
+		if quotaStorageMB > 0 {
+			storageQuota = uint64(quotaStorageMB * 1024 * 1024)
+		}
+
+		// Use MinIO's bucket quota API
+		quota := madmingo.BucketQuota{
+			Quota: storageQuota,
+			Type:  madmingo.HardQuota, // Hard quota means strict enforcement
+		}
+
+		log.Printf("[MINIO] SetBucketQuota: calling admin API for %s with storage=%d bytes (%d MB)",
+			name, storageQuota, quotaStorageMB)
+		err := adminClient.SetBucketQuota(ctx, name, &quota)
+		if err != nil {
+			log.Printf("[MINIO] SetBucketQuota (storage) failed for %s: %v", name, err)
+			// Continue to store quota in tags as fallback
+		} else {
+			log.Printf("[MINIO] SetBucketQuota (storage) set successfully for %s: %d MB", name, quotaStorageMB)
+		}
+	} else {
+		log.Printf("[MINIO] SetBucketQuota: admin client not available, quota will not be enforced for %s", name)
+	}
+
+	// Note: Object quota requires newer version of madmin-go or MinIO server
+	// For now, we only support storage quota enforcement
+	// Object quota is still stored in tags for reference
+
+	// Store quota settings in tags for reference and GetBucketSettings
+	tagSet := []types.Tag{}
+	if quotaStorageMB > 0 {
+		tagSet = append(tagSet, types.Tag{
+			Key:   aws.String("QuotaStorageMB"),
+			Value: aws.String(strconv.FormatInt(quotaStorageMB, 10)),
+		})
+	}
+	if quotaObjects > 0 {
+		tagSet = append(tagSet, types.Tag{
+			Key:   aws.String("QuotaObjects"),
+			Value: aws.String(strconv.FormatInt(quotaObjects, 10)),
+		})
+	}
+
+	s3Client := GetS3Client()
+	var err error
+	if len(tagSet) == 0 {
+		_, err = s3Client.DeleteBucketTagging(ctx, &s3.DeleteBucketTaggingInput{
+			Bucket: aws.String(name),
+		})
+	} else {
+		_, err = s3Client.PutBucketTagging(ctx, &s3.PutBucketTaggingInput{
+			Bucket: aws.String(name),
+			Tagging: &types.Tagging{
+				TagSet: tagSet,
+			},
+		})
+	}
+
+	return err
+}
+
+// GetBucketQuota retrieves the bucket quota settings using MinIO Admin API
+func GetBucketQuota(name string) (storageQuota int64, objectsQuota int64, err error) {
+	ctx := context.Background()
+
+	// Try to get quota from Admin API if available
+	if adminClient != nil {
+		quota, err := adminClient.GetBucketQuota(ctx, name)
+		if err != nil {
+			log.Printf("[MINIO] GetBucketQuota (admin API) failed for %s: %v", name, err)
+			// Continue to try tags as fallback
+		} else {
+			// Convert bytes to MB
+			storageQuota = int64(quota.Quota) / (1024 * 1024)
+			log.Printf("[MINIO] GetBucketQuota (admin API) returned storage=%d MB for %s",
+				storageQuota, name)
+		}
+	}
+
+	// Get quota from tags (MB or legacy GB)
+	s3Client := GetS3Client()
+	tagsOut, err := s3Client.GetBucketTagging(ctx, &s3.GetBucketTaggingInput{
+		Bucket: aws.String(name),
+	})
+	if err == nil && tagsOut.TagSet != nil {
+		for _, tag := range tagsOut.TagSet {
+			if tag.Key == nil || tag.Value == nil {
+				continue
+			}
+			switch *tag.Key {
+			case "QuotaStorageMB":
+				fmt.Sscanf(*tag.Value, "%d", &storageQuota)
+			case "QuotaStorageGB":
+				// Legacy support: convert GB to MB
+				var gb int64
+				fmt.Sscanf(*tag.Value, "%d", &gb)
+				if storageQuota == 0 {
+					storageQuota = gb * 1024
+				}
+			case "QuotaObjects":
+				fmt.Sscanf(*tag.Value, "%d", &objectsQuota)
+			}
+		}
+	}
+
+	return storageQuota, objectsQuota, nil
 }

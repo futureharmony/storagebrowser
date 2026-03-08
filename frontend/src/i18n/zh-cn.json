@@ -42,8 +42,9 @@
     "update": "更新",
     "upload": "上传",
     "openFile": "打开文件",
-  "discardChanges": "放弃更改",
-  "saveChanges": "Save changes"
+    "discardChanges": "放弃更改",
+    "saveChanges": "Save changes",
+    "refresh": "刷新"
   },
   "download": {
     "downloadFile": "下载文件",
@@ -259,10 +260,20 @@
     "username": "用户名",
     "users": "用户",
     "bucketManagement": "存储桶管理",
+    "bucketManagementDesc": "创建、配置和管理您的存储桶",
     "createBucket": "创建存储桶",
+    "bucketSettings": "存储桶设置",
     "bucketName": "存储桶名称",
+    "bucketNamePlaceholder": "输入存储桶名称",
+    "bucketQuota": "存储桶配额",
+    "bucketQuotaDesc": "限制此存储桶的存储空间",
     "versioning": "版本控制",
+    "versioningDesc": "保留对象的多个版本",
+    "versioningDisabledByObjectLock": "因对象锁定已启用而禁用",
+    "versioningRequiredByObjectLock": "启用对象锁定时必须开启版本控制",
     "objectLock": "对象锁定",
+    "objectLockInfo": "对象锁定可防止对象被删除或覆盖",
+    "retention": "保留",
     "quotaStorage": "存储配额 (GB)",
     "quotaObjects": "对象配额",
     "search": "搜索",
@@ -278,6 +289,13 @@
     "bucketDeleted": "存储桶删除成功",
     "retentionMode": "保留模式",
     "retentionDays": "保留天数",
+    "validity": "有效期",
+    "days": "天",
+    "years": "年",
+    "quotaSize": "配额大小",
+    "basicSettings": "基本设置",
+    "enabled": "已启用",
+    "disabled": "已禁用",
     "governance": "治理模式",
     "compliance": "合规模式",
     "objectLockEnabled": "此存储桶已启用对象锁定",
@@ -294,7 +312,9 @@
     "preview": "预览",
     "settings": "设置",
     "signup": "注册",
-    "siteSettings": "网站设置"
+    "siteSettings": "网站设置",
+    "globalSettings": "全局设置",
+    "bucketManagement": "存储桶管理"
   },
   "success": {
     "linkCopied": "链接已复制！"

@@ -618,6 +618,9 @@ func initS3Storage(server *settings.Server) error {
 		return nil
 	}
 
+	log.Printf("[INIT] Initializing S3 storage with endpoint=%s, accessKey=%s, region=%s",
+		server.S3Endpoint, server.S3AccessKey, server.S3Region)
+
 	minioConfig := &minio.Config{
 		Endpoint:  server.S3Endpoint,
 		AccessKey: server.S3AccessKey,
@@ -625,7 +628,14 @@ func initS3Storage(server *settings.Server) error {
 		Region:    server.S3Region,
 	}
 
-	return minio.Init(minioConfig)
+	log.Printf("[INIT] Calling minio.Init with config: %+v", minioConfig)
+	err := minio.Init(minioConfig)
+	if err != nil {
+		log.Printf("[INIT] minio.Init failed: %v", err)
+		return err
+	}
+	log.Printf("[INIT] minio.Init completed successfully")
+	return nil
 }
 
 // buildS3ScopesFromCachedBuckets creates S3 scopes from cached minio buckets.

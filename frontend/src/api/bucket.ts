@@ -15,7 +15,7 @@ export interface BucketSettings {
   objectLock: boolean;
   objectLockDays: number;
   retentionMode: string;
-  quotaStorageGB: number;
+  quotaStorageMB: number;  // Storage quota in MB (for better precision)
   quotaObjects: number;
 }
 

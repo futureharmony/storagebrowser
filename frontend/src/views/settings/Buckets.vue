@@ -4,7 +4,10 @@
     <div class="column">
       <div class="card">
         <div class="card-title">
-          <h2>{{ t("settings.bucketManagement") }}</h2>
+          <div class="card-title-left">
+            <h2>{{ t("settings.bucketManagement") }}</h2>
+            <p class="card-subtitle">{{ t("settings.bucketManagementDesc") }}</p>
+          </div>
           <div class="card-actions">
             <div class="search-box">
               <i class="material-icons">search</i>
@@ -15,14 +18,14 @@
               />
             </div>
             <button
-              class="button"
+              class="button button-primary button-compact"
               @click="showCreateModal = true"
               :disabled="!isAdmin"
             >
               <i class="material-icons">add</i>
-              {{ t("settings.createBucket") }}
+              <!-- {{ t("settings.createBucket") }} -->
             </button>
-            <button class="button button-outline" @click="loadBuckets">
+            <button class="button button-icon" @click="loadBuckets" :title="t('buttons.refresh')">
               <i class="material-icons">refresh</i>
             </button>
           </div>
@@ -76,8 +79,8 @@
               </td>
               <td>
                 {{
-                  bucket.settings?.quotaStorageGB
-                    ? bucket.settings.quotaStorageGB + " GB"
+                  bucket.settings?.quotaStorageMB
+                    ? formatStorageQuota(bucket.settings.quotaStorageMB)
                     : "-"
                 }}
               </td>
@@ -128,6 +131,7 @@
         </button>
       </div>
       <div class="modal-content">
+        <!-- Bucket Name -->
         <div class="form-group">
           <label>{{ t("settings.bucketName") }} *</label>
           <input
@@ -142,78 +146,60 @@
           </span>
         </div>
 
-        <div class="toggle-grid">
-          <label class="toggle-label">
+        <!-- Versioning -->
+        <div class="setting-item">
+          <div class="setting-label">
             <span>{{ t("settings.versioning") }}</span>
-            <label class="toggle">
-              <input type="checkbox" v-model="newBucketSettings.versioning" />
-              <span class="toggle-slider"></span>
-            </label>
-          </label>
-          <label class="toggle-label">
-            <span>{{ t("settings.objectLock") }}</span>
-            <label class="toggle">
-              <input
-                type="checkbox"
-                v-model="newBucketSettings.objectLock"
-                @change="onObjectLockChange"
-              />
-              <span class="toggle-slider"></span>
-            </label>
-          </label>
-          <label class="toggle-label" v-if="newBucketSettings.objectLock">
-            <span>{{ t("settings.retention") }}</span>
-            <label class="toggle">
-              <input type="checkbox" v-model="retentionEnabled" />
-              <span class="toggle-slider"></span>
-            </label>
-          </label>
-          <label class="toggle-label">
-            <span>{{ t("settings.bucketQuota") }}</span>
-            <label class="toggle">
-              <input type="checkbox" v-model="quotaEnabled" />
-              <span class="toggle-slider"></span>
-            </label>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" v-model="newBucketSettings.versioning" />
+            <span class="toggle-slider"></span>
           </label>
         </div>
 
-        <div
-          v-if="newBucketSettings.objectLock && retentionEnabled"
-          class="options-grid"
-        >
-          <div class="form-group">
-            <label>{{ t("settings.retentionMode") }}</label>
+        <!-- Object Lock -->
+        <div class="setting-item">
+          <div class="setting-label">
+            <span>{{ t("settings.objectLock") }}</span>
+            <span class="setting-desc">{{ t("settings.objectLockInfo") }}</span>
+          </div>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              v-model="newBucketSettings.objectLock"
+              @change="onObjectLockChange"
+            />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- Retention (nested under Object Lock) -->
+        <div class="setting-item setting-nested" v-if="newBucketSettings.objectLock">
+          <div class="setting-label">
+            <span>{{ t("settings.retention") }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" v-model="retentionEnabled" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-content setting-nested" v-if="retentionEnabled">
+          <div class="form-row">
+            <label class="form-label">{{ t("settings.retentionMode") }}</label>
             <div class="radio-group">
-              <label
-                class="radio-item"
-                :class="{
-                  selected: newBucketSettings.retentionMode === 'COMPLIANCE',
-                }"
-              >
-                <input
-                  type="radio"
-                  v-model="newBucketSettings.retentionMode"
-                  value="COMPLIANCE"
-                />
+              <label class="radio-item" :class="{ selected: newBucketSettings.retentionMode === 'COMPLIANCE' }">
+                <input type="radio" v-model="newBucketSettings.retentionMode" value="COMPLIANCE" />
                 <span>{{ t("settings.compliance") }}</span>
               </label>
-              <label
-                class="radio-item"
-                :class="{
-                  selected: newBucketSettings.retentionMode === 'GOVERNANCE',
-                }"
-              >
-                <input
-                  type="radio"
-                  v-model="newBucketSettings.retentionMode"
-                  value="GOVERNANCE"
-                />
+              <label class="radio-item" :class="{ selected: newBucketSettings.retentionMode === 'GOVERNANCE' }">
+                <input type="radio" v-model="newBucketSettings.retentionMode" value="GOVERNANCE" />
                 <span>{{ t("settings.governance") }}</span>
               </label>
             </div>
           </div>
-          <div class="form-group">
-            <label>{{ t("settings.validity") }}</label>
+          <div class="form-row">
+            <label class="form-label">{{ t("settings.validity") }}</label>
             <div class="input-with-unit">
               <input
                 v-model.number="newBucketSettings.objectLockDays"
@@ -228,14 +214,27 @@
           </div>
         </div>
 
-        <div v-if="quotaEnabled" class="options-grid">
-          <div class="form-group">
-            <label>{{ t("settings.quotaSize") }}</label>
+        <!-- Bucket Quota -->
+        <div class="setting-item">
+          <div class="setting-label">
+            <span>{{ t("settings.bucketQuota") }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" v-model="quotaEnabled" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- Quota Settings (nested under Bucket Quota) -->
+        <div class="setting-content setting-nested" v-if="quotaEnabled">
+          <div class="form-row">
+            <label class="form-label">{{ t("settings.quotaStorage") }}</label>
             <div class="input-with-unit">
               <input
-                v-model.number="newBucketSettings.quotaStorageGB"
+                v-model.number="newBucketSettings.quotaStorageMB"
                 type="number"
-                min="1"
+                min="0"
+                placeholder="0"
               />
               <select v-model="quotaUnit">
                 <option value="MiB">MiB</option>
@@ -243,6 +242,18 @@
                 <option value="TiB">TiB</option>
                 <option value="PiB">PiB</option>
               </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">{{ t("settings.quotaObjects") }}</label>
+            <div class="input-with-unit">
+              <input
+                v-model.number="newBucketSettings.quotaObjects"
+                type="number"
+                min="0"
+                placeholder="0"
+              />
+              <span class="unit-placeholder"></span>
             </div>
           </div>
         </div>
@@ -276,52 +287,79 @@
         </button>
       </div>
       <div class="modal-content">
-        <div class="form-section">
-          <div class="form-group toggle-group">
-            <label>{{ t("settings.versioning") }}</label>
-            <label class="toggle">
-              <input type="checkbox" v-model="bucketSettings.versioning" />
-              <span class="toggle-slider"></span>
-            </label>
+        <!-- Versioning -->
+        <div class="setting-item">
+          <div class="setting-label">
+            <span>{{ t("settings.versioning") }}</span>
           </div>
+          <label class="toggle">
+            <input
+              type="checkbox"
+              v-model="bucketSettings.versioning"
+              :disabled="objectLockEnabled"
+              :title="objectLockEnabled ? t('settings.versioningDisabledByObjectLock') : ''"
+            />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <p class="form-help" v-if="objectLockEnabled">
+          <i class="material-icons">info</i>
+          {{ t("settings.versioningRequiredByObjectLock") }}
+        </p>
+
+        <!-- Object Lock Info -->
+        <div class="info-text">
+          <span v-if="objectLockEnabled" class="status-enabled">
+            <i class="material-icons">check_circle</i>
+            {{ t("settings.objectLockEnabled") }}
+          </span>
+          <span v-else class="status-disabled">
+            <i class="material-icons">info</i>
+            {{ t("settings.objectLockCannotEnable") }}
+          </span>
         </div>
 
-        <div class="form-section settings-section">
-          <h4>{{ t("settings.objectLock") }}</h4>
-          <div class="info-text">
-            <span v-if="objectLockEnabled" class="status-enabled">
-              <i class="material-icons">check_circle</i>
-              {{ t("settings.objectLockEnabled") }}
-            </span>
-            <span v-else class="status-disabled">
-              <i class="material-icons">info</i>
-              {{ t("settings.objectLockCannotEnable") }}
-            </span>
+        <!-- Bucket Quota -->
+        <div class="setting-item">
+          <div class="setting-label">
+            <span>{{ t("settings.bucketQuota") }}</span>
           </div>
+          <label class="toggle">
+            <input type="checkbox" v-model="bucketQuotaMutable" />
+            <span class="toggle-slider"></span>
+          </label>
         </div>
 
-        <div class="form-section settings-section">
-          <h4>{{ t("settings.bucketQuota") }}</h4>
-          <div class="form-group">
-            <label>{{ t("settings.quotaStorage") }}</label>
+        <!-- Quota Settings (nested under Bucket Quota) -->
+        <div class="setting-content setting-nested" v-if="bucketQuotaMutable">
+          <div class="form-row">
+            <label class="form-label">{{ t("settings.quotaStorage") }}</label>
             <div class="input-with-unit">
               <input
-                v-model.number="bucketSettings.quotaStorageGB"
+                v-model.number="bucketSettings.quotaStorageMB"
                 type="number"
                 min="0"
                 placeholder="0"
               />
-              <span class="unit-label">GB</span>
+              <select v-model="bucketQuotaUnit">
+                <option value="MiB">MiB</option>
+                <option value="GiB">GiB</option>
+                <option value="TiB">TiB</option>
+                <option value="PiB">PiB</option>
+              </select>
             </div>
           </div>
-          <div class="form-group">
-            <label>{{ t("settings.quotaObjects") }}</label>
-            <input
-              v-model.number="bucketSettings.quotaObjects"
-              type="number"
-              min="0"
-              placeholder="0"
-            />
+          <div class="form-row">
+            <label class="form-label">{{ t("settings.quotaObjects") }}</label>
+            <div class="input-with-unit">
+              <input
+                v-model.number="bucketSettings.quotaObjects"
+                type="number"
+                min="0"
+                placeholder="0"
+              />
+              <span class="unit-placeholder"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -374,20 +412,20 @@
 </template>
 
 <script setup lang="ts">
-import { useLayoutStore } from "@/stores/layout";
-import { useAuthStore } from "@/stores/auth";
+import type { BucketSettings } from "@/api/bucket";
 import {
-  list as listBuckets,
   create,
-  remove,
   getSettings,
+  list as listBuckets,
+  remove,
   updateSettings,
 } from "@/api/bucket";
-import type { BucketSettings } from "@/api/bucket";
-import Errors from "@/views/Errors.vue";
-import { inject, onMounted, ref, computed } from "vue";
-import { useI18n } from "vue-i18n";
 import { StatusError } from "@/api/utils";
+import { useAuthStore } from "@/stores/auth";
+import { useLayoutStore } from "@/stores/layout";
+import Errors from "@/views/Errors.vue";
+import { computed, inject, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 interface IToastSuccess {
   (message: string): void;
@@ -423,6 +461,7 @@ const quotaEnabled = ref(false);
 const quotaUnit = ref("GiB");
 const retentionEnabled = ref(false);
 const retentionUnit = ref("day");
+const bucketQuotaUnit = ref("GiB");
 
 const newBucketSettings = ref<BucketSettings>({
   name: "",
@@ -430,7 +469,7 @@ const newBucketSettings = ref<BucketSettings>({
   objectLock: false,
   objectLockDays: 180,
   retentionMode: "GOVERNANCE",
-  quotaStorageGB: 0,
+  quotaStorageMB: 0,
   quotaObjects: 0,
 });
 
@@ -443,7 +482,7 @@ const bucketSettings = ref<BucketSettings>({
   objectLock: false,
   objectLockDays: 1,
   retentionMode: "GOVERNANCE",
-  quotaStorageGB: 0,
+  quotaStorageMB: 0,
   quotaObjects: 0,
 });
 
@@ -468,10 +507,11 @@ const objectLockMutable = computed(() => {
   return !objectLockEnabled.value;
 });
 
+const bucketQuotaMutable = ref(false);
+
 const onObjectLockChange = () => {
   if (newBucketSettings.value.objectLock) {
     newBucketSettings.value.versioning = true;
-    retentionEnabled.value = true;
   }
 };
 
@@ -483,11 +523,25 @@ const closeCreateModal = () => {
     objectLock: false,
     objectLockDays: 180,
     retentionMode: "GOVERNANCE",
-    quotaStorageGB: 0,
+    quotaStorageMB: 0,
     quotaObjects: 0,
   };
   quotaEnabled.value = false;
   retentionEnabled.value = false;
+};
+
+// Format storage quota for display (auto-select best unit)
+const formatStorageQuota = (mb: number): string => {
+  if (mb <= 0) return "-";
+  if (mb >= 1024 * 1024 * 1024) {
+    return `${(mb / (1024 * 1024 * 1024)).toFixed(2)} PB`;
+  } else if (mb >= 1024 * 1024) {
+    return `${(mb / (1024 * 1024)).toFixed(2)} TB`;
+  } else if (mb >= 1024) {
+    return `${(mb / 1024).toFixed(2)} GB`;
+  } else {
+    return `${mb} MB`;
+  }
 };
 
 const loadBuckets = async () => {
@@ -523,16 +577,16 @@ const createBucket = async () => {
   if (!trimmedBucketName.value || isCreateDisabled.value) return;
   creating.value = true;
   try {
-    let quotaStorageGB = newBucketSettings.value.quotaStorageGB;
+    let quotaStorageMB = newBucketSettings.value.quotaStorageMB;
     if (quotaEnabled.value) {
       const unitMultiplier: Record<string, number> = {
-        MiB: 1 / 1024,
-        GiB: 1,
-        TiB: 1024,
-        PiB: 1024 * 1024,
+        MiB: 1,
+        GiB: 1024,
+        TiB: 1024 * 1024,
+        PiB: 1024 * 1024 * 1024,
       };
-      quotaStorageGB = Math.floor(
-        quotaStorageGB * (unitMultiplier[quotaUnit.value] || 1)
+      quotaStorageMB = Math.round(
+        quotaStorageMB * (unitMultiplier[quotaUnit.value] || 1)
       );
     }
 
@@ -544,7 +598,7 @@ const createBucket = async () => {
     const settings = {
       ...newBucketSettings.value,
       name: trimmedBucketName.value,
-      quotaStorageGB,
+      quotaStorageMB,
       objectLockDays,
     };
     await create(settings);
@@ -566,6 +620,28 @@ const editBucket = async (name: string) => {
   try {
     const settings = await getSettings(name);
     bucketSettings.value = settings;
+    // Initialize quota toggle based on existing values
+    bucketQuotaMutable.value = settings.quotaStorageMB > 0 || settings.quotaObjects > 0;
+    // Convert MB to appropriate display unit
+    if (settings.quotaStorageMB > 0) {
+      const mb = settings.quotaStorageMB;
+      // Choose the best unit based on the value
+      if (mb >= 1024 * 1024 * 1024) {
+        bucketQuotaUnit.value = "PiB";
+        bucketSettings.value.quotaStorageMB = mb / (1024 * 1024 * 1024);
+      } else if (mb >= 1024 * 1024) {
+        bucketQuotaUnit.value = "TiB";
+        bucketSettings.value.quotaStorageMB = mb / (1024 * 1024);
+      } else if (mb >= 1024) {
+        bucketQuotaUnit.value = "GiB";
+        bucketSettings.value.quotaStorageMB = mb / 1024;
+      } else {
+        bucketQuotaUnit.value = "MiB";
+        bucketSettings.value.quotaStorageMB = mb;
+      }
+    } else {
+      bucketQuotaUnit.value = "MiB";
+    }
   } catch {
     bucketSettings.value = {
       name,
@@ -573,9 +649,11 @@ const editBucket = async (name: string) => {
       objectLock: false,
       objectLockDays: 1,
       retentionMode: "GOVERNANCE",
-      quotaStorageGB: 0,
+      quotaStorageMB: 0,
       quotaObjects: 0,
     };
+    bucketQuotaMutable.value = false;
+    bucketQuotaUnit.value = "MiB";
   }
   showSettingsModal.value = true;
 };
@@ -583,6 +661,22 @@ const editBucket = async (name: string) => {
 const saveSettings = async () => {
   saving.value = true;
   try {
+    // Apply unit conversion for quota storage
+    if (bucketQuotaMutable.value) {
+      const unitMultiplier: Record<string, number> = {
+        MiB: 1,
+        GiB: 1024,
+        TiB: 1024 * 1024,
+        PiB: 1024 * 1024 * 1024,
+      };
+      bucketSettings.value.quotaStorageMB = Math.round(
+        bucketSettings.value.quotaStorageMB * (unitMultiplier[bucketQuotaUnit.value] || 1)
+      );
+    } else {
+      bucketSettings.value.quotaStorageMB = 0;
+      bucketSettings.value.quotaObjects = 0;
+    }
+
     await updateSettings(bucketSettings.value);
     showSettingsModal.value = false;
     await loadBuckets();
@@ -675,24 +769,56 @@ const deleteBucket = async () => {
 }
 
 .form-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .form-section:last-child {
   margin-bottom: 0;
 }
 
-.form-section h4 {
-  margin: 0 0 1rem 0;
-  font-size: 0.875rem;
-  font-weight: 600;
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-item.setting-nested {
+  padding-left: 1rem;
+  margin-left: 1rem;
+  border-left: 2px solid var(--blue);
+}
+
+.setting-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.setting-label > span {
+  font-size: 0.813rem;
   color: var(--textPrimary);
 }
 
-.settings-section {
-  background: var(--bg);
-  border-radius: 8px;
-  padding: 1rem;
+.setting-desc {
+  font-size: 0.75rem;
+  color: var(--textSecondary);
+}
+
+.setting-content {
+  padding: 0.75rem 0 0.75rem 2rem;
+}
+
+.setting-content.setting-nested {
+  border-left: 2px solid var(--blue);
+  margin-left: 1rem;
 }
 
 .form-group {
@@ -706,7 +832,7 @@ const deleteBucket = async () => {
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 0.813rem;
   color: var(--textSecondary);
 }
 
@@ -714,12 +840,13 @@ const deleteBucket = async () => {
 .form-group input[type="number"],
 .form-group select {
   width: 100%;
-  padding: 0.625rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 20px;
   background: var(--bg);
   color: var(--textPrimary);
-  font-size: 0.875rem;
+  font-size: 0.813rem;
+  transition: border-color 0.2s;
 }
 
 .form-group input:focus,
@@ -741,24 +868,93 @@ const deleteBucket = async () => {
 
 .form-row {
   display: flex;
+  align-items: center;
   gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.form-row:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  min-width: 140px;
+  font-size: 0.813rem;
+  color: var(--textSecondary);
+}
+
+.form-row-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.form-row-inline .inline-label {
+  display: flex;
+  align-items: center;
+  font-size: 0.813rem;
+  color: var(--textSecondary);
+  white-space: nowrap;
+  min-width: 100px;
+  margin-bottom: 0;
+}
+
+.form-row-inline .inline-input-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.form-row-inline input[type="text"] {
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--textPrimary);
+  font-size: 0.813rem;
+}
+
+.form-row-inline input[type="text"]:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+.form-row-inline input[type="text"].input-error {
+  border-color: var(--red) !important;
 }
 
 .toggle-group {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
 }
 
-.toggle-group label:first-child {
-  margin-bottom: 0;
+.form-help {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0.375rem 0 0 0;
+  font-size: 0.75rem;
+  color: var(--textSecondary);
+}
+
+.form-help i {
+  font-size: 0.875rem;
+}
+
+.toggle input:disabled + .toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .toggle {
   position: relative;
   display: inline-block;
-  width: 44px;
-  height: 24px;
+  width: 40px;
+  height: 22px;
 }
 
 .toggle input {
@@ -774,16 +970,16 @@ const deleteBucket = async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--border);
+  background-color: #ccc;
   transition: 0.3s;
-  border-radius: 24px;
+  border-radius: 22px;
 }
 
 .toggle-slider:before {
   position: absolute;
   content: "";
-  height: 18px;
-  width: 18px;
+  height: 16px;
+  width: 16px;
   left: 3px;
   bottom: 3px;
   background-color: white;
@@ -796,12 +992,12 @@ const deleteBucket = async () => {
 }
 
 .toggle input:checked + .toggle-slider:before {
-  transform: translateX(20px);
+  transform: translateX(18px);
 }
 
 .radio-group {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .radio-item {
@@ -809,7 +1005,7 @@ const deleteBucket = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
@@ -828,17 +1024,40 @@ const deleteBucket = async () => {
 
 .input-with-unit {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .input-with-unit input {
   flex: 1;
+  padding: 0.5rem 0.625rem !important;
+  border: 1px solid rgba(128, 128, 128, 0.3) !important;
+  border-radius: 20px !important;
+  background: var(--bg);
+  color: var(--textPrimary);
+  font-size: 0.813rem;
+  transition: border-color 0.2s;
 }
 
-.input-with-unit select,
-.unit-label {
-  width: 80px;
-  text-align: center;
+.input-with-unit input:focus {
+  outline: none;
+  border-color: var(--blue) !important;
+}
+
+.input-with-unit select {
+  width: 70px;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 20px;
+  background: var(--bg);
+  color: var(--textPrimary);
+  font-size: 0.813rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.input-with-unit select:focus {
+  outline: none;
+  border-color: var(--blue);
 }
 
 .unit-label {
@@ -846,18 +1065,38 @@ const deleteBucket = async () => {
   align-items: center;
   justify-content: center;
   background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 0.875rem;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 20px;
+  font-size: 0.813rem;
   color: var(--textSecondary);
+  padding: 0.5rem 0.625rem;
+  min-width: 70px;
+}
+
+.unit-placeholder {
+  width: 70px;
 }
 
 .info-text {
-  font-size: 0.875rem;
+  font-size: 0.813rem;
   color: var(--textSecondary);
-  padding: 0.5rem;
+  padding: 0.5rem 0.625rem;
   background: var(--bg);
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.info-text .status-enabled,
+.info-text .status-disabled {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.info-text i {
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .checkbox-group label {
@@ -989,35 +1228,54 @@ table td.small {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--divider);
-  flex-wrap: wrap;
   gap: 1rem;
+  background: linear-gradient(to right, var(--surfacePrimary), var(--bg));
+}
+
+.card-title-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .card-title h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--textPrimary);
+}
+
+.card-subtitle {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--textSecondary);
 }
 
 .card-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .search-box {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
   background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 20px;
+  transition: border-color 0.2s;
+}
+
+.search-box:focus-within {
+  border-color: var(--blue);
 }
 
 .search-box i {
-  font-size: 1.25rem;
+  font-size: 1rem;
   color: var(--textSecondary);
 }
 
@@ -1025,12 +1283,54 @@ table td.small {
   border: none;
   background: transparent;
   color: var(--textPrimary);
-  font-size: 0.875rem;
-  width: 200px;
+  font-size: 0.813rem;
+  width: 160px;
 }
 
 .search-box input:focus {
   outline: none;
+}
+
+.search-box input::placeholder {
+  color: var(--textSecondary);
+}
+
+.button-primary {
+  background: var(--blue);
+  color: white;
+  border: 1px solid var(--blue);
+}
+
+.button-primary:hover {
+  background: #1976d2;
+}
+
+.button-compact {
+  height: 36px;
+  padding: 0 0.75rem;
+  font-size: 0.813rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.button-compact i {
+  font-size: 1rem;
+}
+
+.button-icon {
+  padding: 0.5rem;
+  min-width: auto;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.button-icon i {
+  font-size: 1.125rem;
 }
 
 .toggle-grid {
@@ -1067,4 +1367,5 @@ table td.small {
 .options-grid .form-group {
   margin-bottom: 0;
 }
+
 </style>

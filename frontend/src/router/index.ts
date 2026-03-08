@@ -10,6 +10,7 @@ import Settings from "@/views/Settings.vue";
 import GlobalSettings from "@/views/settings/Global.vue";
 import ProfileSettings from "@/views/settings/Profile.vue";
 import Shares from "@/views/settings/Shares.vue";
+import Buckets from "@/views/settings/Buckets.vue";
 import Errors from "@/views/Errors.vue";
 import { useAuthStore } from "@/stores/auth";
 import { baseURL, name } from "@/utils/constants";
@@ -27,6 +28,7 @@ const titles = {
   Shares: "settings.shareManagement",
   GlobalSettings: "settings.globalSettings",
   Users: "settings.users",
+  Buckets: "settings.bucketManagement",
   User: "settings.user",
   Forbidden: "errors.forbidden",
   NotFound: "errors.notFound",
@@ -106,6 +108,14 @@ const routes = [
             path: "users",
             name: "Users",
             component: Users,
+            meta: {
+              requiresAdmin: true,
+            },
+          },
+          {
+            path: "buckets",
+            name: "Buckets",
+            component: Buckets,
             meta: {
               requiresAdmin: true,
             },

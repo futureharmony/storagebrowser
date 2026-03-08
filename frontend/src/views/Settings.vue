@@ -20,6 +20,11 @@
               {{ t("settings.globalSettings") }}
             </li></router-link
           >
+          <router-link to="/settings/buckets" v-if="user?.perm.admin && isS3"
+            ><li :class="{ active: $route.path === '/settings/buckets' }">
+              {{ t("settings.bucketManagement") }}
+            </li></router-link
+          >
           <router-link to="/settings/users" v-if="user?.perm.admin"
             ><li
               :class="{
@@ -63,4 +68,7 @@ const layoutStore = useLayoutStore();
 
 const user = computed(() => authStore.user);
 const loading = computed(() => layoutStore.loading);
+
+const appConfig = (window as any).FileBrowser || {};
+const isS3 = computed(() => appConfig.StorageType === "s3");
 </script>

@@ -113,8 +113,41 @@ func withUser(fn handleFunc) handleFunc {
 				return http.StatusForbidden, errors.New("scope not available for user")
 			}
 		} else {
-			// Use user's current scope
+			// Use user's current scope, but validate it still exists
 			targetScope = &d.user.CurrentScope
+		}
+
+		// Validate that the target bucket still exists for S3 storage
+		if d.server.StorageType == "s3" && targetScope != nil && targetScope.Name != "" {
+			buckets, err := minio.ListBuckets()
+			if err == nil {
+				bucketExists := false
+				for _, b := range buckets {
+					if b == targetScope.Name {
+						bucketExists = true
+						break
+					}
+				}
+				if !bucketExists {
+					log.Printf("[AUTH] Target bucket %s no longer exists, switching to first available scope", targetScope.Name)
+					// Switch to first available scope that still exists
+					if len(d.user.AvailableScopes) > 0 {
+						for _, scope := range d.user.AvailableScopes {
+							for _, b := range buckets {
+								if b == scope.Name {
+									targetScope = &scope
+									goto foundValidScope
+								}
+							}
+						}
+					foundValidScope:
+					}
+					// If still no valid scope, try any available scope
+					if targetScope == nil || (targetScope.Name != "" && !bucketExists) && len(d.user.AvailableScopes) > 0 {
+						targetScope = &d.user.AvailableScopes[0]
+					}
+				}
+			}
 		}
 
 		d.requestScope = targetScope

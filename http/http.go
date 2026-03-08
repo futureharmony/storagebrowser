@@ -89,6 +89,10 @@ func NewHandler(
 	api.PathPrefix("/command").Handler(monkey(commandsHandler, "/api/command")).Methods("GET")
 	api.PathPrefix("/search").Handler(monkey(searchHandler, "/api/search")).Methods("GET")
 	api.Handle("/buckets", monkey(listBucketsHandler(), "")).Methods("GET")
+	api.Handle("/buckets", monkey(createBucketHandler(), "")).Methods("POST")
+	api.Handle("/buckets/{name}", monkey(deleteBucketHandler(), "")).Methods("DELETE")
+	api.Handle("/buckets/{name}", monkey(getBucketSettingsHandler(), "")).Methods("GET")
+	api.Handle("/buckets/{name}", monkey(updateBucketSettingsHandler(), "")).Methods("PUT")
 	api.PathPrefix("/subtitle").Handler(monkey(subtitleHandler, "/api/subtitle")).Methods("GET")
 
 	public := api.PathPrefix("/public").Subrouter()

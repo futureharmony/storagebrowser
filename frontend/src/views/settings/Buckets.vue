@@ -262,6 +262,47 @@
             {{ t("settings.objectLockCannotEnable") }}
           </span>
         </div>
+
+        <!-- Retention Settings (only if object lock is enabled) -->
+        <div v-if="objectLockEnabled" class="setting-item setting-nested">
+          <div class="setting-label">
+            <span>{{ t("settings.retention") }}</span>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" v-model="retentionEnabled" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div v-if="objectLockEnabled && retentionEnabled" class="setting-content setting-nested">
+          <div class="form-row">
+            <label class="form-label">{{ t("settings.retentionMode") }}</label>
+            <div class="radio-group">
+              <label class="radio-item" :class="{ selected: bucketSettings.retentionMode === 'COMPLIANCE' }">
+                <input type="radio" v-model="bucketSettings.retentionMode" value="COMPLIANCE" />
+                <span>{{ t("settings.compliance") }}</span>
+              </label>
+              <label class="radio-item" :class="{ selected: bucketSettings.retentionMode === 'GOVERNANCE' }">
+                <input type="radio" v-model="bucketSettings.retentionMode" value="GOVERNANCE" />
+                <span>{{ t("settings.governance") }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">{{ t("settings.validity") }}</label>
+            <div class="input-with-unit">
+              <input
+                v-model.number="bucketSettings.objectLockDays"
+                type="number"
+                min="1"
+              />
+              <select v-model="retentionUnit">
+                <option value="day">{{ t("settings.days") }}</option>
+                <option value="year">{{ t("settings.years") }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button
@@ -480,6 +521,16 @@ const editBucket = async (name: string) => {
   try {
     const settings = await getSettings(name);
     bucketSettings.value = settings;
+    // Initialize retention toggle based on existing values
+    retentionEnabled.value = settings.objectLock && settings.objectLockDays > 0;
+    // Convert days to years if needed
+    if (settings.objectLockDays >= 365 && settings.objectLockDays % 365 === 0) {
+      bucketSettings.value.objectLockDays = settings.objectLockDays / 365;
+      retentionUnit.value = "year";
+    } else {
+      bucketSettings.value.objectLockDays = settings.objectLockDays;
+      retentionUnit.value = "day";
+    }
   } catch {
     bucketSettings.value = {
       name,
@@ -488,6 +539,8 @@ const editBucket = async (name: string) => {
       objectLockDays: 1,
       retentionMode: "GOVERNANCE",
     };
+    retentionEnabled.value = false;
+    retentionUnit.value = "day";
   }
   showSettingsModal.value = true;
 };
@@ -495,6 +548,11 @@ const editBucket = async (name: string) => {
 const saveSettings = async () => {
   saving.value = true;
   try {
+    // Apply unit conversion for retention days
+    if (retentionEnabled.value && retentionUnit.value === "year") {
+      bucketSettings.value.objectLockDays = bucketSettings.value.objectLockDays * 365;
+    }
+
     await updateSettings(bucketSettings.value);
     showSettingsModal.value = false;
     await loadBuckets();

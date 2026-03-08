@@ -377,21 +377,34 @@ func SetBucketObjectLock(name string, enabled bool, days int, mode types.ObjectL
 		return fmt.Errorf("object lock cannot be disabled once enabled")
 	}
 
-	// If already enabled, can only update retention settings
-	if currentEnabled && lockConfig.ObjectLockConfiguration.Rule != nil && lockConfig.ObjectLockConfiguration.Rule.DefaultRetention != nil {
-		_, err := client.PutObjectLockConfiguration(ctx, &s3.PutObjectLockConfigurationInput{
+	// Update retention settings if object lock is enabled
+	if currentEnabled || enabled {
+		log.Printf("[MINIO] SetBucketObjectLock: updating retention settings for %s (days=%d, mode=%s)", name, days, mode)
+
+		input := &s3.PutObjectLockConfigurationInput{
 			Bucket: aws.String(name),
 			ObjectLockConfiguration: &types.ObjectLockConfiguration{
 				ObjectLockEnabled: types.ObjectLockEnabledEnabled,
-				Rule: &types.ObjectLockRule{
-					DefaultRetention: &types.DefaultRetention{
-						Days: aws.Int32(int32(days)),
-						Mode: mode,
-					},
-				},
 			},
-		})
-		return err
+		}
+
+		// Only set rule if days > 0
+		if days > 0 {
+			input.ObjectLockConfiguration.Rule = &types.ObjectLockRule{
+				DefaultRetention: &types.DefaultRetention{
+					Days: aws.Int32(int32(days)),
+					Mode: mode,
+				},
+			}
+		}
+
+		_, err := client.PutObjectLockConfiguration(ctx, input)
+		if err != nil {
+			log.Printf("[MINIO] SetBucketObjectLock: failed to update configuration: %v", err)
+			return err
+		}
+		log.Printf("[MINIO] SetBucketObjectLock: configuration updated successfully")
+		return nil
 	}
 
 	return nil

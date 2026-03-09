@@ -12,7 +12,7 @@
     />
 
     <div
-      v-if="!isSearchActive && !isPreviewMode && hasBuckets && showBucketSelect"
+      v-if="!isPreviewMode && hasBuckets && showBucketSelect"
       id="bucket-select"
     >
       <div id="input" @click="toggleDropdown" ref="selectRef">

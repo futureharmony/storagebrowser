@@ -3,6 +3,7 @@
     <div class="search-input-wrapper">
       <i class="material-icons search-icon">search</i>
       <input
+        ref="searchInput"
         type="text"
         v-model="searchQuery"
         @input="handleInput"
@@ -66,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { useFileStore } from "@/stores/file";
@@ -94,11 +95,13 @@ const fileStore = useFileStore();
 const { isMobile } = useResponsive();
 
 const searchContainer = ref<HTMLElement | null>(null);
+const searchInput = ref<HTMLInputElement | null>(null);
 const searchQuery = ref("");
 const activeFilter = ref<string | null>(null);
 const searchResults = ref<SearchResult[]>([]);
 const isSearching = ref(false);
 const showResults = ref(false);
+const isVisible = computed(() => showResults.value);
 
 const searchPlaceholder = computed(() => {
   return isMobile.value ? t("search.searchMobile") : t("search.search");
@@ -157,6 +160,23 @@ const handleSearch = async () => {
     isSearching.value = false;
   }
 };
+
+// 自动聚焦到搜索输入框
+const focusSearchInput = async () => {
+  await nextTick();
+  if (searchInput.value) {
+    searchInput.value.focus();
+    // 将光标移动到文本末尾
+    searchInput.value.selectionStart = searchInput.value.selectionEnd = searchInput.value.value.length;
+  }
+};
+
+// 监听搜索结果显示，自动聚焦
+watch(showResults, (newVal) => {
+  if (newVal) {
+    focusSearchInput();
+  }
+});
 
 const navigateTo = (item: SearchResult) => {
   router.push(item.url);

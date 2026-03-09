@@ -170,6 +170,14 @@ const globalKeyEvent = (event: KeyboardEvent) => {
         if (event.shiftKey) {
           event.preventDefault();
           layoutStore.showHover("search");
+          // 自动聚焦到搜索输入框
+          setTimeout(() => {
+            const searchInput = document.querySelector(".search-input") as HTMLInputElement;
+            if (searchInput) {
+              searchInput.focus();
+              searchInput.selectionStart = searchInput.selectionEnd = searchInput.value.length;
+            }
+          }, 100);
         }
         break;
       case "s":

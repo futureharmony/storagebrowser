@@ -32,6 +32,9 @@ builds:
         goarch: "386"
       - goos: freebsd
         goarch: arm
+    hooks:
+      pre: |
+        cd frontend && pnpm build && cd ..
 
 archives:
   - name_template: "{{.Os}}-{{.Arch}}{{if .Arm}}v{{.Arm}}{{end}}-{{ .ProjectName }}"

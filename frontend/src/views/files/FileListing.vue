@@ -404,6 +404,11 @@ const keyEvent = (event: KeyboardEvent) => {
     fileStore.selected = [];
   }
 
+  if (event.key === "F1") {
+    // Show help prompt
+    layoutStore.showHover("help");
+  }
+
   if (event.key === "Delete") {
     if (!authStore.user?.perm.delete || fileStore.selectedCount == 0) return;
 

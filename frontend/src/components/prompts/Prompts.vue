@@ -10,8 +10,11 @@
         ref="modalOverlayRef"
         class="modal-overlay"
         @click.self="handleClickOutside"
+        @keydown.escape="handleEscape"
+        @keydown.enter="handleEnter"
+        tabindex="-1"
       >
-        <div class="modal-content">
+        <div class="modal-content" ref="modalContentRef">
           <component
             :is="getModalComponent(currentPrompt.prompt)"
             v-bind="getModalProps(currentPrompt)"
@@ -111,14 +114,29 @@ const handleClickOutside = () => {
   }
 };
 
-// Handle Escape key for modal closure
-window.addEventListener("keydown", (event) => {
-  if (!currentPrompt.value) return;
-
-  if (event.key === "Escape") {
-    event.stopImmediatePropagation();
+const handleEscape = (event: KeyboardEvent) => {
+  if (currentPrompt.value) {
+    event.stopPropagation();
+    event.preventDefault();
     layoutStore.closeCurrentHover();
   }
+};
+
+const handleEnter = (event: KeyboardEvent) => {
+  if (currentPrompt.value) {
+    const focusElement = document.querySelector(
+      '.modal-content [type="submit"], .modal-content [type="button"]'
+    ) as HTMLElement;
+    if (focusElement) {
+      focusElement.click();
+    }
+  }
+};
+
+// Handle Escape key for modal closure
+window.addEventListener("keydown", (event) => {
+  // This is handled by the modal overlay itself now
+  // Keeping this for backward compatibility
 });
 </script>
 

@@ -205,6 +205,7 @@ import css from "@/utils/css";
 import * as upload from "@/utils/upload";
 import { Base64 } from "js-base64";
 import { throttle } from "lodash-es";
+import { createDebouncedKeyHandler } from "@/utils/debounce";
 
 import { removePrefix } from "@/api/utils";
 import Item from "@/components/files/ListingItem.vue";
@@ -367,7 +368,7 @@ onMounted(() => {
   }
 
   // Add the needed event listeners to the window and document.
-  window.addEventListener("keydown", keyEvent);
+  window.addEventListener("keydown", createDebouncedKeyHandler(keyEvent, 50));
   window.addEventListener("scroll", scrollEvent);
   window.addEventListener("resize", windowsResize);
 

@@ -234,9 +234,18 @@ const itemClick = (event: Event | KeyboardEvent) => {
     !(event as KeyboardEvent).metaKey &&
     !(event as KeyboardEvent).shiftKey &&
     !fileStore.multiple
-  )
+  ) {
     open();
-  else click(event);
+  } else {
+    console.log("ListingItem: Calling click with event", {
+      ctrlKey: (event as KeyboardEvent).ctrlKey,
+      metaKey: (event as KeyboardEvent).metaKey,
+      shiftKey: (event as KeyboardEvent).shiftKey,
+      multiple: fileStore.multiple,
+      singleClick: singleClick.value
+    });
+    click(event);
+  }
 };
 
 const click = (event: Event | KeyboardEvent) => {

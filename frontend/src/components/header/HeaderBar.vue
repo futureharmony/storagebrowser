@@ -105,6 +105,7 @@
       <action
         v-if="headerButtons.download"
         icon="file_download"
+        id="download-button"
         :label="t('buttons.download')"
         @action="download"
         :counter="fileStore.selectedCount"

@@ -10,7 +10,6 @@ const staticURL: string = getFileBrowser().StaticURL || "/static";
 const recaptcha: string = getFileBrowser().ReCaptcha;
 const recaptchaKey: string = getFileBrowser().ReCaptchaKey;
 const signup: boolean = getFileBrowser().Signup;
-const version: string = getFileBrowser().Version || "";
 const logoURL = `${staticURL}/img/logo.svg`;
 const noAuth: boolean = getFileBrowser().NoAuth;
 const authMethod = getFileBrowser().AuthMethod || "";
@@ -26,6 +25,20 @@ const tusSettings = getFileBrowser().TusSettings || {
 const origin = typeof window !== "undefined" ? window.location.origin : "";
 const tusEndpoint = `/api/tus`;
 
+// Debug version loading
+console.log("Constants version loaded:", getFileBrowser().Version || "");
+console.log("FileBrowser object:", getFileBrowser());
+
+// Function to check version status
+export const checkVersionStatus = () => {
+  const currentVersion = getFileBrowser().Version || "";
+  console.log("Version check - Current:", currentVersion, "Loaded:", getFileBrowser().Version || "");
+  return currentVersion;
+};
+
+// Export version as a function to get current value
+export const version = () => getFileBrowser().Version || "";
+
 export {
   name,
   disableExternal,
@@ -35,7 +48,6 @@ export {
   recaptcha,
   recaptchaKey,
   signup,
-  version,
   noAuth,
   authMethod,
   loginPage,

@@ -175,7 +175,7 @@
       </div>
       <div class="footer-info">
         <span class="app-name">StorageBrowser</span>
-        <span class="app-version">v{{ version }}</span>
+        <span class="app-version">v{{ version() }}</span>
       </div>
     </footer>
   </nav>
@@ -186,6 +186,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useLayoutStore } from "@/stores/layout";
 import { computed, inject, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { checkVersionStatus, version } from "@/utils/constants";
 
 import * as auth from "@/utils/auth";
 import {
@@ -193,7 +194,6 @@ import {
   loginPage,
   noAuth,
   signup,
-  version,
 } from "@/utils/constants";
 
 const route = useRoute();
@@ -267,6 +267,17 @@ const toBucketSettings = () => {
   router.push({ path: "/settings/buckets" });
   layoutStore.closeHovers();
 };
+
+// 检查版本状态
+const checkVersion = () => {
+  console.log("Sidebar version check called");
+  checkVersionStatus();
+};
+
+// 在组件挂载时检查版本
+onMounted(() => {
+  checkVersion();
+});
 
 const help = () => {
   layoutStore.showHover("help");

@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/futureharmony/storagebrowser/v2/auth"
+	"github.com/futureharmony/storagebrowser/v2/settings"
+	"github.com/futureharmony/storagebrowser/v2/storage"
 	"github.com/futureharmony/storagebrowser/v2/version"
 )
 
@@ -60,3 +62,43 @@ var configHandler = withUser(func(w http.ResponseWriter, r *http.Request, d *dat
 
 	return renderJSON(w, r, config)
 })
+
+// publicConfigHandler returns config information without requiring authentication
+var publicConfigHandler = func(w http.ResponseWriter, r *http.Request, store *storage.Storage, server *settings.Server) (int, error) {
+	settings, err := store.Settings.Get()
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	config := map[string]interface{}{
+		"Name":                  settings.Branding.Name,
+		"DisableExternal":       settings.Branding.DisableExternal,
+		"DisableUsedPercentage": settings.Branding.DisableUsedPercentage,
+		"Color":                 settings.Branding.Color,
+		"BaseURL":               server.BaseURL,
+		"Version":               version.Version,
+		"StaticURL":             path.Join(server.BaseURL, "/static"),
+		"Signup":                settings.Signup,
+		"NoAuth":                settings.AuthMethod == auth.MethodNoAuth,
+		"AuthMethod":            settings.AuthMethod,
+		"LoginPage":             false, // Will be set properly after login
+		"CSS":                   false,
+		"ReCaptcha":             false,
+		"Theme":                 settings.Branding.Theme,
+		"EnableThumbs":          server.EnableThumbnails,
+		"ResizePreview":         server.ResizePreview,
+		"EnableExec":            server.EnableExec,
+		"TusSettings":           settings.Tus,
+		"StorageType":           server.StorageType,
+	}
+
+	if settings.Branding.Files != "" {
+		fPath := filepath.Join(settings.Branding.Files, "custom.css")
+		_, err := os.Stat(fPath)
+		if err == nil {
+			config["CSS"] = true
+		}
+	}
+
+	return renderJSON(w, r, config)
+}

@@ -75,8 +75,9 @@ import { useLayoutStore } from "@/stores/layout";
 import { useUploadStore } from "@/stores/upload";
 import { enableExec } from "@/utils/constants";
 import { useResponsive } from "@/utils/responsive";
-import { computed, provide, ref, watch } from "vue";
+import { computed, onMounted, provide, ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import { loadConfig } from "@/api/config";
 
 const layoutStore = useLayoutStore();
 const authStore = useAuthStore();
@@ -130,6 +131,11 @@ watch(sidebarActive, (newValue, oldValue) => {
       }
     }, 0);
   }
+});
+
+// Load config on mount
+onMounted(async () => {
+  await loadConfig();
 });
 </script>
 

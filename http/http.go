@@ -81,7 +81,16 @@ func NewHandler(
 	api.Handle("/settings", monkey(settingsGetHandler, "")).Methods("GET")
 	api.Handle("/settings", monkey(settingsPutHandler, "")).Methods("PUT")
 
-	api.Handle("/config", monkey(configHandler, "")).Methods("GET")
+	api.HandleFunc("/config", func(w http.ResponseWriter, r *http.Request) {
+		status, err := publicConfigHandler(w, r, store, server)
+		if status != 0 || err != nil {
+			if status == 0 {
+				status = http.StatusInternalServerError
+			}
+			http.Error(w, http.StatusText(status), status)
+			return
+		}
+	}).Methods("GET")
 
 	api.PathPrefix("/raw").Handler(monkey(rawHandler, "/api/raw")).Methods("GET")
 	api.PathPrefix("/preview/{size}/{path:.*}").

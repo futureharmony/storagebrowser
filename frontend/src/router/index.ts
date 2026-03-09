@@ -12,6 +12,7 @@ import ProfileSettings from "@/views/settings/Profile.vue";
 import Shares from "@/views/settings/Shares.vue";
 import Buckets from "@/views/settings/Buckets.vue";
 import Errors from "@/views/Errors.vue";
+import KeyboardShortcuts from "@/views/KeyboardShortcuts.vue";
 import { useAuthStore } from "@/stores/auth";
 import { baseURL, name } from "@/utils/constants";
 import i18n from "@/i18n";
@@ -158,6 +159,14 @@ const routes = [
     props: {
       errorCode: 500,
       showHeader: true,
+    },
+  },
+  {
+    path: "/keyboard-shortcuts",
+    name: "KeyboardShortcuts",
+    component: KeyboardShortcuts,
+    meta: {
+      requiresAuth: true,
     },
   },
   {

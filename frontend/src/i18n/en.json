@@ -94,6 +94,14 @@
     "f2": "rename file",
     "help": "Help"
   },
+  "keyboardShortcuts": {
+    "title": "Keyboard Shortcuts",
+    "navigation": "Navigation",
+    "fileOperations": "File Operations",
+    "selection": "Selection",
+    "selectAll": "select all items",
+    "rangeSelect": "select range of items"
+  },
   "login": {
     "createAnAccount": "Create an account",
     "loginInstead": "Already have an account",

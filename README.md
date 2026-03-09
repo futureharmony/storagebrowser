@@ -48,6 +48,30 @@ Start FileBrowser with S3 storage:
 
 You can also use environment variables (FB_ prefix with underscore separators):
 
+### Keyboard Shortcuts
+
+StorageBrowser supports the following keyboard shortcuts for improved productivity:
+
+- **F1** - Show help information
+- **F2** - Rename selected file (requires rename permission)
+- **DEL** - Delete selected items (requires delete permission)
+- **ESC** - Clear selection and/or close prompts
+- **CTRL + S** - Download selected file or current directory
+- **CTRL + SHIFT + F** - Open search
+- **CTRL + Click** - Select multiple files or directories
+- **Click** - Select file or directory
+- **Double click** - Open file or directory
+- **CTRL + A** - Select all items
+- **CTRL + C** - Copy selected files
+- **CTRL + V** - Paste files
+
+### Quick Start
+
+1. Download the latest release
+2. Configure S3 settings in `settings.local.json`
+3. Run: `./storagebrowser -c settings.local.json`
+4. Access the web interface at `http://localhost:8080`
+
 ```bash
 export FB_STORAGE_TYPE=s3
 export FB_S3_REGION=us-east-1

@@ -402,6 +402,10 @@ const keyEvent = (event: KeyboardEvent) => {
   if (event.key === "Escape") {
     // Reset files selection.
     fileStore.selected = [];
+    // Also close any open prompts
+    if (layoutStore.currentPrompt !== null) {
+      layoutStore.closeCurrentHover();
+    }
   }
 
   if (event.key === "F1") {

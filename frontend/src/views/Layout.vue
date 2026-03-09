@@ -75,7 +75,7 @@ import { useLayoutStore } from "@/stores/layout";
 import { useUploadStore } from "@/stores/upload";
 import { enableExec } from "@/utils/constants";
 import { useResponsive } from "@/utils/responsive";
-import { computed, onMounted, provide, ref, watch } from "vue";
+import { computed, onMounted, onBeforeUnmount, provide, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { loadConfig } from "@/api/config";
 
@@ -133,9 +133,79 @@ watch(sidebarActive, (newValue, oldValue) => {
   }
 });
 
+// 全局键盘事件处理器
+const globalKeyEvent = (event: KeyboardEvent) => {
+  // 如果当前在编辑器中，不处理快捷键
+  if (isEditor.value) return;
+
+  // 如果有模态框显示，不处理快捷键
+  if (layoutStore.currentPrompt !== null) return;
+
+  // 处理全局快捷键
+  switch (event.key) {
+    case "Escape":
+      // 清除文件选择
+      fileStore.selected = [];
+      break;
+    case "F1":
+      // 显示帮助
+      layoutStore.showHover("help");
+      break;
+    case "F2":
+      if (authStore.user?.perm.rename && fileStore.selectedCount === 1) {
+        layoutStore.showHover("rename");
+      }
+      break;
+    case "Delete":
+      if (authStore.user?.perm.delete && fileStore.selectedCount > 0) {
+        layoutStore.showHover("delete");
+      }
+      break;
+  }
+
+  // 处理 Ctrl 键快捷键
+  if (event.ctrlKey || event.metaKey) {
+    switch (event.key.toLowerCase()) {
+      case "f":
+        if (event.shiftKey) {
+          event.preventDefault();
+          layoutStore.showHover("search");
+        }
+        break;
+      case "s":
+        event.preventDefault();
+        // 查找并点击下载按钮
+        const downloadButton = document.getElementById("download-button");
+        if (downloadButton) {
+          downloadButton.click();
+        }
+        break;
+      case "a":
+        event.preventDefault();
+        // 全选
+        if (fileStore.req) {
+          const items = fileStore.req.items;
+          fileStore.selected = [];
+          for (let i = 0; i < items.length; i++) {
+            fileStore.selected.push(i);
+          }
+        }
+        break;
+    }
+  }
+};
+
 // Load config on mount
 onMounted(async () => {
   await loadConfig();
+  
+  // 添加全局键盘事件监听
+  window.addEventListener("keydown", globalKeyEvent);
+});
+
+// 清理函数
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", globalKeyEvent);
 });
 </script>
 
